@@ -1,4 +1,4 @@
-use iced::{text_input, Background, Color, container, scrollable};
+use iced::{ Background, Color, container, button, };
 
 pub struct Container;
 
@@ -20,6 +20,50 @@ impl container::StyleSheet for Container {
 			background: Some(Background::Color(BACKGROUND_PURPLE)),
 			text_color: Some(TEXT_COLOR),
 			..container::Style::default()
+		}
+	}
+}
+
+pub struct NextDayButton;
+
+impl button::StyleSheet for NextDayButton {
+	fn active(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(BACKGROUND_PURPLE)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn hovered(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(BACKGROUND_PURPLE)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn pressed(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(BACKGROUND_PURPLE)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn disabled(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(BACKGROUND_PURPLE)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
 		}
 	}
 }

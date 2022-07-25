@@ -3,18 +3,24 @@ mod style;
 mod weather;
 
 use iced::executor;
-use iced::{ Application, Column, Command, Container, Element, Length, Settings, Text };
+use iced::{ Application, Column, Command, Container, Element, Length, Settings, Subscription };
 
 struct Window {
 	weather: weather::render::View,
 }
 
+#[derive(Debug)]
+enum Message {
+	Redraw,
+	WeatherMessage(weather::render::Message),
+}
+
 impl Application for Window {
-	type Message = ();
+	type Message = Message;
 	type Executor = executor::Default;
 	type Flags = ();
 
-	fn new(_flags: ()) -> (Self, Command<()>) {
+	fn new(_flags: ()) -> (Self, Command<Self::Message>) {
 		(
 			Window {
 				weather: weather::render::View::new(),
@@ -27,17 +33,32 @@ impl Application for Window {
 		String::from("bansheelong")
 	}
 
-	fn update(&mut self, _message: ()) -> Command<()> {
+	fn subscription(&self) -> Subscription<Self::Message> {
+		iced::time::every(std::time::Duration::from_millis(16)).map(|_| {
+			Self::Message::Redraw
+		})
+	}
+
+	fn update(&mut self, _message: Message) -> Command<Self::Message> {
+		match _message {
+			Self::Message::Redraw => {},
+			Self::Message::WeatherMessage(message) => {
+				self.weather.update(message);
+			},
+		};
+
 		Command::none()
 	}
 
-	fn view(&mut self) -> Element<()> {
+	fn view(&mut self) -> Element<Self::Message> {
 		Container::new(
 			Column::new()
-				.push(self.weather.view())
+				.push(self.weather.view().map(move |message| {
+					Self::Message::WeatherMessage(message)
+				}))
 		)
 			.width(Length::Fill)
-			.padding(20)
+			.padding([12, 0, 0, 20])
 			.style(style::Container)
 			.into()
 	}
@@ -45,7 +66,7 @@ impl Application for Window {
 
 fn main() -> iced::Result {
 	Window::run(Settings {
-		antialiasing: false,
+		antialiasing: true,
 		default_font: Some(include_bytes!("../data/fonts/NotoSans-Medium.ttf")),
 		window: iced::window::Settings {
 			size: (constants::WINDOW_WIDTH as u32, constants::WINDOW_HEIGHT as u32),

@@ -12,3 +12,8 @@ pub const NOTOSANS: Font = Font::External {
 	name: "NotoSans Regular",
 	bytes: include_bytes!("../data/fonts/NotoSans-Medium.ttf"),
 };
+
+pub const ICONS: Font = Font::External {
+	name: "Material Icons",
+	bytes: include_bytes!("../data/fonts/MaterialIcons-Regular.ttf"),
+};
