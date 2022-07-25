@@ -24,9 +24,9 @@ impl container::StyleSheet for Container {
 	}
 }
 
-pub struct NextDayButton;
+pub struct WeatherButton;
 
-impl button::StyleSheet for NextDayButton {
+impl button::StyleSheet for WeatherButton {
 	fn active(&self) -> button::Style {
 		button::Style {
 			background: Some(Background::Color(BACKGROUND_PURPLE)),

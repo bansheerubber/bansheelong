@@ -44,161 +44,178 @@ struct Status {
 #[derive(Debug)]
 pub struct View {
 	current_status: isize,
+	detail_toggle: bool,
 	max_statuses: isize,
 	statuses: [Status; 5],
 
-	next_day: button::State,
-	previous_day: button::State,
+	next_day_state: button::State,
+	previous_day_state: button::State,
+	toggle_detail_state: button::State,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
-	Previous,
 	Next,
+	Previous,
+	Refresh,
+	ToggleDetail,
 }
 
 impl View {
 	pub fn new() -> Self {
-			View {
-				current_status: 0,
-				max_statuses: 5,
-				statuses: [
-					Status {
-						current: Instant {
-							time: 0,
-							temperature: 99,
-						},
-						day: String::from("Sunday"),
-						humidity: 47,
-						icon: String::from("clear-day.svg"),
-						times: [
-							Instant {
-								time: (5 + 12),
-								temperature: 98,
-							},
-							Instant {
-								time: (9 + 12),
-								temperature: 91,
-							},
-							Instant {
-								time: 8,
-								temperature: 86,
-							},
-						],
-						uv: 10,
-						wind: 12,
+		View {
+			current_status: 0,
+			detail_toggle: false,
+			max_statuses: 5,
+			statuses: [
+				Status {
+					current: Instant {
+						time: 0,
+						temperature: 99,
 					},
-					Status {
-						current: Instant {
-							time: 0,
+					day: String::from("Sunday"),
+					humidity: 47,
+					icon: String::from("clear-day.svg"),
+					times: [
+						Instant {
+							time: (5 + 12),
+							temperature: 98,
+						},
+						Instant {
+							time: (9 + 12),
+							temperature: 91,
+						},
+						Instant {
+							time: 8,
+							temperature: 86,
+						},
+					],
+					uv: 10,
+					wind: 12,
+				},
+				Status {
+					current: Instant {
+						time: 0,
+						temperature: 100,
+					},
+					day: String::from("Monday"),
+					humidity: 45,
+					icon: String::from("clear-day.svg"),
+					times: [
+						Instant {
+							time: (5 + 12),
 							temperature: 100,
 						},
-						day: String::from("Monday"),
-						humidity: 45,
-						icon: String::from("clear-day.svg"),
-						times: [
-							Instant {
-								time: (5 + 12),
-								temperature: 100,
-							},
-							Instant {
-								time: (9 + 12),
-								temperature: 100,
-							},
-							Instant {
-								time: 8,
-								temperature: 100,
-							},
-						],
-						uv: 10,
-						wind: 10,
-					},
-					Status {
-						current: Instant {
-							time: 0,
+						Instant {
+							time: (9 + 12),
 							temperature: 100,
 						},
-						day: String::from("Teusday"),
-						humidity: 45,
-						icon: String::from("clear-day.svg"),
-						times: [
-							Instant {
-								time: (5 + 12),
-								temperature: 100,
-							},
-							Instant {
-								time: (9 + 12),
-								temperature: 100,
-							},
-							Instant {
-								time: 8,
-								temperature: 100,
-							},
-						],
-						uv: 10,
-						wind: 8,
-					},
-					Status {
-						current: Instant {
-							time: 0,
+						Instant {
+							time: 8,
 							temperature: 100,
 						},
-						day: String::from("Wednesday"),
-						humidity: 45,
-						icon: String::from("clear-day.svg"),
-						times: [
-							Instant {
-								time: (5 + 12),
-								temperature: 100,
-							},
-							Instant {
-								time: (9 + 12),
-								temperature: 100,
-							},
-							Instant {
-								time: 8,
-								temperature: 100,
-							},
-						],
-						uv: 10,
-						wind: 8,
+					],
+					uv: 10,
+					wind: 10,
+				},
+				Status {
+					current: Instant {
+						time: 0,
+						temperature: 100,
 					},
-					Status {
-						current: Instant {
-							time: 0,
+					day: String::from("Teusday"),
+					humidity: 45,
+					icon: String::from("clear-day.svg"),
+					times: [
+						Instant {
+							time: (5 + 12),
 							temperature: 100,
 						},
-						day: String::from("Thursday"),
-						humidity: 45,
-						icon: String::from("clear-day.svg"),
-						times: [
-							Instant {
-								time: (5 + 12),
-								temperature: 100,
-							},
-							Instant {
-								time: (9 + 12),
-								temperature: 100,
-							},
-							Instant {
-								time: 8,
-								temperature: 100,
-							},
-						],
-						uv: 11,
-						wind: 7,
+						Instant {
+							time: (9 + 12),
+							temperature: 100,
+						},
+						Instant {
+							time: 8,
+							temperature: 100,
+						},
+					],
+					uv: 10,
+					wind: 8,
+				},
+				Status {
+					current: Instant {
+						time: 0,
+						temperature: 100,
 					},
-				],
-
-			next_day: button::State::new(),
-			previous_day: button::State::new(),
+					day: String::from("Wednesday"),
+					humidity: 45,
+					icon: String::from("clear-day.svg"),
+					times: [
+						Instant {
+							time: (5 + 12),
+							temperature: 100,
+						},
+						Instant {
+							time: (9 + 12),
+							temperature: 100,
+						},
+						Instant {
+							time: 8,
+							temperature: 100,
+						},
+					],
+					uv: 10,
+					wind: 8,
+				},
+				Status {
+					current: Instant {
+						time: 0,
+						temperature: 100,
+					},
+					day: String::from("Thursday"),
+					humidity: 45,
+					icon: String::from("clear-day.svg"),
+					times: [
+						Instant {
+							time: (5 + 12),
+							temperature: 100,
+						},
+						Instant {
+							time: (9 + 12),
+							temperature: 100,
+						},
+						Instant {
+							time: 8,
+							temperature: 100,
+						},
+					],
+					uv: 11,
+					wind: 7,
+				},
+			],
+			next_day_state: button::State::new(),
+			previous_day_state: button::State::new(),
+			toggle_detail_state: button::State::new(),
 		}
 	}
 	
 	pub fn update(&mut self, message: Message) -> Command<Message> {
 		match message {
-			Message::Previous => self.current_status = cmp::max(self.current_status - 1, 0),
-			Message::Next => self.current_status = cmp::min(self.current_status + 1, self.max_statuses - 1),
+			Message::Next => {
+				self.current_status = cmp::min(self.current_status + 1, self.max_statuses - 1);
+			},
+			Message::Previous => {
+				self.current_status = cmp::max(self.current_status - 1, 0);
+			},
+			Message::Refresh => {
+				println!("refresh from api");
+			},
+			Message::ToggleDetail => {
+				if self.current_status == 0 {
+					self.detail_toggle = !self.detail_toggle;
+				}
+			},
 		}
 
 		Command::none()
@@ -222,7 +239,7 @@ impl View {
 		};
 
 		let previous_day = Button::new(
-			&mut self.previous_day,
+			&mut self.previous_day_state,
 			Text::new(if self.current_status != 0 { "\u{e408}" } else { "" })
 				.width(Length::Units(40))
 				.height(Length::Fill)
@@ -234,10 +251,10 @@ impl View {
 			.width(Length::Units(40))
 			.height(Length::Fill)
 			.padding(0)
-			.style(style::NextDayButton);
+			.style(style::WeatherButton);
 	
 		let next_day = Button::new(
-			&mut self.next_day,
+			&mut self.next_day_state,
 			Text::new(if self.current_status != self.max_statuses - 1 { "\u{e409}" } else { "" } )
 				.width(Length::Units(40))
 				.height(Length::Fill)
@@ -249,78 +266,90 @@ impl View {
 			.width(Length::Units(40))
 			.height(Length::Fill)
 			.padding(0)
-			.style(style::NextDayButton);
+			.style(style::WeatherButton);
 		
-		let temperature_or_detailed = if self.current_status == 0 {
-			Row::new()
-				.padding(0)
-				.align_items(Alignment::Center)
-				.width(Length::Fill)
-				.push(
-					create_temp_time(&self.statuses[self.current_status as usize].times[0])
-				)
-				.push(
-					create_temp_time(&self.statuses[self.current_status as usize].times[1])
-				)
-				.push(
-					create_temp_time(&self.statuses[self.current_status as usize].times[2])
-				)
-		} else {
-			Row::new()
-				.padding(0)
-				.align_items(Alignment::Center)
-				.width(Length::Fill)
-				.push(
-					Container::new(
-						Svg::from_path(
-							format!(
-								"{}/data/uv-index-{}.svg",
-								env::var("BANSHEELONG_DIR").unwrap(),
-								self.statuses[self.current_status as usize].uv
-							)
-						)
-							.width(Length::Units(70))
+		let temperature_or_detailed = if self.current_status == 0 && !self.detail_toggle {
+			Button::new(
+				&mut self.toggle_detail_state,
+				Row::new()
+					.padding(0)
+					.align_items(Alignment::Center)
+					.width(Length::Fill)
+					.push(
+						create_temp_time(&self.statuses[self.current_status as usize].times[0])
 					)
-						.width(Length::Units(width / 3))
-						.align_x(iced::alignment::Horizontal::Center)
-				)
-				.push(
-					Row::new()
-						.width(Length::Units(width / 3))
-						.align_items(Alignment::Center)
-						.push(
+					.push(
+						create_temp_time(&self.statuses[self.current_status as usize].times[1])
+					)
+					.push(
+						create_temp_time(&self.statuses[self.current_status as usize].times[2])
+					)
+			)
+				.on_press(Message::ToggleDetail)
+				.padding(0)
+				.style(style::WeatherButton)
+		} else {
+			Button::new(
+				&mut self.toggle_detail_state,
+				Row::new()
+					.padding(0)
+					.align_items(Alignment::Center)
+					.width(Length::Fill)
+					.push(
+						Container::new(
 							Svg::from_path(
 								format!(
-									"{}/data/raindrop.svg",
-									env::var("BANSHEELONG_DIR").unwrap()
-								)
-							)
-								.width(Length::Units(50))
-								.height(Length::Units(70))
-						)
-						.push(
-							Text::new(format!("{}%", self.statuses[self.current_status as usize].humidity))
-								.size(40)
-						)
-				)
-				.push(
-					Row::new()
-						.width(Length::Units(width / 3))
-						.align_items(Alignment::Center)
-						.push(
-							Svg::from_path(
-								format!(
-									"{}/data/wind.svg",
-									env::var("BANSHEELONG_DIR").unwrap()
+									"{}/data/uv-index-{}.svg",
+									env::var("BANSHEELONG_DIR").unwrap(),
+									self.statuses[self.current_status as usize].uv
 								)
 							)
 								.width(Length::Units(70))
 						)
-						.push(
-							Text::new(format!("{}", self.statuses[self.current_status as usize].wind))
-								.size(40)
-						)
-				)
+							.width(Length::Units(width / 3))
+							.align_x(iced::alignment::Horizontal::Center)
+					)
+					.push(
+						Row::new()
+							.width(Length::Units(width / 3))
+							.align_items(Alignment::Center)
+							.push(
+								Svg::from_path(
+									format!(
+										"{}/data/raindrop.svg",
+										env::var("BANSHEELONG_DIR").unwrap()
+									)
+								)
+									.width(Length::Units(50))
+									.height(Length::Units(70))
+							)
+							.push(
+								Text::new(format!("{}%", self.statuses[self.current_status as usize].humidity))
+									.size(40)
+							)
+					)
+					.push(
+						Row::new()
+							.width(Length::Units(width / 3))
+							.align_items(Alignment::Center)
+							.push(
+								Svg::from_path(
+									format!(
+										"{}/data/wind.svg",
+										env::var("BANSHEELONG_DIR").unwrap()
+									)
+								)
+									.width(Length::Units(70))
+							)
+							.push(
+								Text::new(format!("{}", self.statuses[self.current_status as usize].wind))
+									.size(40)
+							)
+					)
+			)
+				.on_press(Message::ToggleDetail)
+				.padding(0)
+				.style(style::WeatherButton)
 		};
 		
 		Container::new(

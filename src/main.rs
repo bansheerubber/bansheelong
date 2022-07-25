@@ -34,9 +34,16 @@ impl Application for Window {
 	}
 
 	fn subscription(&self) -> Subscription<Self::Message> {
-		iced::time::every(std::time::Duration::from_millis(16)).map(|_| {
-			Self::Message::Redraw
-		})
+		Subscription::batch([
+			iced::time::every(std::time::Duration::from_millis(16)).map(|_| { // force redraw for rpi4
+				Self::Message::Redraw
+			}),
+			iced::time::every(std::time::Duration::from_secs(300)).map(|_| { // refersh weather info
+				Self::Message::WeatherMessage(
+					weather::render::Message::Refresh
+				)
+			})
+		])
 	}
 
 	fn update(&mut self, _message: Message) -> Command<Self::Message> {
