@@ -92,3 +92,38 @@ pub struct CurrentDatum {
 	pub wind_deg: u16,
 	pub weather: Vec<SkyDescription>,
 }
+
+#[derive(Clone, Debug, Default)]
+pub struct TemperatureDatum {
+	pub time: u16,
+	pub temperature: u16,
+}
+
+impl TemperatureDatum {
+	pub fn get_temperature(&self) -> String {
+		format!("{}°", self.temperature)
+	}
+
+	pub fn get_time(&self) -> String {
+		if self.time == 12 {
+			format!("{} PM", self.time)
+		} else if self.time == 0 {
+			String::from("12 AM")
+		} else if self.time > 12 {
+			format!("{} PM", self.time - 12)
+		} else {
+			format!("{} AM", self.time)
+		}
+	}
+}
+
+#[derive(Clone, Debug, Default)]
+pub struct DailyStatus {
+	pub current: TemperatureDatum,
+	pub day: String,
+	pub humidity: u16,
+	pub icon: String,
+	pub times: [TemperatureDatum; 3],
+	pub uv: u16,
+	pub wind: u16,
+}

@@ -8,42 +8,7 @@ use iced::{ Alignment, Button, Column, Command, Container, Element, Length, Row,
 use crate::constants::{ ICONS, NOTOSANS_BOLD, WINDOW_HEIGHT, get_directory };
 use crate::style;
 use crate::weather::api;
-use crate::weather::types::{ OneAPIError, OneAPIResponse };
-
-#[derive(Debug)]
-struct TemperatureDatum {
-	time: u16,
-	temperature: u16,
-}
-
-impl TemperatureDatum {
-	fn get_temperature(&self) -> String {
-		format!("{}°", self.temperature)
-	}
-
-	fn get_time(&self) -> String {
-		if self.time == 12 {
-			format!("{} PM", self.time)
-		} else if self.time == 0 {
-			String::from("12 AM")
-		} else if self.time > 12 {
-			format!("{} PM", self.time - 12)
-		} else {
-			format!("{} AM", self.time)
-		}
-	}
-}
-
-#[derive(Debug)]
-struct DailyStatus {
-	current: TemperatureDatum,
-	day: String,
-	humidity: u16,
-	icon: String,
-	times: [TemperatureDatum; 3],
-	uv: u16,
-	wind: u16,
-}
+use crate::weather::types::{ DailyStatus, OneAPIError, OneAPIResponse, TemperatureDatum };
 
 #[derive(Debug)]
 pub struct View {
@@ -78,131 +43,11 @@ impl View {
 			last_interaction: Instant::now(),
 			max_statuses: 5,
 			statuses: [
-				DailyStatus {
-					current: TemperatureDatum {
-						time: 0,
-						temperature: 99,
-					},
-					day: String::from("Sunday"),
-					humidity: 47,
-					icon: String::from("clear-day"),
-					times: [
-						TemperatureDatum {
-							time: (5 + 12),
-							temperature: 98,
-						},
-						TemperatureDatum {
-							time: (9 + 12),
-							temperature: 91,
-						},
-						TemperatureDatum {
-							time: 8,
-							temperature: 86,
-						},
-					],
-					uv: 10,
-					wind: 12,
-				},
-				DailyStatus {
-					current: TemperatureDatum {
-						time: 0,
-						temperature: 100,
-					},
-					day: String::from("Monday"),
-					humidity: 45,
-					icon: String::from("clear-day"),
-					times: [
-						TemperatureDatum {
-							time: (5 + 12),
-							temperature: 100,
-						},
-						TemperatureDatum {
-							time: (9 + 12),
-							temperature: 100,
-						},
-						TemperatureDatum {
-							time: 8,
-							temperature: 100,
-						},
-					],
-					uv: 10,
-					wind: 10,
-				},
-				DailyStatus {
-					current: TemperatureDatum {
-						time: 0,
-						temperature: 100,
-					},
-					day: String::from("Teusday"),
-					humidity: 45,
-					icon: String::from("clear-day"),
-					times: [
-						TemperatureDatum {
-							time: (5 + 12),
-							temperature: 100,
-						},
-						TemperatureDatum {
-							time: (9 + 12),
-							temperature: 100,
-						},
-						TemperatureDatum {
-							time: 8,
-							temperature: 100,
-						},
-					],
-					uv: 10,
-					wind: 8,
-				},
-				DailyStatus {
-					current: TemperatureDatum {
-						time: 0,
-						temperature: 100,
-					},
-					day: String::from("Wednesday"),
-					humidity: 45,
-					icon: String::from("clear-day"),
-					times: [
-						TemperatureDatum {
-							time: (5 + 12),
-							temperature: 100,
-						},
-						TemperatureDatum {
-							time: (9 + 12),
-							temperature: 100,
-						},
-						TemperatureDatum {
-							time: 8,
-							temperature: 100,
-						},
-					],
-					uv: 10,
-					wind: 8,
-				},
-				DailyStatus {
-					current: TemperatureDatum {
-						time: 0,
-						temperature: 100,
-					},
-					day: String::from("Thursday"),
-					humidity: 45,
-					icon: String::from("clear-day"),
-					times: [
-						TemperatureDatum {
-							time: (5 + 12),
-							temperature: 100,
-						},
-						TemperatureDatum {
-							time: (9 + 12),
-							temperature: 100,
-						},
-						TemperatureDatum {
-							time: 8,
-							temperature: 100,
-						},
-					],
-					uv: 11,
-					wind: 7,
-				},
+				DailyStatus::default(),
+				DailyStatus::default(),
+				DailyStatus::default(),
+				DailyStatus::default(),
+				DailyStatus::default()
 			],
 			next_day_state: button::State::new(),
 			previous_day_state: button::State::new(),
