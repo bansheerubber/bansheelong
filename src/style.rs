@@ -1,11 +1,15 @@
 use iced::{ Background, Color, container, button, };
 
-pub struct Container;
-
 const BACKGROUND_PURPLE: Color = Color::from_rgb(
 	0x38 as f32 / 255.0,
 	0x26 as f32 / 255.0,
 	0x3F as f32 / 255.0,
+);
+
+const BACKGROUND_LIGHT_PURPLE: Color = Color::from_rgb(
+	0x58 as f32 / 255.0,
+	0x3C as f32 / 255.0,
+	0x63 as f32 / 255.0,
 );
 
 const TEXT_COLOR: Color = Color::from_rgb(
@@ -14,6 +18,7 @@ const TEXT_COLOR: Color = Color::from_rgb(
 	0xF3 as f32 / 255.0,
 );
 
+pub struct Container;
 impl container::StyleSheet for Container {
 	fn style(&self) -> container::Style {
 		container::Style {
@@ -24,8 +29,29 @@ impl container::StyleSheet for Container {
 	}
 }
 
-pub struct WeatherButton;
+pub struct WeatherContainer;
+impl container::StyleSheet for WeatherContainer {
+	fn style(&self) -> container::Style {
+		container::Style {
+			background: Some(Background::Color(BACKGROUND_PURPLE)),
+			text_color: Some(TEXT_COLOR),
+			..container::Style::default()
+		}
+	}
+}
 
+pub struct BlankWeatherContainer;
+impl container::StyleSheet for BlankWeatherContainer {
+	fn style(&self) -> container::Style {
+		container::Style {
+			background: Some(Background::Color(BACKGROUND_LIGHT_PURPLE)),
+			text_color: Some(TEXT_COLOR),
+			..container::Style::default()
+		}
+	}
+}
+
+pub struct WeatherButton;
 impl button::StyleSheet for WeatherButton {
 	fn active(&self) -> button::Style {
 		button::Style {

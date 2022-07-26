@@ -25,7 +25,9 @@ impl Application for Window {
 			Window {
 				weather: weather::render::View::new(),
 			},
-			Command::none(),
+			Command::perform(weather::api::dial(), move |result| {
+				Self::Message::WeatherMessage(weather::render::Message::Fetched(result))
+			}),
 		)
 	}
 
@@ -42,6 +44,11 @@ impl Application for Window {
 				Self::Message::WeatherMessage(
 					weather::render::Message::Refresh
 				)
+			}),
+			iced::time::every(std::time::Duration::from_secs(1)).map(|_| { // tick weather widget so it can detect absense of user interaction, etc
+				Self::Message::WeatherMessage(
+					weather::render::Message::Tick
+				)
 			})
 		])
 	}
@@ -50,7 +57,9 @@ impl Application for Window {
 		match _message {
 			Self::Message::Redraw => {},
 			Self::Message::WeatherMessage(message) => {
-				self.weather.update(message);
+				return self.weather.update(message).map(move |message| {
+					Self::Message::WeatherMessage(message)
+				});
 			},
 		};
 
@@ -65,7 +74,6 @@ impl Application for Window {
 				}))
 		)
 			.width(Length::Fill)
-			.padding([12, 0, 0, 20])
 			.style(style::Container)
 			.into()
 	}
