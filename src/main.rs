@@ -1,11 +1,14 @@
 mod constants;
 mod style;
+mod todos;
 mod weather;
 
+use iced::alignment;
 use iced::executor;
-use iced::{ Application, Column, Command, Container, Element, Length, Settings, Subscription };
+use iced::{ Application, Color, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
 struct Window {
+	todos: todos::render::View,
 	weather: weather::render::View,
 }
 
@@ -23,6 +26,7 @@ impl Application for Window {
 	fn new(_flags: ()) -> (Self, Command<Self::Message>) {
 		(
 			Window {
+				todos: todos::render::View::new(),
 				weather: weather::render::View::new(),
 			},
 			Command::perform(weather::api::dial(), move |result| {
@@ -68,10 +72,28 @@ impl Application for Window {
 
 	fn view(&mut self) -> Element<Self::Message> {
 		Container::new(
-			Column::new()
-				.push(self.weather.view().map(move |message| {
-					Self::Message::WeatherMessage(message)
-				}))
+			Row::new()
+				.push( // weather
+					self.weather.view().map(move |message| {
+						Self::Message::WeatherMessage(message)
+					})
+				)
+				.push( // vertical rule
+					Container::new(
+						Container::new(Text::new(""))
+							.style(style::VerticalRule)
+							.width(Length::Units(2))
+							.height(Length::Units(constants::WINDOW_HEIGHT - 50))
+					)
+						.height(Length::Fill)
+						.padding([0, 25])
+						.align_y(alignment::Vertical::Center)
+				)
+				.push( // todo list
+					self.todos.view().map(move |message| {
+						Self::Message::Redraw
+					})
+				)
 		)
 			.width(Length::Fill)
 			.style(style::Container)
@@ -81,8 +103,9 @@ impl Application for Window {
 
 fn main() -> iced::Result {
 	Window::run(Settings {
-		antialiasing: true,
+		antialiasing: false,
 		default_font: Some(include_bytes!("../data/fonts/NotoSans-Medium.ttf")),
+		text_multithreading: true,
 		window: iced::window::Settings {
 			size: (constants::WINDOW_WIDTH as u32, constants::WINDOW_HEIGHT as u32),
 			resizable: false,
