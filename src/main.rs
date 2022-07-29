@@ -90,7 +90,7 @@ impl Application for Window {
 						.align_y(alignment::Vertical::Center)
 				)
 				.push( // todo list
-					self.todos.view().map(move |message| {
+					self.todos.view().map(move |_message| {
 						Self::Message::Redraw
 					})
 				)

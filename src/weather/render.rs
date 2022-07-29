@@ -66,7 +66,7 @@ impl View {
 			self.statuses[0].uv = std::cmp::max(std::cmp::min(data.current.uvi as u16, 11), 1);
 			self.statuses[0].wind = data.current.wind_speed as u16;
 
-			let mut next_time: u16 = (api::convert_to_time(data.current.dt).format("%H").to_string().parse::<u16>().unwrap() + 1) % 24;
+			let mut next_time: u16 = (api::convert_to_time(data.current.dt).format("%H").to_string().parse::<u16>().unwrap() + 2) % 24;
 			let mut index = 0;
 			let mut status_index = 0;
 			while status_index < 3 {
