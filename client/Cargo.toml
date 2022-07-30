@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
+bansheelong_types = { path = "../types" }
 chrono = "0.4.19"
 iced = { features = ["tokio", "svg"], path = "../../iced" }
 iced_native = { path = "../../iced/native" }
@@ -13,3 +14,4 @@ reqwest = { features = ["json"], version = "0.11.11" }
 serde = { features = ["derive"], version = "1.0" }
 serde_json = "1.0"
 time = { version = "0.3.5", features = ["local-offset"] }
+tokio = { features = ["full"], version = "1.20.1" }

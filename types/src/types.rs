@@ -168,6 +168,7 @@ pub struct Error {
 	pub message: String,
 }
 
+#[derive(Debug)]
 pub enum Dirty {
 	None,
 	Read,
@@ -176,18 +177,21 @@ pub enum Dirty {
 
 pub struct IO {
 	pub database: Database,
-	pub file_name: String,
+	pub resource: String,
 	pub count: i32,
 	pub dirty: Dirty,
+
+	pub(crate) write_log: Vec<(Item, Option<Date>)>
 }
 
 impl Default for IO {
 	fn default() -> Self {
 		IO {
 			database: Database::default(),
-			file_name: String::from("todos"),
+			resource: String::from("todos"),
 			count: 0,
 			dirty: Dirty::Read,
+			write_log: Vec::new(),
 		}
 	}
 }

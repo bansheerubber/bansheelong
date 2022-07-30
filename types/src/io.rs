@@ -2,55 +2,61 @@ use std::io::ErrorKind;
 use std::fs::File;
 use std::io::prelude::*;
 
+use futures::executor;
 use serde::{ Serialize, Deserialize };
 
 use crate::{ Database, Date, Day, Dirty, Error, IO, Item };
 
 impl IO {
 	pub fn read_database(&mut self) -> Result<&Database, Error> {
-		self.count += 1;
-		
-		let mut file = match File::open("todos") {
-			Ok(file) => file,
-			Err(error) => {
-				if error.kind() == ErrorKind::NotFound {
-					self.write_database()?;
-					return Ok(&self.database);
+		if self.resource.contains("http") {
+			Ok(&self.database)
+		} else {
+			self.count += 1;
+			
+			let mut file = match File::open(&self.resource) {
+				Ok(file) => file,
+				Err(error) => {
+					if error.kind() == ErrorKind::NotFound {
+						self.write_database()?;
+						return Ok(&self.database);
+					}
+					
+					return Err(Error {
+						message: format!("{:?}", error),
+					});
 				}
-				
+			};
+
+			let mut buffer = Vec::new();
+			if let Err(error) = file.read_to_end(&mut buffer) {
 				return Err(Error {
 					message: format!("{:?}", error),
 				});
 			}
-		};
 
-		let mut buffer = Vec::new();
-		if let Err(error) = file.read_to_end(&mut buffer) {
-			return Err(Error {
-				message: format!("{:?}", error),
-			});
-		}
+			let root = match flexbuffers::Reader::get_root(buffer.as_slice()) {
+				Ok(root) => root,
+				Err(error) => return Err(Error {
+					message: format!("{:?}", error),
+				}),
+			};
 
-		let root = match flexbuffers::Reader::get_root(buffer.as_slice()) {
-			Ok(root) => root,
-			Err(error) => return Err(Error {
-				message: format!("{:?}", error),
-			}),
-		};
-
-		match Database::deserialize(root) {
-			Ok(database) => {
-				self.database = database;
-				self.dirty = Dirty::None;
-				Ok(&self.database)
-			},
-			Err(error) => Err(Error {
-				message: format!("{:?}", error),
-			}),
+			match Database::deserialize(root) {
+				Ok(database) => {
+					self.database = database;
+					self.dirty = Dirty::None;
+					Ok(&self.database)
+				},
+				Err(error) => Err(Error {
+					message: format!("{:?}", error),
+				}),
+			}
 		}
 	}
 
 	pub fn add_to_database(&mut self, item: Item, date: Option<Date>) -> Result<&Database, Error> {
+		self.write_log.push((item.clone(), date.clone()));
 		self.dirty = Dirty::Write;
 		if self.database.mapping.contains_key(&date) {
 			let items = &mut self.database.mapping.get_mut(&date).unwrap().items;
@@ -69,6 +75,7 @@ impl IO {
 	pub fn add_to_database_sync(&mut self, item: Item, date: Option<Date>) -> Result<&Database, Error> {
 		self.sync()?;
 		
+		self.write_log.push((item.clone(), date.clone()));
 		self.dirty = Dirty::Write;
 		if self.database.mapping.contains_key(&date) {
 			self.database.mapping.get_mut(&date).unwrap().items.push(item);
@@ -85,20 +92,42 @@ impl IO {
 	}
 
 	pub fn write_database(&mut self) -> Result<(), Error> {
-		let mut serializer = flexbuffers::FlexbufferSerializer::new();
-		if let Err(error) = self.database.serialize(&mut serializer) {
-			return Err(Error {
-				message: format!("{:?}", error),
-			});
-		}
+		if self.resource.contains("http") {
+			println!("{:?}", self.write_log);
+			
+			let client = reqwest::Client::new();
+			let result = executor::block_on(
+				client.post(format!("{}/add-todo", self.resource))
+				.form(&[("todos", serde_json::to_string(&self.write_log).unwrap())])
+				.send()
+			);
 
-		if let Err(error) = std::fs::write("todos", serializer.view()) {
-			Err(Error {
-				message: format!("{:?}", error),
-			})
-		} else {
+			if let Err(error) = result {
+				return Err(Error {
+					message: format!("{:?}", error),
+				});
+			}
+
+			self.write_log.clear();
 			self.dirty = Dirty::None;
 			Ok(())
+		} else {
+			self.write_log.clear();
+			let mut serializer = flexbuffers::FlexbufferSerializer::new();
+			if let Err(error) = self.database.serialize(&mut serializer) {
+				return Err(Error {
+					message: format!("{:?}", error),
+				});
+			}
+
+			if let Err(error) = std::fs::write(&self.resource, serializer.view()) {
+				Err(Error {
+					message: format!("{:?}", error),
+				})
+			} else {
+				self.dirty = Dirty::None;
+				Ok(())
+			}
 		}
 	}
 
@@ -128,9 +157,10 @@ mod tests {
 
 	fn setup() -> IO {
 		let mut io = IO {
-			file_name: String::from("/tmp/todos"),
+			resource: String::from("/tmp/todos"),
 			..IO::default()
 		};
+
 		if let Err(error) = io.write_database() {
 			panic!("{:?}", error);
 		}
