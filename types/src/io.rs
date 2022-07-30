@@ -2,70 +2,127 @@ use std::io::ErrorKind;
 use std::fs::File;
 use std::io::prelude::*;
 
-use futures::executor;
 use serde::{ Serialize, Deserialize };
 
-use crate::{ Database, Date, Day, Dirty, Error, IO, Item };
+use crate::{ Database, Date, Day, Dirty, Error, ErrorTag, IO, Item, Resource };
 
-impl IO {
-	pub fn read_database(&mut self) -> Result<&Database, Error> {
-		if self.resource.contains("http") {
-			let client = reqwest::Client::new();
-			let response_result = executor::block_on(
-				client.get(format!("{}/get-todos", self.resource))
-					.header(reqwest::header::CONTENT_TYPE, "application/json")
-					.header(reqwest::header::ACCEPT, "application/json")
-					.send()
-			);
+pub async fn read_database(resource: Resource) -> Result<Database, Error> {
+	if resource.reference.contains("http") {
+		let client = reqwest::Client::new();
+		let response_result = client.get(format!("{}/get-todos", resource.reference))
+			.header(reqwest::header::CONTENT_TYPE, "application/json")
+			.header(reqwest::header::ACCEPT, "application/json")
+			.send()
+			.await;
 
-			if let Err(error) = response_result {
-				return Err(Error {
-					message: format!("{:?}", error),
-				});
-			}
-			
-			Ok(&self.database)
-		} else {
-			self.count += 1;
-			
-			let mut file = match File::open(&self.resource) {
-				Ok(file) => file,
-				Err(error) => {
-					if error.kind() == ErrorKind::NotFound {
-						self.write_database()?;
-						return Ok(&self.database);
-					}
-					
+		if let Err(error) = response_result {
+			return Err(Error {
+				message: format!("{:?}", error),
+				..Error::default()
+			});
+		}
+		let response = response_result.unwrap();
+
+		match response.json::<Database>().await {
+			Ok(result) => Ok(result),
+			Err(error) => Err(Error {
+				message: format!("Could not deserialize JSON: {:?}", error),
+				..Error::default()
+			}),
+		}
+	} else {
+		let mut file = match File::open(&resource.reference) {
+			Ok(file) => file,
+			Err(error) => {
+				if error.kind() == ErrorKind::NotFound {
 					return Err(Error {
-						message: format!("{:?}", error),
+						message: String::from("Could not find file"),
+						tag: ErrorTag::CouldNotFindFile,
 					});
 				}
-			};
-
-			let mut buffer = Vec::new();
-			if let Err(error) = file.read_to_end(&mut buffer) {
+				
 				return Err(Error {
 					message: format!("{:?}", error),
+					..Error::default()
 				});
 			}
+		};
 
-			let root = match flexbuffers::Reader::get_root(buffer.as_slice()) {
-				Ok(root) => root,
-				Err(error) => return Err(Error {
-					message: format!("{:?}", error),
-				}),
-			};
+		let mut buffer = Vec::new();
+		if let Err(error) = file.read_to_end(&mut buffer) {
+			return Err(Error {
+				message: format!("{:?}", error),
+				..Error::default()
+			});
+		}
 
-			match Database::deserialize(root) {
-				Ok(database) => {
-					self.database = database;
-					self.dirty = Dirty::None;
-					Ok(&self.database)
-				},
-				Err(error) => Err(Error {
-					message: format!("{:?}", error),
-				}),
-			}
+		let root = match flexbuffers::Reader::get_root(buffer.as_slice()) {
+			Ok(root) => root,
+			Err(error) => return Err(Error {
+				message: format!("{:?}", error),
+				..Error::default()
+			}),
+		};
+
+		match Database::deserialize(root) {
+			Ok(database) => Ok(database),
+			Err(error) => Err(Error {
+				message: format!("{:?}", error),
+				..Error::default()
+			}),
+		}
+	}
+}
+
+pub async fn write_database(
+	database: &Database,
+	write_log: Option<&Vec<(Item, Option<Date>)>>,
+	resource: Resource
+) -> Result<(), Error> {
+	if resource.reference.contains("http") {
+		let client = reqwest::Client::new();
+		let response_result =  client.post(format!("{}/add-todo", resource.reference))
+			.form(&[("todos", serde_json::to_string(&write_log).unwrap())])
+			.send()
+			.await;
+
+		if let Err(error) = response_result {
+			return Err(Error {
+				message: format!("{:?}", error),
+				..Error::default()
+			});
+		}
+
+		Ok(())
+	} else {
+		let mut serializer = flexbuffers::FlexbufferSerializer::new();
+		if let Err(error) = database.serialize(&mut serializer) {
+			return Err(Error {
+				message: format!("{:?}", error),
+				..Error::default()
+			});
+		}
+
+		if let Err(error) = std::fs::write(&resource.reference, serializer.view()) {
+			Err(Error {
+				message: format!("{:?}", error),
+				..Error::default()
+			})
+		} else {
+			Ok(())
+		}
+	}
+}
+
+impl IO {
+	pub async fn read_database(&mut self) -> Result<&Database, Error> {
+		match read_database(self.resource.clone()).await {
+			Ok(database) => {
+				self.database = database;
+				self.dirty = Dirty::None;
+				Ok(&self.database)
+			},
+			Err(error) => Err(error),
 		}
 	}
 
@@ -86,8 +143,8 @@ impl IO {
 		Ok(&self.database)
 	}
 
-	pub fn add_to_database_sync(&mut self, item: Item, date: Option<Date>) -> Result<&Database, Error> {
-		self.sync()?;
+	pub async fn add_to_database_sync(&mut self, item: Item, date: Option<Date>) -> Result<&Database, Error> {
+		self.sync().await?;
 		
 		self.write_log.push((item.clone(), date.clone()));
 		self.dirty = Dirty::Write;
@@ -100,58 +157,29 @@ impl IO {
 			});
 		}
 
-		self.sync()?;
+		self.sync().await?;
 
 		Ok(&self.database)
 	}
 
-	pub fn write_database(&mut self) -> Result<(), Error> {
-		if self.resource.contains("http") {
-			println!("{:?}", self.write_log);
-			
-			let client = reqwest::Client::new();
-			let response_result = executor::block_on(
-				client.post(format!("{}/add-todo", self.resource))
-					.form(&[("todos", serde_json::to_string(&self.write_log).unwrap())])
-					.send()
-			);
-
-			if let Err(error) = response_result {
-				return Err(Error {
-					message: format!("{:?}", error),
-				});
-			}
-
-			self.write_log.clear();
-			self.dirty = Dirty::None;
-			Ok(())
-		} else {
-			self.write_log.clear();
-			let mut serializer = flexbuffers::FlexbufferSerializer::new();
-			if let Err(error) = self.database.serialize(&mut serializer) {
-				return Err(Error {
-					message: format!("{:?}", error),
-				});
-			}
-
-			if let Err(error) = std::fs::write(&self.resource, serializer.view()) {
-				Err(Error {
-					message: format!("{:?}", error),
-				})
-			} else {
+	pub async fn write_database(&mut self) -> Result<(), Error> {
+		match write_database(&self.database, Some(&self.write_log), self.resource.clone()).await {
+			Ok(_) => {
+				self.write_log.clear();
 				self.dirty = Dirty::None;
 				Ok(())
-			}
+			},
+			Err(error) => Err(error),
 		}
 	}
 
-	pub fn sync(&mut self) -> Result<(), Error> {
+	pub async fn sync(&mut self) -> Result<(), Error> {
 		match &self.dirty {
 			Dirty::Read => {
-				self.read_database()?;
+				self.read_database().await?;
 			},
 			Dirty::Write => {
-				self.write_database()?;
+				self.write_database().await?;
 			},
 			_ => {},
 		}
@@ -167,15 +195,17 @@ mod tests {
 	use rand::{ Rng, SeedableRng };
 	use rand::rngs::StdRng;
 
-	use crate::Time;
+	use crate::{ Resource, Time };
 
 	fn setup() -> IO {
 		let mut io = IO {
-			resource: String::from("/tmp/todos"),
+			resource: Resource {
+				reference: String::from("/tmp/todos"),
+			},
 			..IO::default()
 		};
 
-		if let Err(error) = io.write_database() {
+		if let Err(error) = tokio_test::block_on(io.write_database()) {
 			panic!("{:?}", error);
 		}
 

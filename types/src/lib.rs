@@ -1,11 +1,16 @@
 pub(crate) mod io;
 pub(crate) mod types;
 
-pub type Database = types::Database;
-pub type Date = types::Date;
-pub type Day = types::Day;
-pub type Dirty = types::Dirty;
-pub type Error = types::Error;
-pub type IO = types::IO;
-pub type Item = types::Item;
-pub type Time = types::Time;
+pub use types::Database;
+pub use types::Date;
+pub use types::Day;
+pub use types::Dirty;
+pub use types::Error;
+pub use types::ErrorTag;
+pub use types::IO;
+pub use types::Item;
+pub use types::Resource;
+pub use types::Time;
+
+pub use io::read_database;
+pub use io::write_database;

@@ -130,7 +130,7 @@ impl ToString for Date {
 	}
 }
 
-#[derive(Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Day {
 	pub items: Vec<Item>,
 	pub date: Option<Date>,
@@ -157,38 +157,54 @@ impl PartialOrd for Day {
 }
 
 #[serde_as]
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
 pub struct Database {
 	#[serde_as(as = "Vec<(_, _)>")]
 	pub mapping: BTreeMap<Option<Date>, Day>,
 }
 
-#[derive(Debug)]
-pub struct Error {
-	pub message: String,
+#[derive(Clone, Debug, Default)]
+pub enum ErrorTag {
+	#[default]
+	Generic,
+	CouldNotFindFile,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug, Default)]
+pub struct Error {
+	pub message: String,
+	pub tag: ErrorTag,
+}
+
+#[derive(Clone, Debug)]
 pub enum Dirty {
 	None,
 	Read,
 	Write,
 }
 
+#[derive(Clone, Debug)]
+pub struct Resource {
+	pub reference: String,
+}
+
+#[derive(Clone, Debug)]
 pub struct IO {
 	pub database: Database,
-	pub resource: String,
+	pub resource: Resource,
 	pub count: i32,
 	pub dirty: Dirty,
 
-	pub(crate) write_log: Vec<(Item, Option<Date>)>
+	pub write_log: Vec<(Item, Option<Date>)>
 }
 
 impl Default for IO {
 	fn default() -> Self {
 		IO {
 			database: Database::default(),
-			resource: String::from("todos"),
+			resource: Resource {
+				reference: String::from("todos")
+			},
 			count: 0,
 			dirty: Dirty::Read,
 			write_log: Vec::new(),

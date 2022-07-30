@@ -7,7 +7,7 @@ use iced::alignment;
 use iced::executor;
 use iced::{ Application, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
-use bansheelong_types::IO;
+use bansheelong_types::{ Resource, read_database };
 
 struct Window {
 	todos: todos::render::View,
@@ -17,6 +17,8 @@ struct Window {
 #[derive(Debug)]
 enum Message {
 	Redraw,
+	Refresh,
+	TodoMessage(todos::render::Message),
 	WeatherMessage(weather::render::Message),
 }
 
@@ -26,14 +28,23 @@ impl Application for Window {
 	type Flags = ();
 
 	fn new(_flags: ()) -> (Self, Command<Self::Message>) {
+		let todos_resource = Resource {
+			reference: String::from("http://localhost:3000")
+		};
+
 		(
 			Window {
-				todos: todos::render::View::new(),
+				todos: todos::render::View::new(todos_resource.clone()),
 				weather: weather::render::View::new(),
 			},
-			Command::perform(weather::api::dial(), move |result| {
-				Self::Message::WeatherMessage(weather::render::Message::Fetched(result))
-			}),
+			Command::batch([
+				Command::perform(weather::api::dial(), move |result| {
+					Self::Message::WeatherMessage(weather::render::Message::Fetched(result))
+				}),
+				Command::perform(read_database(todos_resource), move |result| {
+					Self::Message::TodoMessage(todos::render::Message::Fetched(result))
+				}),
+			])
 		)
 	}
 
@@ -46,11 +57,7 @@ impl Application for Window {
 			iced::time::every(std::time::Duration::from_millis(16)).map(|_| { // force redraw for rpi4
 				Self::Message::Redraw
 			}),
-			iced::time::every(std::time::Duration::from_secs(300)).map(|_| { // refersh weather info
-				Self::Message::WeatherMessage(
-					weather::render::Message::Refresh
-				)
-			}),
+			iced::time::every(std::time::Duration::from_secs(300)).map(|_| Self::Message::Refresh), // refresh weather/todos
 			iced::time::every(std::time::Duration::from_secs(1)).map(|_| { // tick weather widget so it can detect absense of user interaction, etc
 				Self::Message::WeatherMessage(
 					weather::render::Message::Tick
@@ -62,6 +69,21 @@ impl Application for Window {
 	fn update(&mut self, _message: Message) -> Command<Self::Message> {
 		match _message {
 			Self::Message::Redraw => {},
+			Self::Message::Refresh => {
+				return Command::batch([
+					self.todos.update(todos::render::Message::Refresh).map(move |message| {
+						Self::Message::TodoMessage(message)
+					}),
+					self.weather.update(weather::render::Message::Refresh).map(move |message| {
+						Self::Message::WeatherMessage(message)
+					}),
+				]);
+			}
+			Self::Message::TodoMessage(message) => {
+				return self.todos.update(message).map(move |message| {
+					Self::Message::TodoMessage(message)
+				});
+			},
 			Self::Message::WeatherMessage(message) => {
 				return self.weather.update(message).map(move |message| {
 					Self::Message::WeatherMessage(message)
@@ -105,12 +127,6 @@ impl Application for Window {
 
 #[tokio::main]
 async fn main() -> iced::Result {
-	let mut io = IO::default();
-	io.resource = String::from("http://test");
-	if let Err(error) = io.sync() {
-		println!("{:?}", error);
-	}
-	
 	Window::run(Settings {
 		antialiasing: false,
 		default_font: Some(include_bytes!("../data/fonts/NotoSans-Medium.ttf")),
