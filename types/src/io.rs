@@ -122,7 +122,13 @@ impl IO {
 				self.dirty = Dirty::None;
 				Ok(&self.database)
 			},
-			Err(error) => Err(error),
+			Err(error) => {
+				if error.tag == ErrorTag::CouldNotFindFile {
+					self.write_database().await?;
+					return Ok(&self.database);
+				}
+				Err(error)
+			},
 		}
 	}
 

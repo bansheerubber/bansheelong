@@ -163,14 +163,14 @@ pub struct Database {
 	pub mapping: BTreeMap<Option<Date>, Day>,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub enum ErrorTag {
 	#[default]
 	Generic,
 	CouldNotFindFile,
 }
 
-#[derive(Clone, Debug, Default)]
+#[derive(Clone, Debug, Default, Eq, PartialEq)]
 pub struct Error {
 	pub message: String,
 	pub tag: ErrorTag,
