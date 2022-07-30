@@ -5,7 +5,7 @@ mod weather;
 
 use iced::alignment;
 use iced::executor;
-use iced::{ Application, Color, Command, Container, Element, Length, Row, Settings, Subscription, Text };
+use iced::{ Application, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
 struct Window {
 	todos: todos::render::View,
