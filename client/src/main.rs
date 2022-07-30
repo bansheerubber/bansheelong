@@ -7,6 +7,8 @@ use iced::alignment;
 use iced::executor;
 use iced::{ Application, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
+use bansheelong_types::IO;
+
 struct Window {
 	todos: todos::render::View,
 	weather: weather::render::View,
@@ -101,7 +103,14 @@ impl Application for Window {
 	}
 }
 
-fn main() -> iced::Result {
+#[tokio::main]
+async fn main() -> iced::Result {
+	let mut io = IO::default();
+	io.resource = String::from("http://test");
+	if let Err(error) = io.sync() {
+		println!("{:?}", error);
+	}
+	
 	Window::run(Settings {
 		antialiasing: false,
 		default_font: Some(include_bytes!("../data/fonts/NotoSans-Medium.ttf")),

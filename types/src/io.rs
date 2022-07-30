@@ -10,6 +10,20 @@ use crate::{ Database, Date, Day, Dirty, Error, IO, Item };
 impl IO {
 	pub fn read_database(&mut self) -> Result<&Database, Error> {
 		if self.resource.contains("http") {
+			let client = reqwest::Client::new();
+			let response_result = executor::block_on(
+				client.get(format!("{}/get-todos", self.resource))
+					.header(reqwest::header::CONTENT_TYPE, "application/json")
+					.header(reqwest::header::ACCEPT, "application/json")
+					.send()
+			);
+
+			if let Err(error) = response_result {
+				return Err(Error {
+					message: format!("{:?}", error),
+				});
+			}
+			
 			Ok(&self.database)
 		} else {
 			self.count += 1;
@@ -96,13 +110,13 @@ impl IO {
 			println!("{:?}", self.write_log);
 			
 			let client = reqwest::Client::new();
-			let result = executor::block_on(
+			let response_result = executor::block_on(
 				client.post(format!("{}/add-todo", self.resource))
-				.form(&[("todos", serde_json::to_string(&self.write_log).unwrap())])
-				.send()
+					.form(&[("todos", serde_json::to_string(&self.write_log).unwrap())])
+					.send()
 			);
 
-			if let Err(error) = result {
+			if let Err(error) = response_result {
 				return Err(Error {
 					message: format!("{:?}", error),
 				});
