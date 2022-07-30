@@ -5,7 +5,7 @@ use std::convert::Infallible;
 use hyper::service::{ make_service_fn, service_fn };
 use hyper::{ Body, Method, Request, Response, Server, StatusCode };
 
-use crate::todo_database::{ Date, IO, Item };
+use bansheelong_types::{ Date, IO, Item };
 
 async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<Body>, Infallible> {
 	println!("{}", request.uri().to_string());

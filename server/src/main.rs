@@ -2,10 +2,9 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 mod host;
-mod todo_database;
 use crate::host::http;
 
-use crate::todo_database::types::IO;
+use bansheelong_types::IO;
 
 #[tokio::main]
 async fn main() {

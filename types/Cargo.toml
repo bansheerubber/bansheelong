@@ -1,0 +1,11 @@
+[package]
+name = "bansheelong_types"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+flexbuffers = "2.0.0"
+rand = "0.7.3"
+serde = { features = ["derive"], version = "1.0.140" }
+serde_json = "1.0.82"
+serde_with = "2.0.0"

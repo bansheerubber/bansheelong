@@ -140,11 +140,9 @@ pub async fn dial() -> Result<OneAPIResponse, OneAPIError> {
 			};
 		},
 		other => {
-			println!("egg egg egg {:?}", other);
+			return Err(OneAPIError {
+				message: format!("Error code {}", other),
+			});
 		},
 	}
-
-	Err(OneAPIError {
-		message: String::from("unknown error"),
-	})
 }

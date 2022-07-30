@@ -4,7 +4,7 @@ use std::io::prelude::*;
 
 use serde::{ Serialize, Deserialize };
 
-use crate::todo_database::{ Database, Date, Day, Dirty, Error, IO, Item };
+use crate::{ Database, Date, Day, Dirty, Error, IO, Item };
 
 impl IO {
 	pub fn read_database(&mut self) -> Result<&Database, Error> {
@@ -124,7 +124,7 @@ mod tests {
 	use rand::{ Rng, SeedableRng };
 	use rand::rngs::StdRng;
 
-	use crate::todo_database::Time;
+	use crate::Time;
 
 	fn setup() -> IO {
 		let mut io = IO {

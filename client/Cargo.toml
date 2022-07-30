@@ -1,5 +1,5 @@
 [package]
-name = "bansheelong-client"
+name = "bansheelong_client"
 version = "0.1.0"
 edition = "2021"
 

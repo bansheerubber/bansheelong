@@ -1,17 +1,13 @@
 [package]
-name = "bansheelong-server"
+name = "bansheelong_server"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
-flexbuffers = "2.0.0"
+bansheelong_types = { path = "../types" }
 hyper = { features = ["full"], version = "0.14.20" }
 lazy_static = "1.4.0"
-rand = "0.7.3"
+url = "2.2.2"
 serde = { features = ["derive"], version = "1.0.140" }
 serde_json = "1.0.82"
-serde_with = "2.0.0"
-url = "2.2.2"
 tokio = { features = ["full"], version = "1" }

@@ -10,10 +10,10 @@ pub const NOTOSANS_BOLD: Font = Font::External {
 	bytes: include_bytes!("../data/fonts/NotoSans-Bold.ttf"),
 };
 
-pub const NOTOSANS: Font = Font::External {
-	name: "NotoSans Regular",
-	bytes: include_bytes!("../data/fonts/NotoSans-Medium.ttf"),
-};
+// pub const NOTOSANS: Font = Font::External {
+// 	name: "NotoSans Regular",
+// 	bytes: include_bytes!("../data/fonts/NotoSans-Medium.ttf"),
+// };
 
 pub const NOTOSANS_THIN: Font = Font::External {
 	name: "NotoSans Thin",
