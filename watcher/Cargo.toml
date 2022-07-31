@@ -1,0 +1,9 @@
+[package]
+name = "bansheelong_watcher"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+bansheelong_types = { path = "../types" }
+notify = "4.0.17"
+tokio = { features = ["full"], version = "1.20.1" }
