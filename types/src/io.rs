@@ -2,9 +2,12 @@ use std::io::ErrorKind;
 use std::fs::File;
 use std::io::prelude::*;
 
+use lazy_static::lazy_static;
+
+use regex::Regex;
 use serde::{ Serialize, Deserialize };
 
-use crate::{ Database, Date, Day, Dirty, Error, ErrorTag, IO, Item, Resource };
+use crate::{ Database, Date, Day, Dirty, Error, ErrorTag, IO, Item, Resource, Time };
 
 pub async fn read_database(resource: Resource) -> Result<Database, Error> {
 	if resource.reference.contains("http") {
@@ -81,10 +84,17 @@ pub async fn write_database(
 ) -> Result<(), Error> {
 	if resource.reference.contains("http") {
 		let client = reqwest::Client::new();
-		let response_result =  client.post(format!("{}/add-todo", resource.reference))
-			.form(&[("todos", serde_json::to_string(&write_log).unwrap())])
-			.send()
-			.await;
+		let response_result = if let Some(log) = write_log {
+			client.post(format!("{}/add-todos", resource.reference))
+				.body(serde_json::to_string(&log).unwrap())
+				.send()
+				.await
+		} else { // if no write log is specified, write the whole database
+			client.post(format!("{}/set-todos", resource.reference))
+				.body(serde_json::to_string(&database).unwrap())
+				.send()
+				.await
+		};
 
 		if let Err(error) = response_result {
 			return Err(Error {
@@ -188,6 +198,49 @@ impl IO {
 				self.write_database().await?;
 			},
 			_ => {},
+		}
+
+		Ok(())
+	}
+
+	pub fn parse_from_human_readable(&mut self, file: String) -> Result<(), Error> {
+		let string = match std::fs::read_to_string(file) {
+			Ok(string) => string,
+			Err(error) => return Err(Error {
+				message: format!("{:?}", error),
+				..Error::default()
+			}),
+		};
+
+		lazy_static! {
+			static ref DATE_REGEX: Regex = Regex::new(r"([0-9]+)/([0-9]+)/([0-9]+)").unwrap();
+		}
+		
+		let lines: Vec<String> = string.split("\n").map(str::to_string).collect();
+		let mut date: Option<Date> = None;
+		for line in lines {
+			println!("{}", line);
+			if let Some(captures) = DATE_REGEX.captures(&line) {
+				let month = String::from(captures.get(1).unwrap().as_str());
+				let day = String::from(captures.get(2).unwrap().as_str());
+				let year = String::from(captures.get(3).unwrap().as_str());
+
+				date = Some(Date {
+					day: day.parse().unwrap(),
+					month: month.parse().unwrap(),
+					year: year.parse().unwrap(),
+				});
+			} else {
+				let item = Item {
+					description: line,
+					time: Some(Time {
+						hour: 0,
+						minute: 0,
+					}),
+				};
+
+				self.add_to_database(item, date)?;
+			}
 		}
 
 		Ok(())
