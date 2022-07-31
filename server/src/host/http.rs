@@ -43,7 +43,7 @@ async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<
 					Ok(data)
 				})
 				.await.unwrap()
-			) {
+			) { // make sure we convert utf8 correctly
 				Ok(string) => string,
 				Err(error) => {
 					eprintln!(" -> Error on request, {:?}", error);
@@ -56,11 +56,11 @@ async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<
 				}
 			};
 
-			match serde_json::from_str::<Vec<(Item, Option<Date>)>>(&json) {
+			match serde_json::from_str::<Vec<(Item, Option<Date>)>>(&json) { // parse JSON
 				Ok(items) => {
 					let mut guard = io.lock().await;
 
-					for (item, date) in items {
+					for (item, date) in items { // add items to database
 						let result = guard.add_to_database(item, date);
 						if let Err(error) = result {
 							eprintln!(" -> Error on request, {:?}", error);
@@ -73,7 +73,7 @@ async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<
 						}
 					}
 
-					if let Err(error) = guard.sync().await {
+					if let Err(error) = guard.sync().await { // sync
 						eprintln!(" -> Error on request, {:?}", error);
 						return Ok(
 							Response::builder()
@@ -110,7 +110,7 @@ async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<
 					Ok(data)
 				})
 				.await.unwrap()
-			) {
+			) { // make sure we convert utf8 correctly
 				Ok(string) => string,
 				Err(error) => {
 					eprintln!(" -> Error on request, {:?}", error);
@@ -123,7 +123,7 @@ async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<
 				}
 			};
 
-			match serde_json::from_str::<Database>(&json) {
+			match serde_json::from_str::<Database>(&json) { // parse JSON
 				Ok(database) => {
 					let mut guard = io.lock().await;
 					guard.database = database;
