@@ -76,7 +76,7 @@ impl View {
 									)
 									.width(Length::Fill),
 								|acc, item| acc.push(
-									Text::new(format!("- {}", item.description))
+									Text::new(format!("{} ", item.description))
 										.font(constants::NOTOSANS_THIN)
 										.width(Length::Fill)
 								)
