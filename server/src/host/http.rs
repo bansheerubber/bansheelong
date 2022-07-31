@@ -11,7 +11,7 @@ use tokio;
 use bansheelong_types::{ Date, Database, Dirty, IO, Item };
 
 async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<Body>, Infallible> {
-	println!("{}", request.uri().to_string());
+	println!("{} {}", request.method(), request.uri().to_string());
 	let (parts, body) = request.into_parts();
 	match (parts.method, parts.uri.path()) {
 		(Method::GET, "/get-todos/") | (Method::GET, "/get-todos") => {
