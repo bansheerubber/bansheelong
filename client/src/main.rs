@@ -63,8 +63,11 @@ impl Application for Window {
 					weather::render::Message::Tick
 				)
 			}),
-			todos::ws::ws().map(|_| {
-				Self::Message::TodoMessage(todos::render::Message::Refresh)
+			todos::ws::ws().map(|event| {
+				match event {
+					todos::ws::Event::Error(m) => Self::Message::TodoMessage(todos::render::Message::Error(m)),
+					todos::ws::Event::Refresh => Self::Message::TodoMessage(todos::render::Message::Refresh),
+				}
 			})
 		])
 	}

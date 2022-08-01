@@ -12,6 +12,7 @@ enum State {
 
 #[derive(Debug, Clone)]
 pub enum Event {
+	Error(String),
 	Refresh,
 }
 
@@ -30,7 +31,7 @@ pub fn ws() -> Subscription<Event> {
 						},
 						Err(error) => {
 							eprintln!("{}", error);
-							return (None, State::Disconnected);
+							return (Some(Event::Error(String::from("Could not connect"))), State::Disconnected);
 						}
 					};
 				},
@@ -47,7 +48,7 @@ pub fn ws() -> Subscription<Event> {
 						Ok(_) => (None, State::Connected(websocket)),
 						Err(error) => {
 							eprintln!("{}", error);
-							(None, State::Disconnected)
+							(Some(Event::Error(String::from("Lost connection"))), State::Disconnected)
 						}
 					}
 				},

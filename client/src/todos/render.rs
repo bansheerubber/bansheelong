@@ -11,12 +11,14 @@ use crate::style;
 
 #[derive(Debug)]
 pub struct View {
+	error: Option<String>,
 	scrollable_state: scrollable::State,
 	todos: IO,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
+	Error(String),
 	Fetched(Result<Database, Error>),
 	Refresh,
 }
@@ -24,6 +26,7 @@ pub enum Message {
 impl View {
 	pub fn new(resource: Resource) -> Self {
 		View {
+			error: None,
 			scrollable_state: scrollable::State::new(),
 			todos: IO {
 				resource,
@@ -34,12 +37,17 @@ impl View {
 
 	pub fn update(&mut self, message: Message) -> Command<Message> {
 		match message {
+			Message::Error(m) => {
+				self.error = Some(m);
+				Command::none()
+			},
 			Message::Fetched(result) => {
 				if let Err(error) = result {
 					println!("{:?}", error);
 				} else if let Ok(database) = result {
 					self.todos.database = database;
 				}
+				self.error = None;
 				Command::none()
 			},
 			Message::Refresh => {
@@ -49,6 +57,10 @@ impl View {
 	}
 
 	pub fn view(&mut self) -> Element<Message> {
+		if let Some(m) = &self.error {
+			return Text::new(format!("error with todos: {}", m)).into();
+		}
+		
 		let mut scrollable = Scrollable::new(&mut self.scrollable_state)
 			.width(Length::Units(400))
 			.height(Length::Fill)
