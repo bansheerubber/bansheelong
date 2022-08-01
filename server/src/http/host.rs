@@ -11,6 +11,7 @@ use tokio;
 use crate::types;
 use bansheelong_types::{ Date, Database, Dirty, IO, Item };
 
+// TODO move this under warp framework
 async fn service(
 	request: Request<Body>,
 	tx: Arc<Mutex<mpsc::UnboundedSender<types::WSCommand>>>,

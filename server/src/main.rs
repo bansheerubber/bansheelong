@@ -3,11 +3,9 @@ use tokio::sync::{ Mutex, mpsc };
 
 use futures::future;
 
-mod host;
+mod http;
 mod types;
 mod ws;
-
-use crate::host::http;
 
 use bansheelong_types::IO;
 
