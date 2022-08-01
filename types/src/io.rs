@@ -146,9 +146,7 @@ impl IO {
 		self.write_log.push((item.clone(), date.clone()));
 		self.dirty = Dirty::Write;
 		if self.database.mapping.contains_key(&date) {
-			let items = &mut self.database.mapping.get_mut(&date).unwrap().items;
-			let pos = items.binary_search(&item).unwrap_or_else(|e| e);
-			items.insert(pos, item);
+			self.database.mapping.get_mut(&date).unwrap().items.push(item);
 		} else {
 			self.database.mapping.insert(date, Day {
 				items: vec![item],
@@ -204,6 +202,8 @@ impl IO {
 	}
 
 	pub fn parse_from_human_readable(&mut self, file: String) -> Result<(), Error> {
+		self.database = Database::default();
+		
 		let string = match std::fs::read_to_string(file) {
 			Ok(string) => string,
 			Err(error) => return Err(Error {
@@ -316,13 +316,6 @@ mod tests {
 		
 		let mut last_date = None;
 		for (_, day) in io.database.mapping.iter() {
-			let mut last_time = None;
-			for item in day.items.iter() {
-				println!("{:?} >= {:?}", item.time, last_time);
-				assert!(item.time >= last_time);
-				last_time = item.time;
-			}
-
 			println!("{:?} >= {:?}", day.date, last_date);
 			assert!(day.date >= last_date);
 			last_date = day.date;
