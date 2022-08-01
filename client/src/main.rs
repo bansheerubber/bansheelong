@@ -62,6 +62,9 @@ impl Application for Window {
 				Self::Message::WeatherMessage(
 					weather::render::Message::Tick
 				)
+			}),
+			todos::ws::ws().map(|_| {
+				Self::Message::TodoMessage(todos::render::Message::Refresh)
 			})
 		])
 	}
