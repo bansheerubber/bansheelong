@@ -1,6 +1,8 @@
 use iced::scrollable;
 use iced::{ Column, Command, Container, Element, Length, Scrollable, Space, Text };
 
+use chrono::{ Datelike, TimeZone, Utc, Weekday };
+
 use bansheelong_types::{ Database, Error, IO, Resource, read_database };
 
 use crate::constants;
@@ -55,7 +57,19 @@ impl View {
 
 		let date_to_ui = |date: Option<bansheelong_types::Date>| {
 			if let Some(d) = date {
-				Date::new(format!("{}/{}/{}({}):", d.month, d.day, d.year, "fu"))
+				let abbreviation = match Utc.ymd(2000 + d.year as i32, d.month as u32, d.day as u32)
+					.and_hms(0, 0, 0).date().weekday()
+				{
+					Weekday::Mon => "m",
+					Weekday::Tue => "t",
+					Weekday::Wed => "w",
+					Weekday::Thu => "th",
+					Weekday::Fri => "f",
+					Weekday::Sat => "s",
+					Weekday::Sun => "su",
+				};
+
+				Date::new(format!("{}/{}/{}({}):", d.month, d.day, d.year, abbreviation))
 					.font(constants::NOTOSANS_THIN)
 			} else {
 				Date::new("General list")
