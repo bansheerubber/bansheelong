@@ -178,6 +178,6 @@ pub async fn host(io: Arc<Mutex<IO>>) -> hyper::Result<()> {
 		})) }
 	});
 
-	let addr = ([127, 0, 0, 1], 3000).into();
+	let addr = ([192, 168, 0, 83], 3000).into();
 	Server::bind(&addr).serve(make_svc).await
 }

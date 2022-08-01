@@ -12,7 +12,7 @@ async fn main() {
 
 	let mut io = IO {
 		resource: Resource {
-			reference: String::from("http://localhost:3000")
+			reference: String::from("http://bansheerubber:3000")
 		},
 		..IO::default()
 	};

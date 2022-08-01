@@ -29,7 +29,7 @@ impl Application for Window {
 
 	fn new(_flags: ()) -> (Self, Command<Self::Message>) {
 		let todos_resource = Resource {
-			reference: String::from("http://localhost:3000")
+			reference: String::from("http://bansheerubber:3000")
 		};
 
 		(
