@@ -5,12 +5,17 @@ use futures::{ TryStreamExt };
 use hyper::service::{ make_service_fn, service_fn };
 use hyper::{ Body, Method, Request, Response, Server, StatusCode };
 
-use tokio::sync::Mutex;
+use tokio::sync::{ Mutex, mpsc };
 use tokio;
 
+use crate::types;
 use bansheelong_types::{ Date, Database, Dirty, IO, Item };
 
-async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<Body>, Infallible> {
+async fn service(
+	request: Request<Body>,
+	tx: Arc<Mutex<mpsc::UnboundedSender<types::WSCommand>>>,
+	io: Arc<Mutex<IO>>
+) -> Result<Response<Body>, Infallible> {
 	println!("{} {}", request.method(), request.uri().to_string());
 	let (parts, body) = request.into_parts();
 	match (parts.method, parts.uri.path()) {
@@ -95,6 +100,9 @@ async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<
 			}
 
 			println!(" -> Valid request, adding todos and syncing...");
+			if let Err(error) = tx.lock().await.send(types::WSCommand::Refresh) {
+				eprintln!("WS Could not send refresh through http -> ws channel {:?}", error);
+			}
 
 			Ok(
 				Response::builder()
@@ -150,6 +158,9 @@ async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<
 			}
 
 			println!(" -> Valid request, set todo database and syncing...");
+			if let Err(error) = tx.lock().await.send(types::WSCommand::Refresh) {
+				eprintln!("WS Could not send refresh through http -> ws channel {:?}", error);
+			}
 
 			Ok(
 				Response::builder()
@@ -169,12 +180,14 @@ async fn service(request: Request<Body>, io: Arc<Mutex<IO>>) -> Result<Response<
 	}
 }
 
-pub async fn host(io: Arc<Mutex<IO>>) -> hyper::Result<()> {
+pub async fn host(tx: mpsc::UnboundedSender<types::WSCommand>, io: Arc<Mutex<IO>>) -> hyper::Result<()> {
+	let tx = Arc::new(Mutex::new(tx));
+	
 	let make_svc = make_service_fn(|_conn| {
 		let io = io.clone();
+		let tx = tx.clone();
 		async { Ok::<_, Infallible>(service_fn(move |request| {
-			let io = io.clone();
-			service(request, io)
+			service(request, tx.clone(), io.clone())
 		})) }
 	});
 
