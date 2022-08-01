@@ -69,7 +69,7 @@ pub fn decode_icon(id: u16, high_clouds: bool, day: bool) -> String {
 		} else {
 			"haze-night"
 		},
-		731 => if high_clouds {
+		731 | 751 | 761 => if high_clouds {
 			"dust"
 		} else if day {
 			"dust-day"
@@ -82,13 +82,6 @@ pub fn decode_icon(id: u16, high_clouds: bool, day: bool) -> String {
 			"fog-day"
 		} else {
 			"fog-night"
-		},
-		751 => if high_clouds {
-			"dust"
-		} else if day {
-			"dust-day"
-		} else {
-			"dust-night"
 		},
 		762 => "volcano",
 		771 => "wind",
