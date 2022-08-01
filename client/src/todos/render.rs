@@ -61,8 +61,19 @@ impl View {
 				Date::new("General list")
 			}
 		};
-		
+
 		for (_, day) in self.todos.database.mapping.iter() {
+			// find the last valid index in the list
+			let mut last_index = 0;
+			let mut index = 0;
+			for item in day.items.iter() {
+				if item.description != "" {
+					last_index = index;
+				}
+				index += 1;
+			}
+			
+			index = 0;
 			scrollable = scrollable.push(
 				Container::new(
 					Container::new(
@@ -75,11 +86,18 @@ impl View {
 										Space::new(Length::Units(0), Length::Units(5))
 									)
 									.width(Length::Fill),
-								|acc, item| acc.push(
-									Text::new(format!("{} ", item.description))
-										.font(constants::NOTOSANS_THIN)
-										.width(Length::Fill)
-								)
+								|acc, item| {
+									index += 1;
+									if index - 1 > last_index {
+										acc
+									} else {
+										acc.push(
+											Text::new(format!("{} ", item.description))
+												.font(constants::NOTOSANS_THIN)
+												.width(Length::Fill)
+										)
+									}
+								}
 							)
 						)
 						.width(Length::Fill)
