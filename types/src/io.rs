@@ -9,12 +9,15 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{ Database, Date, Day, Dirty, Error, ErrorTag, IO, Item, Resource, Time };
 
+use crate::{ get_todos_secret };
+
 pub async fn read_database(resource: Resource) -> Result<Database, Error> {
 	if resource.reference.contains("http") {
 		let client = reqwest::Client::new();
 		let response_result = client.get(format!("{}/get-todos", resource.reference))
 			.header(reqwest::header::CONTENT_TYPE, "application/json")
 			.header(reqwest::header::ACCEPT, "application/json")
+			.header("Secret", get_todos_secret())
 			.send()
 			.await;
 
@@ -86,11 +89,13 @@ pub async fn write_database(
 		let client = reqwest::Client::new();
 		let response_result = if let Some(log) = write_log {
 			client.post(format!("{}/add-todos", resource.reference))
+				.header("Secret", get_todos_secret())
 				.body(serde_json::to_string(&log).unwrap())
 				.send()
 				.await
 		} else { // if no write log is specified, write the whole database
 			client.post(format!("{}/set-todos", resource.reference))
+				.header("Secret", get_todos_secret())
 				.body(serde_json::to_string(&database).unwrap())
 				.send()
 				.await
@@ -219,7 +224,6 @@ impl IO {
 		let lines: Vec<String> = string.split("\n").map(str::to_string).collect();
 		let mut date: Option<Date> = None;
 		for line in lines {
-			println!("{}", line);
 			if let Some(captures) = DATE_REGEX.captures(&line) {
 				let month = String::from(captures.get(1).unwrap().as_str());
 				let day = String::from(captures.get(2).unwrap().as_str());

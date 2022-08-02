@@ -4,9 +4,12 @@ use std::sync::{ Arc };
 use futures::{ StreamExt, SinkExt, TryFutureExt, future };
 use warp::ws::{ Message, WebSocket };
 use warp::Filter;
+use warp::reply::Reply;
+use warp::reject::Rejection;
 
 use tokio::sync::{ RwLock, mpsc };
 use tokio_stream::wrappers::UnboundedReceiverStream;
+use bansheelong_types::{ get_todos_port, get_todos_secret };
 
 use crate::types;
 
@@ -63,6 +66,14 @@ async fn user_disconnect(user_id: usize, users: Users) {
 	users.write().await.remove(index.unwrap());
 }
 
+async fn handler(correct: bool, ws: warp::ws::Ws, users_filter: Arc<RwLock<Vec<User>>>) -> Result<impl Reply, Rejection> {
+	if correct {
+		Ok(ws.on_upgrade(move |socket| user_connected(socket, users_filter)))
+	} else {
+		Err(warp::reject::not_found())
+	}
+}
+
 pub async fn host(rx: mpsc::UnboundedReceiver<types::WSCommand>) {
 	let mut rx = UnboundedReceiverStream::new(rx);
 	
@@ -71,14 +82,18 @@ pub async fn host(rx: mpsc::UnboundedReceiver<types::WSCommand>) {
 	let users_filter = warp::any().map(move || borrowed.clone());
 	
 	let route = warp::path("websocket")
+		.and(
+			warp::header::<String>("secret")
+				.map(|token: String| {
+					token == get_todos_secret()
+				})
+		)
 		.and(warp::ws())
 		.and(users_filter)
-		.map(|ws: warp::ws::Ws, users_filter| {
-			ws.on_upgrade(move |socket| user_connected(socket, users_filter))
-		});
+		.and_then(handler);
 	
 	future::join(
-		warp::serve(route).run(([192, 168, 0, 83], 3001)),
+		warp::serve(route).run(([0, 0, 0, 0], get_todos_port() + 1)),
 		async { // send refresh messages to listeners
 			while let Some(message) = rx.next().await {
 				match message {

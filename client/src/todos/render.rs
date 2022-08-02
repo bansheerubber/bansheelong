@@ -1,3 +1,4 @@
+use iced::alignment;
 use iced::scrollable;
 use iced::{ Column, Command, Container, Element, Length, Scrollable, Space, Text };
 
@@ -6,12 +7,13 @@ use chrono::{ Datelike, TimeZone, Utc, Weekday };
 use bansheelong_types::{ Database, Error, IO, Resource, read_database };
 
 use crate::constants;
-use crate::todos::date::Date;
+use crate::todos::Date;
 use crate::style;
 
 #[derive(Debug)]
 pub struct View {
 	error: Option<String>,
+	is_todos_valid: bool,
 	scrollable_state: scrollable::State,
 	todos: IO,
 }
@@ -20,6 +22,7 @@ pub struct View {
 pub enum Message {
 	Error(String),
 	Fetched(Result<Database, Error>),
+	InvalidateState,
 	Refresh,
 }
 
@@ -27,6 +30,7 @@ impl View {
 	pub fn new(resource: Resource) -> Self {
 		View {
 			error: None,
+			is_todos_valid: false,
 			scrollable_state: scrollable::State::new(),
 			todos: IO {
 				resource,
@@ -39,15 +43,22 @@ impl View {
 		match message {
 			Message::Error(m) => {
 				self.error = Some(m);
+				self.is_todos_valid = false;
 				Command::none()
 			},
 			Message::Fetched(result) => {
 				if let Err(error) = result {
 					println!("{:?}", error);
+					self.is_todos_valid = false;
 				} else if let Ok(database) = result {
 					self.todos.database = database;
+					self.is_todos_valid = true;
 				}
 				self.error = None;
+				Command::none()
+			},
+			Message::InvalidateState => {
+				self.is_todos_valid = false;
 				Command::none()
 			},
 			Message::Refresh => {
@@ -57,8 +68,19 @@ impl View {
 	}
 
 	pub fn view(&mut self) -> Element<Message> {
-		if let Some(m) = &self.error {
-			return Text::new(format!("error with todos: {}", m)).into();
+		let width = 400;
+		if !self.is_todos_valid {
+			return Container::new(
+				Container::new(Text::new(""))
+					.width(Length::Units(width))
+					.height(Length::Units(250))
+					.style(style::BlankWeatherContainer)
+			)
+				.width(Length::Units(width))
+				.height(Length::Units(constants::WINDOW_HEIGHT))
+				.style(style::WeatherContainer)
+				.align_y(alignment::Vertical::Center)
+				.into()
 		}
 		
 		let mut scrollable = Scrollable::new(&mut self.scrollable_state)

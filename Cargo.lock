@@ -146,6 +146,7 @@ dependencies = [
  "bansheelong_types",
  "chrono",
  "futures",
+ "http",
  "iced",
  "iced_futures",
  "iced_native",

@@ -9,7 +9,7 @@ use tokio::sync::{ Mutex, mpsc };
 use tokio;
 
 use crate::types;
-use bansheelong_types::{ Date, Database, Dirty, IO, Item };
+use bansheelong_types::{ Date, Database, Dirty, IO, Item, get_todos_port, get_todos_secret };
 
 // TODO move this under warp framework
 async fn service(
@@ -19,6 +19,18 @@ async fn service(
 ) -> Result<Response<Body>, Infallible> {
 	println!("{} {}", request.method(), request.uri().to_string());
 	let (parts, body) = request.into_parts();
+
+	let secret = parts.headers.get("Secret");
+	if secret.is_none() || secret.unwrap().to_str().is_err() || secret.unwrap().to_str().unwrap() != get_todos_secret().as_str() {
+		eprintln!(" -> Secret not in request");
+		return Ok(
+			Response::builder()
+				.status(StatusCode::NOT_FOUND)
+				.body("404".into())
+				.unwrap()
+		);
+	}
+
 	match (parts.method, parts.uri.path()) {
 		(Method::GET, "/get-todos/") | (Method::GET, "/get-todos") => {
 			let mut guard = io.lock().await;
@@ -192,6 +204,6 @@ pub async fn host(tx: mpsc::UnboundedSender<types::WSCommand>, io: Arc<Mutex<IO>
 		})) }
 	});
 
-	let addr = ([192, 168, 0, 83], 3000).into();
+	let addr = ([0, 0, 0, 0], get_todos_port()).into();
 	Server::bind(&addr).serve(make_svc).await
 }

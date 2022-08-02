@@ -7,19 +7,19 @@ use iced::alignment;
 use iced::executor;
 use iced::{ Application, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
-use bansheelong_types::{ Resource, read_database };
+use bansheelong_types::{ Resource, get_todos_host, get_todos_port, read_database };
 
 struct Window {
-	todos: todos::render::View,
-	weather: weather::render::View,
+	todos: todos::View,
+	weather: weather::View,
 }
 
 #[derive(Debug)]
 enum Message {
 	Redraw,
 	Refresh,
-	TodoMessage(todos::render::Message),
-	WeatherMessage(weather::render::Message),
+	TodoMessage(todos::Message),
+	WeatherMessage(weather::Message),
 }
 
 impl Application for Window {
@@ -29,20 +29,20 @@ impl Application for Window {
 
 	fn new(_flags: ()) -> (Self, Command<Self::Message>) {
 		let todos_resource = Resource {
-			reference: String::from("http://bansheerubber:3000")
+			reference: format!("http://{}:{}", get_todos_host(), get_todos_port()),
 		};
 
 		(
 			Window {
-				todos: todos::render::View::new(todos_resource.clone()),
-				weather: weather::render::View::new(),
+				todos: todos::View::new(todos_resource.clone()),
+				weather: weather::View::new(),
 			},
 			Command::batch([
 				Command::perform(weather::api::dial(), move |result| {
-					Self::Message::WeatherMessage(weather::render::Message::Fetched(result))
+					Self::Message::WeatherMessage(weather::Message::Fetched(result))
 				}),
 				Command::perform(read_database(todos_resource), move |result| {
-					Self::Message::TodoMessage(todos::render::Message::Fetched(result))
+					Self::Message::TodoMessage(todos::Message::Fetched(result))
 				}),
 			])
 		)
@@ -60,13 +60,14 @@ impl Application for Window {
 			iced::time::every(std::time::Duration::from_secs(300)).map(|_| Self::Message::Refresh), // refresh weather/todos
 			iced::time::every(std::time::Duration::from_secs(1)).map(|_| { // tick weather widget so it can detect absense of user interaction, etc
 				Self::Message::WeatherMessage(
-					weather::render::Message::Tick
+					weather::Message::Tick
 				)
 			}),
-			todos::ws::ws().map(|event| {
+			todos::connect().map(|event| {
 				match event {
-					todos::ws::Event::Error(m) => Self::Message::TodoMessage(todos::render::Message::Error(m)),
-					todos::ws::Event::Refresh => Self::Message::TodoMessage(todos::render::Message::Refresh),
+					todos::Event::Error(m) => Self::Message::TodoMessage(todos::Message::Error(m)),
+					todos::Event::InvalidateState => Self::Message::TodoMessage(todos::Message::InvalidateState),
+					todos::Event::Refresh => Self::Message::TodoMessage(todos::Message::Refresh),
 				}
 			})
 		])
@@ -77,10 +78,10 @@ impl Application for Window {
 			Self::Message::Redraw => {},
 			Self::Message::Refresh => {
 				return Command::batch([
-					self.todos.update(todos::render::Message::Refresh).map(move |message| {
+					self.todos.update(todos::Message::Refresh).map(move |message| {
 						Self::Message::TodoMessage(message)
 					}),
-					self.weather.update(weather::render::Message::Refresh).map(move |message| {
+					self.weather.update(weather::Message::Refresh).map(move |message| {
 						Self::Message::WeatherMessage(message)
 					}),
 				]);

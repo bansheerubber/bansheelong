@@ -8,6 +8,7 @@ async-tungstenite = { features = ["tokio-rustls-webpki-roots"], version = "0.16"
 bansheelong_types = { path = "../types" }
 chrono = "0.4.19"
 futures = "0.3.21"
+http = "0.2.8"
 iced = { features = ["tokio", "svg"], path = "../../iced" }
 iced_native = { path = "../../iced/native" }
 iced_futures = { path = "../../iced/futures" }
