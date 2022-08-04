@@ -1,3 +1,4 @@
+mod calendar;
 mod constants;
 mod style;
 mod todos;
@@ -12,6 +13,7 @@ use iced::{ Application, Command, Container, Element, Length, Row, Settings, Sub
 use bansheelong_types::{ Database, Error, IO, Resource, get_todos_host, get_todos_port, read_database };
 
 struct Window {
+	calendar: calendar::View,
 	todos: todos::View,
 	weather: weather::View,
 
@@ -20,6 +22,7 @@ struct Window {
 
 #[derive(Debug)]
 enum Message {
+	CalendarMessage(calendar::Message),
 	FetchedTodos(Result<Database, Error>),
 	Redraw,
 	Refresh,
@@ -41,6 +44,7 @@ impl Application for Window {
 
 		(
 			Window {
+				calendar: calendar::View::new(),
 				todos: todos::View::new(),
 				weather: weather::View::new(),
 				io: Arc::new(IO {
@@ -63,9 +67,6 @@ impl Application for Window {
 
 	fn subscription(&self) -> Subscription<Self::Message> {
 		Subscription::batch([
-			iced::time::every(std::time::Duration::from_millis(16)).map(|_| { // force redraw for rpi4
-				Self::Message::Redraw
-			}),
 			iced::time::every(std::time::Duration::from_secs(300)).map(|_| Self::Message::Refresh), // refresh weather/todos
 			iced::time::every(std::time::Duration::from_secs(1)).map(|_| { // tick weather widget so it can detect absense of user interaction, etc
 				Self::Message::Tick
@@ -82,6 +83,11 @@ impl Application for Window {
 
 	fn update(&mut self, _message: Message) -> Command<Self::Message> {
 		match _message {
+			Self::Message::CalendarMessage(message) => {
+				self.calendar.update(message).map(move |message| {
+					Self::Message::CalendarMessage(message)
+				})
+			},
 			Self::Message::FetchedTodos(result) => {
 				if let Err(error) = result {
 					println!("{:?}", error);
@@ -116,6 +122,9 @@ impl Application for Window {
 			},
 			Self::Message::Tick => {
 				Command::batch([
+					self.calendar.update(calendar::Message::Tick).map(move |message| {
+						Self::Message::CalendarMessage(message)
+					}),
 					self.weather.update(weather::Message::Tick).map(move |message| {
 						Self::Message::WeatherMessage(message)
 					}),
@@ -151,6 +160,11 @@ impl Application for Window {
 				.push( // todo list
 					self.todos.view().map(move |_message| {
 						Self::Message::Redraw
+					})
+				)
+				.push( // calendar bar
+					self.calendar.view().map(move |message| {
+						Self::Message::CalendarMessage(message)
 					})
 				)
 		)
