@@ -28,7 +28,7 @@ pub const ICONS: Font = Font::External {
 pub fn get_directory() -> String {
 	match env::var("BANSHEELONG_DIR") {
 		Ok(path) => path,
-		Err(_) => String::from("/home/me/Projects/bansheelong"),
+		Err(_) => String::from(""),
 	}
 }
 
