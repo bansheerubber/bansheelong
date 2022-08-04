@@ -3,22 +3,29 @@ mod style;
 mod todos;
 mod weather;
 
+use std::sync::Arc;
+
 use iced::alignment;
 use iced::executor;
 use iced::{ Application, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
-use bansheelong_types::{ Resource, get_todos_host, get_todos_port, read_database };
+use bansheelong_types::{ Database, Error, IO, Resource, get_todos_host, get_todos_port, read_database };
 
 struct Window {
 	todos: todos::View,
 	weather: weather::View,
+
+	io: Arc<IO>,
 }
 
 #[derive(Debug)]
 enum Message {
+	FetchedTodos(Result<Database, Error>),
 	Redraw,
 	Refresh,
+	RefreshTodos,
 	TodoMessage(todos::Message),
+	Tick,
 	WeatherMessage(weather::Message),
 }
 
@@ -28,22 +35,24 @@ impl Application for Window {
 	type Flags = ();
 
 	fn new(_flags: ()) -> (Self, Command<Self::Message>) {
-		let todos_resource = Resource {
+		let resource = Resource {
 			reference: format!("http://{}:{}", get_todos_host(), get_todos_port()),
 		};
 
 		(
 			Window {
-				todos: todos::View::new(todos_resource.clone()),
+				todos: todos::View::new(),
 				weather: weather::View::new(),
+				io: Arc::new(IO {
+					resource: resource.clone(),
+					..IO::default()
+				}),
 			},
 			Command::batch([
 				Command::perform(weather::api::dial(), move |result| {
 					Self::Message::WeatherMessage(weather::Message::Fetched(result))
 				}),
-				Command::perform(read_database(todos_resource), move |result| {
-					Self::Message::TodoMessage(todos::Message::Fetched(result))
-				}),
+				Command::perform(read_database(resource), Self::Message::FetchedTodos),
 			])
 		)
 	}
@@ -59,15 +68,13 @@ impl Application for Window {
 			}),
 			iced::time::every(std::time::Duration::from_secs(300)).map(|_| Self::Message::Refresh), // refresh weather/todos
 			iced::time::every(std::time::Duration::from_secs(1)).map(|_| { // tick weather widget so it can detect absense of user interaction, etc
-				Self::Message::WeatherMessage(
-					weather::Message::Tick
-				)
+				Self::Message::Tick
 			}),
 			todos::connect().map(|event| {
 				match event {
-					todos::Event::Error(m) => Self::Message::TodoMessage(todos::Message::Error(m)),
-					todos::Event::InvalidateState => Self::Message::TodoMessage(todos::Message::InvalidateState),
-					todos::Event::Refresh => Self::Message::TodoMessage(todos::Message::Refresh),
+					todos::Event::Error(_) => Self::Message::TodoMessage(todos::Message::Update(None)),
+					todos::Event::InvalidateState => Self::Message::TodoMessage(todos::Message::Update(None)),
+					todos::Event::Refresh => Self::Message::RefreshTodos,
 				}
 			})
 		])
@@ -75,30 +82,51 @@ impl Application for Window {
 
 	fn update(&mut self, _message: Message) -> Command<Self::Message> {
 		match _message {
-			Self::Message::Redraw => {},
+			Self::Message::FetchedTodos(result) => {
+				if let Err(error) = result {
+					println!("{:?}", error);
+				} else if let Ok(database) = result {
+					self.io = Arc::new(IO { // TODO clean this up
+						database,
+						resource: self.io.resource.clone(),
+						..IO::default()
+					});
+				}
+
+				self.todos.update(todos::Message::Update(Some(self.io.clone()))).map(move |message| {
+					self::Message::TodoMessage(message)
+				})
+			},
+			Self::Message::Redraw => { Command::none() },
 			Self::Message::Refresh => {
-				return Command::batch([
-					self.todos.update(todos::Message::Refresh).map(move |message| {
-						Self::Message::TodoMessage(message)
-					}),
+				Command::batch([
+					Command::perform(read_database(self.io.resource.clone()), Self::Message::FetchedTodos),
 					self.weather.update(weather::Message::Refresh).map(move |message| {
 						Self::Message::WeatherMessage(message)
 					}),
-				]);
-			}
+				])
+			},
+			Self::Message::RefreshTodos => {
+				Command::perform(read_database(self.io.resource.clone()), Self::Message::FetchedTodos)
+			},
 			Self::Message::TodoMessage(message) => {
-				return self.todos.update(message).map(move |message| {
+				self.todos.update(message).map(move |message| {
 					Self::Message::TodoMessage(message)
-				});
+				})
+			},
+			Self::Message::Tick => {
+				Command::batch([
+					self.weather.update(weather::Message::Tick).map(move |message| {
+						Self::Message::WeatherMessage(message)
+					}),
+				])
 			},
 			Self::Message::WeatherMessage(message) => {
-				return self.weather.update(message).map(move |message| {
+				self.weather.update(message).map(move |message| {
 					Self::Message::WeatherMessage(message)
-				});
+				})
 			},
-		};
-
-		Command::none()
+		}
 	}
 
 	fn view(&mut self) -> Element<Self::Message> {
