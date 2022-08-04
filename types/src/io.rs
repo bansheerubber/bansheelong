@@ -9,7 +9,7 @@ use serde::{ Serialize, Deserialize };
 
 use crate::{ Database, Date, Day, Dirty, Error, ErrorTag, IO, Item, Resource, Time };
 
-use crate::{ get_todos_secret };
+use crate::get_todos_secret;
 
 pub async fn read_database(resource: Resource) -> Result<Database, Error> {
 	if resource.reference.contains("http") {
@@ -223,7 +223,7 @@ impl IO {
 		
 		let lines: Vec<String> = string.split("\n").map(str::to_string).collect();
 		let mut date: Option<Date> = None;
-		for line in lines {
+		for mut line in lines {
 			if let Some(captures) = DATE_REGEX.captures(&line) {
 				let month = String::from(captures.get(1).unwrap().as_str());
 				let day = String::from(captures.get(2).unwrap().as_str());
@@ -235,12 +235,22 @@ impl IO {
 					year: year.parse().unwrap(),
 				});
 			} else {
+				let time = get_time_from_line(line.clone());
+
+				let time = if let Err(error) = time {
+					eprintln!("Could not parse time for item: {:?}", error);
+					None
+				} else {
+					time.unwrap()
+				};
+
+				if line.len() > 0 && line.chars().nth(0).unwrap() == '@' {
+					line = line.split(" ").skip(1).collect::<Vec<&str>>().join(" ");
+				}
+
 				let item = Item {
 					description: line,
-					time: Some(Time {
-						hour: 0,
-						minute: 0,
-					}),
+					time,
 				};
 
 				self.add_to_database(item, date)?;
@@ -248,6 +258,135 @@ impl IO {
 		}
 
 		Ok(())
+	}
+}
+
+#[derive(Debug)]
+enum TimeError {
+	BadEndHours,
+	BadStartHours,
+	BadEndMinutes,
+	BadStartMinutes,
+}
+
+fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
+	lazy_static! {
+		static ref TIME_REGEX: Regex = Regex::new(r"(\d{1,2})(:\d{2})?(am|pm)?(-|\+)(\d{0,2})(:\d{2})?(am|pm)?").unwrap();
+	}
+	
+	if let Some(captures) = TIME_REGEX.captures(&line.as_str().to_lowercase()) {
+		// decode start hours
+		let mut start_hour = if let None = captures.get(1) {
+			0
+		} else {
+			match String::from(captures.get(1).unwrap().as_str()).parse::<u8>() {
+			  Ok(number) => {
+					number
+				},
+				Err(_) => {
+					return Err(TimeError::BadStartHours);
+				}
+			}
+		};
+
+		// decode start minutes
+		let start_minute = if let None = captures.get(2) {
+			0
+		} else {
+			let string = captures.get(2).unwrap().as_str();
+			match String::from(&string[1..string.len()]).parse::<u8>() {
+			  Ok(number) => {
+					number
+				},
+				Err(_) => {
+					return Err(TimeError::BadStartMinutes);
+				}
+			}
+		};
+
+		// decode end hours
+		let mut end_hour = if let None = captures.get(5) {
+			0
+		} else {
+			match String::from(captures.get(5).unwrap().as_str()).parse::<u8>() {
+			  Ok(number) => {
+					number
+				},
+				Err(_) => {
+					return Err(TimeError::BadEndHours);
+				}
+			}
+		};
+
+		// decode end minutes
+		let mut end_minute = if let None = captures.get(6) {
+			0
+		} else {
+			let string = captures.get(6).unwrap().as_str();
+			match String::from(&string[1..string.len()]).parse::<u8>() {
+			  Ok(number) => {
+					number
+				},
+				Err(_) => {
+					println!("{:?}", captures.get(6).unwrap().as_str());
+					return Err(TimeError::BadEndMinutes);
+				}
+			}
+		};
+
+		let start_ampm = if let None = captures.get(3) {
+			if start_hour < 8 || start_hour == 12 {
+				String::from("pm")
+			} else {
+				String::from("am")
+			}
+		} else {
+			String::from(captures.get(3).unwrap().as_str())
+		};
+
+		let end_ampm = if let None = captures.get(3) {
+			if end_hour < 8 || end_hour == 12 {
+				String::from("pm")
+			} else {
+				String::from("am")
+			}
+		} else {
+			String::from(captures.get(3).unwrap().as_str())
+		};
+
+		// handle start hours conversions
+		if start_ampm == "pm" && start_hour != 12 {
+			start_hour += 12;
+		}
+
+		if start_ampm == "am" && start_hour == 12 {
+			start_hour = 0;
+		}
+
+		// handle operators
+		let operator = String::from(captures.get(4).unwrap().as_str());
+		if end_ampm == "pm" && end_hour != 12 && operator != "+" {
+			end_hour += 12;
+		}
+
+		if operator == "+" {
+			end_hour = start_hour + end_hour;
+			end_minute = start_minute + end_minute;
+
+			if end_minute >= 60 {
+				end_hour += 1;
+				end_minute = end_minute % 60;
+			}
+		}
+
+		Ok(Some(Time {
+			start_hour,
+			start_minute,
+			end_hour,
+			end_minute,
+		}))
+	} else {
+		Ok(None)
 	}
 }
 
@@ -290,8 +429,10 @@ mod tests {
 					Item {
 						description: String::from(""),
 						time: Some(Time {
-							hour: generator.gen_range(0, 20),
-							minute: generator.gen_range(0, 20),
+							start_hour: generator.gen_range(0, 20),
+							start_minute: generator.gen_range(0, 20),
+							end_hour: 0,
+							end_minute: 0,
 						}),
 					},
 					date

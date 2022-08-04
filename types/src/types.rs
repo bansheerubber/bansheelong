@@ -7,19 +7,21 @@ use serde_with::serde_as;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Time {
-	pub hour: u8,
-	pub minute: u8,
+	pub start_hour: u8,
+	pub start_minute: u8,
+	pub end_hour: u8,
+	pub end_minute: u8,
 }
 
 impl Ord for Time {
 	fn cmp(&self, other: &Self) -> Ordering {
-		if self.hour < other.hour {
+		if self.start_hour < other.start_hour {
 			Ordering::Less
-		} else if self.hour > other.hour {
+		} else if self.start_hour > other.start_hour {
 			Ordering::Greater
-		} else if self.minute < other.minute {
+		} else if self.start_minute < other.start_minute {
 			Ordering::Less
-		} else if self.minute > other.minute {
+		} else if self.start_minute > other.start_minute {
 			Ordering::Greater
 		} else {
 			Ordering::Equal
@@ -61,10 +63,17 @@ impl PartialOrd for Item {
 
 impl Item {
 	pub fn new(parameters: &HashMap<String, String>) -> Item {
-		let time = if parameters.contains_key("hour") && parameters.contains_key("minute") {
+		let time = if
+			parameters.contains_key("start_hour")
+			&& parameters.contains_key("start_minute")
+			&& parameters.contains_key("end_hour")
+			&& parameters.contains_key("end_minute")
+		{
 			Some(Time {
-				hour: parameters.get("hour").unwrap().parse::<u8>().unwrap_or_else(|_| { 0 }),
-				minute: parameters.get("minute").unwrap().parse::<u8>().unwrap_or_else(|_| { 0 }),
+				start_hour: parameters.get("start_hour").unwrap().parse::<u8>().unwrap_or_else(|_| { 0 }),
+				start_minute: parameters.get("start_minute").unwrap().parse::<u8>().unwrap_or_else(|_| { 0 }),
+				end_hour: parameters.get("end_hour").unwrap().parse::<u8>().unwrap_or_else(|_| { 0 }),
+				end_minute: parameters.get("end_minute").unwrap().parse::<u8>().unwrap_or_else(|_| { 0 }),
 			})
 		} else {
 			None
