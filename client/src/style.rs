@@ -1,34 +1,72 @@
 use iced::{ Background, Color, container, button, scrollable, };
 
-const BACKGROUND_PURPLE: Color = Color::from_rgb(
+pub const BACKGROUND_PURPLE: Color = Color::from_rgb(
 	0x38 as f32 / 255.0,
 	0x26 as f32 / 255.0,
 	0x3F as f32 / 255.0,
 );
 
-const BACKGROUND_LIGHT_PURPLE: Color = Color::from_rgb(
+pub const BACKGROUND_LIGHT_PURPLE: Color = Color::from_rgb(
 	0x58 as f32 / 255.0,
 	0x3C as f32 / 255.0,
 	0x63 as f32 / 255.0,
 );
 
-const BACKGROUND_DARK_PURPLE: Color = Color::from_rgb(
+pub const BACKGROUND_DARK_PURPLE: Color = Color::from_rgb(
 	0x32 as f32 / 255.0,
 	0x22 as f32 / 255.0,
 	0x38 as f32 / 255.0,
 );
 
-const BACKGROUND_DARKER_PURPLE: Color = Color::from_rgb(
+pub const BACKGROUND_DARKER_PURPLE: Color = Color::from_rgb(
 	0x26 as f32 / 255.0,
 	0x1A as f32 / 255.0,
 	0x2B as f32 / 255.0,
 );
 
-const TEXT_COLOR: Color = Color::from_rgb(
+pub const TEXT_COLOR: Color = Color::from_rgb(
 	0xFF as f32 / 255.0,
 	0xDD as f32 / 255.0,
 	0xF3 as f32 / 255.0,
 );
+
+pub const BLUE_COLOR: Color = Color::from_rgb(
+	0x8A as f32 / 255.0,
+	0x76 as f32 / 255.0,
+	0xE0 as f32 / 255.0,
+);
+
+pub const MAGENTA_COLOR: Color = Color::from_rgb(
+	0xE0 as f32 / 255.0,
+	0x59 as f32 / 255.0,
+	0xE0 as f32 / 255.0,
+);
+
+pub const GREEN_COLOR: Color = Color::from_rgb(
+	0x2C as f32 / 255.0,
+	0xBA as f32 / 255.0,
+	0x60 as f32 / 255.0,
+);
+
+pub const CYAN_COLOR: Color = Color::from_rgb(
+	0x58 as f32 / 255.0,
+	0xB7 as f32 / 255.0,
+	0xCE as f32 / 255.0,
+);
+
+pub const YELLOW_COLOR: Color = Color::from_rgb(
+	0xDB as f32 / 255.0,
+	0xCD as f32 / 255.0,
+	0x51 as f32 / 255.0,
+);
+
+pub const TODO_COLORS: [Color; 5] = [
+	BLUE_COLOR,
+	MAGENTA_COLOR,
+	GREEN_COLOR,
+	CYAN_COLOR,
+	YELLOW_COLOR,
+];
 
 pub struct Container;
 impl container::StyleSheet for Container {
@@ -143,7 +181,7 @@ pub struct TodoScrollable;
 impl scrollable::StyleSheet for TodoScrollable {
 	fn active(&self) -> scrollable::Scrollbar {
 		scrollable::Scrollbar {
-			background: Some(Background::Color(Color::TRANSPARENT)),
+			background: None,
 			border_radius: 0.0,
 			border_width: 0.0,
 			border_color: Color::TRANSPARENT,
