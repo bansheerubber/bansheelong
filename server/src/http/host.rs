@@ -193,9 +193,7 @@ async fn service(
 	}
 }
 
-pub async fn host(tx: mpsc::UnboundedSender<types::WSCommand>, io: Arc<Mutex<IO>>) -> hyper::Result<()> {
-	let tx = Arc::new(Mutex::new(tx));
-	
+pub async fn host(tx: Arc<Mutex<mpsc::UnboundedSender<types::WSCommand>>>, io: Arc<Mutex<IO>>) -> hyper::Result<()> {
 	let make_svc = make_service_fn(|_conn| {
 		let io = io.clone();
 		let tx = tx.clone();

@@ -41,6 +41,9 @@ pub fn connect() -> Subscription<Event> {
 								(None, State::Connected(websocket))
 							}
 						},
+						Ok(tungstenite::Message::Close(_)) => {
+							(Some(Event::Error(String::from("Lost connection"))), State::Disconnected)
+						},
 						Ok(_) => (None, State::Connected(websocket)),
 						Err(error) => {
 							eprintln!("WS error {}", error);

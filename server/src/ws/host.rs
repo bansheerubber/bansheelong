@@ -1,5 +1,5 @@
 use std::sync::atomic::{ AtomicUsize, Ordering };
-use std::sync::{ Arc };
+use std::sync::Arc;
 
 use futures::{ StreamExt, SinkExt, TryFutureExt, future };
 use warp::ws::{ Message, WebSocket };
@@ -97,6 +97,14 @@ pub async fn host(rx: mpsc::UnboundedReceiver<types::WSCommand>) {
 		async { // send refresh messages to listeners
 			while let Some(message) = rx.next().await {
 				match message {
+					types::WSCommand::Ping => {
+						let users = users.write().await;
+						for user in users.iter() {
+							if let Err(error) = user.channel.send(Message::ping([])) {
+								eprintln!("WS Error {:?}", error);
+							}
+						}
+					},
 					types::WSCommand::Refresh => {
 						let users = users.write().await;
 						for user in users.iter() {
