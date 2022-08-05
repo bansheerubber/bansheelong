@@ -2,9 +2,9 @@ use std::sync::Arc;
 
 use iced::alignment;
 use iced::scrollable;
-use iced::{ Column, Command, Container, Element, Length, Scrollable, Space, Text };
+use iced::{ Column, Command, Container, Element, Length, Row, Scrollable, Space, Text };
 
-use chrono::{ Datelike, TimeZone, Utc, Weekday };
+use chrono::{ Datelike, Local, TimeZone, Utc, Weekday };
 
 use bansheelong_types::IO;
 
@@ -41,6 +41,24 @@ impl View {
 	}
 
 	pub fn view(&mut self) -> Element<Message> {
+		let color_amount = 4;
+		let get_todo_circle = |index| -> Box<dyn iced::container::StyleSheet> {
+			match index {
+				0 => Box::new(style::TodoCircleBlue),
+				1 => Box::new(style::TodoCircleMagenta),
+				2 => Box::new(style::TodoCircleGreen),
+				3 => Box::new(style::TodoCircleCyan),
+				_ => Box::new(style::TodoCircleBlue),
+			}
+		};
+
+		let time = Local::now();
+		let current_date = Some(bansheelong_types::Date {
+			day: time.day() as u8,
+			month: time.month() as u8,
+			year: (time.year() % 100) as u8,
+		});
+		
 		let width = 400;
 		if let None = self.todos {
 			return Container::new(
@@ -95,6 +113,7 @@ impl View {
 			}
 			
 			index = 0;
+			let mut color_index = 0;
 			scrollable = scrollable.push(
 				Container::new(
 					Container::new(
@@ -112,10 +131,36 @@ impl View {
 									if index - 1 > last_index {
 										acc
 									} else {
+										let circle_or_dash = if item.time.is_some() && day.date == current_date {
+											color_index += 1;
+											Container::new(
+												Container::new(Space::new(Length::Units(0), Length::Units(0)))
+													.style(get_todo_circle((color_index - 1) % color_amount))
+													.width(Length::Units(7))
+													.height(Length::Units(7))
+											)
+												.width(Length::Units(10))
+												.align_x(alignment::Horizontal::Center)
+												.padding([7, 4, 0, 0])
+										} else if item.description != "" {
+											Container::new(Text::new("-"))
+												.width(Length::Units(10))
+												.align_x(alignment::Horizontal::Center)
+												.padding([0, 4, 0, 0])
+										} else {
+											Container::new(Space::new(Length::Units(0), Length::Units(0)))
+										};
+
 										acc.push(
-											Text::new(format!("{} ", item.description))
-												.font(constants::NOTOSANS_THIN)
-												.width(Length::Fill)
+											Row::new()
+												.push(
+													circle_or_dash
+												)
+												.push(
+													Text::new(format!("{} ", item.description.clone().replace("- ", "")))
+														.font(constants::NOTOSANS_THIN)
+														.width(Length::Fill)
+												)
 										)
 									}
 								}

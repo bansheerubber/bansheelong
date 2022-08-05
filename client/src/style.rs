@@ -201,3 +201,47 @@ impl scrollable::StyleSheet for TodoScrollable {
 		}
 	}
 }
+
+pub struct TodoCircleBlue;
+impl container::StyleSheet for TodoCircleBlue {
+	fn style(&self) -> container::Style {
+		container::Style {
+			background: Some(Background::Color(BLUE_COLOR)),
+			border_radius: 100.0,
+			..container::Style::default()
+		}
+	}
+}
+
+pub struct TodoCircleMagenta;
+impl container::StyleSheet for TodoCircleMagenta {
+	fn style(&self) -> container::Style {
+		container::Style {
+			background: Some(Background::Color(MAGENTA_COLOR)),
+			border_radius: 100.0,
+			..container::Style::default()
+		}
+	}
+}
+
+pub struct TodoCircleGreen;
+impl container::StyleSheet for TodoCircleGreen {
+	fn style(&self) -> container::Style {
+		container::Style {
+			background: Some(Background::Color(GREEN_COLOR)),
+			border_radius: 100.0,
+			..container::Style::default()
+		}
+	}
+}
+
+pub struct TodoCircleCyan;
+impl container::StyleSheet for TodoCircleCyan {
+	fn style(&self) -> container::Style {
+		container::Style {
+			background: Some(Background::Color(CYAN_COLOR)),
+			border_radius: 100.0,
+			..container::Style::default()
+		}
+	}
+}
