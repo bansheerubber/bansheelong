@@ -32,7 +32,7 @@ async fn main() {
 
 	let ws_ping = Box::pin(async {
 		loop {
-			tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+			tokio::time::sleep(tokio::time::Duration::from_secs(10)).await;
 			if let Err(error) = tx.lock().await.send(types::WSCommand::Ping) {
 				panic!("{:?}", error);	
 			}
