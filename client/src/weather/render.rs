@@ -1,6 +1,8 @@
 use std::cmp;
 use std::time::{ Duration, Instant };
 
+use chrono::{ Local, Timelike };
+
 use iced::alignment;
 use iced::button;
 use iced::{ Alignment, Button, Column, Command, Container, Element, Length, Row, Svg, Text };
@@ -57,12 +59,18 @@ impl View {
 	
 	pub fn update_from_api(&mut self) {
 		if let Some(data) = &self.api_data {
-			// data.current.temp
+			let hour = Local::now().hour();
+			let is_day = if hour < 4 || hour > 19 {
+				false
+			} else {
+				true
+			};
+
 			self.statuses[0].current.temperature = data.current.temp as u16;
 			self.statuses[0].current.time = 0;
 			self.statuses[0].day = api::convert_to_time(data.current.dt).format("%A").to_string();
 			self.statuses[0].humidity = data.current.humidity;
-			self.statuses[0].icon = api::decode_icon(data.current.weather[0].id, data.current.clouds > 50, true);
+			self.statuses[0].icon = api::decode_icon(data.current.weather[0].id, data.current.clouds > 50, is_day);
 			self.statuses[0].uv = std::cmp::max(std::cmp::min(data.current.uvi as u16, 11), 1);
 			self.statuses[0].wind = data.current.wind_speed as u16;
 

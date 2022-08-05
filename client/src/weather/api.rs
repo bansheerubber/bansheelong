@@ -86,7 +86,11 @@ pub fn decode_icon(id: u16, high_clouds: bool, day: bool) -> String {
 		762 => "volcano",
 		771 => "wind",
 		781 => "tornado",
-		800 => "clear-day",
+		800 => if day {
+			"clear-day"
+		} else {
+			"clear-night"
+		},
 		801 | 802 => if day {
 			"partly-cloudy-day"
 		} else {
