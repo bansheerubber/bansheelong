@@ -1,4 +1,4 @@
-use std::rc::Rc;
+use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
 use chrono::{ Local, Timelike };
@@ -16,13 +16,14 @@ use super::calendar;
 pub struct View {
 	last_interaction: Option<Instant>,
 	scrollable_state: scrollable::State,
-	todos: Option<Rc<IO>>,
+	todos: Option<Arc<IO>>,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
 	Scroll(f32),
 	Tick,
+	Update(Option<Arc<IO>>),
 }
 
 impl View {
@@ -53,6 +54,9 @@ impl View {
 					self.scrollable_state.snap_to(time_height / height);
 				}
 			},
+			Message::Update(io) => {
+				self.todos = io;
+			}
 		}
 		
 		Command::none()

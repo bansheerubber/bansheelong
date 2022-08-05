@@ -99,9 +99,14 @@ impl Application for Window {
 					});
 				}
 
-				self.todos.update(todos::Message::Update(Some(self.io.clone()))).map(move |message| {
-					self::Message::TodoMessage(message)
-				})
+				Command::batch([
+					self.calendar.update(calendar::Message::Update(Some(self.io.clone()))).map(move |message| {
+						self::Message::CalendarMessage(message)
+					}),
+					self.todos.update(todos::Message::Update(Some(self.io.clone()))).map(move |message| {
+						self::Message::TodoMessage(message)
+					}),
+				])
 			},
 			Self::Message::Redraw => { Command::none() },
 			Self::Message::Refresh => {
