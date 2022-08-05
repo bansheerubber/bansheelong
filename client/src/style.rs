@@ -54,18 +54,11 @@ pub const CYAN_COLOR: Color = Color::from_rgb(
 	0xCE as f32 / 255.0,
 );
 
-pub const YELLOW_COLOR: Color = Color::from_rgb(
-	0xDB as f32 / 255.0,
-	0xCD as f32 / 255.0,
-	0x51 as f32 / 255.0,
-);
-
-pub const TODO_COLORS: [Color; 5] = [
+pub const TODO_COLORS: [Color; 4] = [
 	BLUE_COLOR,
 	MAGENTA_COLOR,
 	GREEN_COLOR,
 	CYAN_COLOR,
-	YELLOW_COLOR,
 ];
 
 pub struct Container;

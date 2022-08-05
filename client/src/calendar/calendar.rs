@@ -102,9 +102,11 @@ where
 		let time = Local::now();
 		let current_hour = time.hour() as HourMinute;
 		let current_minute = time.minute() as HourMinute;
-		let day = time.day() as u8;
-		let month = time.month() as u8;
-		let year = (time.year() % 100) as u8;
+		let current_date = Some(Date {
+			day: time.day() as u8,
+			month: time.month() as u8,
+			year: (time.year() % 100) as u8,
+		});
 
 		// draw background
 		renderer.fill_quad(
@@ -160,15 +162,10 @@ where
 			}
 		}
 
-		let current_date = Date {
-			day,
-			month,
-			year
-		};
-
-		if self.todos.is_some() && self.todos.as_ref().unwrap().database.mapping.get(&Some(current_date)).is_some() {
-			let items = &self.todos.as_ref().unwrap().database.mapping.get(&Some(current_date)).unwrap().items;
+		if self.todos.is_some() && self.todos.as_ref().unwrap().database.mapping.get(&current_date).is_some() {
+			let items = &self.todos.as_ref().unwrap().database.mapping.get(&current_date).unwrap().items;
 			
+			let mut color_index = 0;
 			for item in items {
 				let time = if item.time.is_none() {
 					continue;
@@ -192,8 +189,9 @@ where
 						border_width: 0.0,
 						border_color: Color::TRANSPARENT,
 					},
-					Background::Color(TODO_COLORS[0])
+					Background::Color(TODO_COLORS[color_index % TODO_COLORS.len()])
 				);
+				color_index += 1;
 
 				// figure out string truncation
 				let size = self.item_size.unwrap_or(renderer.default_size());
