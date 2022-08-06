@@ -334,6 +334,7 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 			}
 		};
 
+		// decode am/pm
 		let start_ampm = if let None = captures.get(3) {
 			if start_hour < 8 || start_hour == 12 {
 				String::from("pm")

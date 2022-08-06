@@ -59,11 +59,11 @@ impl View {
 			year: (time.year() % 100) as u8,
 		});
 		
-		let width = 400;
+		let width = 385;
 		if let None = self.todos {
 			return Container::new(
 				Container::new(Text::new(""))
-					.width(Length::Units(width))
+					.width(Length::Units(width - 20))
 					.height(Length::Units(250))
 					.style(style::BlankWeatherContainer)
 			)
@@ -73,11 +73,11 @@ impl View {
 				.align_y(alignment::Vertical::Center)
 				.into()
 		}
-		
+
 		let mut scrollable = Scrollable::new(&mut self.scrollable_state)
-			.width(Length::Units(400))
+			.width(Length::Units(width))
 			.height(Length::Fill)
-			.padding([20, 20, 20, 0])
+			.padding([20, 15, 20, 0])
 			.style(style::TodoScrollable);
 
 		let date_to_ui = |date: Option<bansheelong_types::Date>| {

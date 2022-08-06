@@ -65,9 +65,9 @@ impl View {
 	pub fn view(&mut self) -> Element<Message> {
 		Container::new(
 				Scrollable::new(&mut self.scrollable_state)
-					.width(Length::Units(400))
+					.width(Length::Units(350))
 					.height(Length::Fill)
-					.padding([20, 20, 20, 0])
+					.padding([20, 15, 20, 0])
 					.style(style::TodoScrollable)
 					.push(
 						calendar::Calendar::new(self.todos.clone())
@@ -75,7 +75,7 @@ impl View {
 					)
 					.on_scroll(move |offset| Message::Scroll(offset))
 		)
-			.padding([0, 0, 0, 10])
+			.padding([0, 0, 0, 5])
 			.into()
 	}
 }
