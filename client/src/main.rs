@@ -91,22 +91,31 @@ impl Application for Window {
 			Self::Message::FetchedTodos(result) => {
 				if let Err(error) = result {
 					println!("{:?}", error);
-				} else if let Ok(database) = result {
+					
+					Command::batch([
+						self.calendar.update(calendar::Message::Update(None)).map(move |message| {
+							self::Message::CalendarMessage(message)
+						}),
+						self.todos.update(todos::Message::Update(None)).map(move |message| {
+							self::Message::TodoMessage(message)
+						}),
+					])
+				} else {
 					self.io = Arc::new(IO { // TODO clean this up
-						database,
+						database: result.unwrap(),
 						resource: self.io.resource.clone(),
 						..IO::default()
 					});
-				}
 
-				Command::batch([
-					self.calendar.update(calendar::Message::Update(Some(self.io.clone()))).map(move |message| {
-						self::Message::CalendarMessage(message)
-					}),
-					self.todos.update(todos::Message::Update(Some(self.io.clone()))).map(move |message| {
-						self::Message::TodoMessage(message)
-					}),
-				])
+					Command::batch([
+						self.calendar.update(calendar::Message::Update(Some(self.io.clone()))).map(move |message| {
+							self::Message::CalendarMessage(message)
+						}),
+						self.todos.update(todos::Message::Update(Some(self.io.clone()))).map(move |message| {
+							self::Message::TodoMessage(message)
+						}),
+					])
+				}
 			},
 			Self::Message::Redraw => { Command::none() },
 			Self::Message::Refresh => {
