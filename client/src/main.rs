@@ -1,5 +1,6 @@
 mod calendar;
 mod constants;
+mod storage;
 mod style;
 mod todos;
 mod weather;
@@ -14,6 +15,7 @@ use bansheelong_types::{ Database, Error, IO, Resource, get_todos_host, get_todo
 
 struct Window {
 	calendar: calendar::View,
+	storage: storage::View,
 	todos: todos::View,
 	weather: weather::View,
 
@@ -27,6 +29,7 @@ enum Message {
 	Redraw,
 	Refresh,
 	RefreshTodos,
+	StorageMessage(storage::Message),
 	TodoMessage(todos::Message),
 	Tick,
 	WeatherMessage(weather::Message),
@@ -45,8 +48,10 @@ impl Application for Window {
 		(
 			Window {
 				calendar: calendar::View::new(),
+				storage: storage::View::new(),
 				todos: todos::View::new(),
 				weather: weather::View::new(),
+
 				io: Arc::new(IO {
 					resource: resource.clone(),
 					..IO::default()
@@ -129,6 +134,9 @@ impl Application for Window {
 			Self::Message::RefreshTodos => {
 				Command::perform(read_database(self.io.resource.clone()), Self::Message::FetchedTodos)
 			},
+			Self::Message::StorageMessage(_) => {
+				Command::none()
+			},
 			Self::Message::TodoMessage(message) => {
 				self.todos.update(message).map(move |message| {
 					Self::Message::TodoMessage(message)
@@ -179,6 +187,11 @@ impl Application for Window {
 				.push( // calendar bar
 					self.calendar.view().map(move |message| {
 						Self::Message::CalendarMessage(message)
+					})
+				)
+				.push(
+					self.storage.view().map(move |message| {
+						Self::Message::StorageMessage(message)
 					})
 				)
 		)
