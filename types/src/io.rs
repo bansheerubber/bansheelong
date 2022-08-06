@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{ Serialize, Deserialize };
 
-use crate::{ Database, Date, Day, Dirty, Error, ErrorTag, IO, Item, Resource, Time };
+use crate::{ Database, Date, Day, Dirty, Error, ErrorTag, IO, Item, Resource, Time, Weekday };
 
 use crate::get_todos_secret;
 
@@ -271,15 +271,31 @@ enum TimeError {
 
 fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 	lazy_static! {
-		static ref TIME_REGEX: Regex = Regex::new(r"(\d{1,2})(:\d{2})?(am|pm)?(-|\+)(\d{0,2})(:\d{2})?(am|pm)?").unwrap();
+		static ref TIME_REGEX: Regex = Regex::new(r"(m|t|w|th|f|s|su)?(\d{1,2})(:\d{2})?(am|pm)?(-|\+)(\d{0,2})(:\d{2})?(am|pm)?").unwrap();
 	}
 	
 	if let Some(captures) = TIME_REGEX.captures(&line.as_str().to_lowercase()) {
+		// decode day
+		let day = if let None = captures.get(1) {
+			None
+		} else {
+			Some(match captures.get(1).unwrap().as_str() {
+				"m" => Weekday::Monday,
+				"t" => Weekday::Tuesday,
+				"w" => Weekday::Wednesday,
+				"th" => Weekday::Thursday,
+				"f" => Weekday::Friday,
+				"s" => Weekday::Saturday,
+				"su" => Weekday::Sunday,
+				&_ => Weekday::Monday,
+			})
+		};
+		
 		// decode start hours
-		let mut start_hour = if let None = captures.get(1) {
+		let mut start_hour = if let None = captures.get(2) {
 			0
 		} else {
-			match String::from(captures.get(1).unwrap().as_str()).parse::<u8>() {
+			match String::from(captures.get(2).unwrap().as_str()).parse::<u8>() {
 			  Ok(number) => {
 					number
 				},
@@ -290,10 +306,10 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 		};
 
 		// decode start minutes
-		let start_minute = if let None = captures.get(2) {
+		let start_minute = if let None = captures.get(3) {
 			0
 		} else {
-			let string = captures.get(2).unwrap().as_str();
+			let string = captures.get(3).unwrap().as_str();
 			match String::from(&string[1..string.len()]).parse::<u8>() {
 			  Ok(number) => {
 					number
@@ -305,10 +321,10 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 		};
 
 		// decode end hours
-		let mut end_hour = if let None = captures.get(5) {
+		let mut end_hour = if let None = captures.get(6) {
 			0
 		} else {
-			match String::from(captures.get(5).unwrap().as_str()).parse::<u8>() {
+			match String::from(captures.get(6).unwrap().as_str()).parse::<u8>() {
 			  Ok(number) => {
 					number
 				},
@@ -319,40 +335,40 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 		};
 
 		// decode end minutes
-		let mut end_minute = if let None = captures.get(6) {
+		let mut end_minute = if let None = captures.get(7) {
 			0
 		} else {
-			let string = captures.get(6).unwrap().as_str();
+			let string = captures.get(7).unwrap().as_str();
 			match String::from(&string[1..string.len()]).parse::<u8>() {
 			  Ok(number) => {
 					number
 				},
 				Err(_) => {
-					println!("{:?}", captures.get(6).unwrap().as_str());
+					println!("{:?}", captures.get(7).unwrap().as_str());
 					return Err(TimeError::BadEndMinutes);
 				}
 			}
 		};
 
 		// decode am/pm
-		let start_ampm = if let None = captures.get(3) {
+		let start_ampm = if let None = captures.get(4) {
 			if start_hour < 8 || start_hour == 12 {
 				String::from("pm")
 			} else {
 				String::from("am")
 			}
 		} else {
-			String::from(captures.get(3).unwrap().as_str())
+			String::from(captures.get(4).unwrap().as_str())
 		};
 
-		let end_ampm = if let None = captures.get(3) {
+		let end_ampm = if let None = captures.get(8) {
 			if end_hour < 8 || end_hour == 12 {
 				String::from("pm")
 			} else {
 				String::from("am")
 			}
 		} else {
-			String::from(captures.get(3).unwrap().as_str())
+			String::from(captures.get(8).unwrap().as_str())
 		};
 
 		// handle start hours conversions
@@ -365,7 +381,7 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 		}
 
 		// handle operators
-		let operator = String::from(captures.get(4).unwrap().as_str());
+		let operator = String::from(captures.get(5).unwrap().as_str());
 		if end_ampm == "pm" && end_hour != 12 && operator != "+" {
 			end_hour += 12;
 		}
@@ -381,6 +397,7 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 		}
 
 		Ok(Some(Time {
+			day,
 			start_hour,
 			start_minute,
 			end_hour,
@@ -430,6 +447,7 @@ mod tests {
 					Item {
 						description: String::from(""),
 						time: Some(Time {
+							day: None,
 							start_hour: generator.gen_range(0, 20),
 							start_minute: generator.gen_range(0, 20),
 							end_hour: 0,

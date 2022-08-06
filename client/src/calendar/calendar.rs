@@ -8,7 +8,7 @@ use iced_native::renderer;
 use iced_native::text;
 use iced_native::{ Background, Color, Element, Layout, Length, Point, Rectangle, Size, Vector, Widget };
 
-use bansheelong_types::{ Date, IO };
+use bansheelong_types::{ Date, IO, Weekday };
 
 use crate::style::{ BACKGROUND_DARK_PURPLE, BACKGROUND_LIGHT_PURPLE, TODO_COLORS };
 
@@ -100,6 +100,15 @@ where
 		};
 
 		let time = Local::now();
+		let weekday = match time.weekday() {
+			chrono::Weekday::Mon => { Weekday::Monday },
+			chrono::Weekday::Tue => { Weekday::Tuesday },
+			chrono::Weekday::Wed => { Weekday::Wednesday },
+			chrono::Weekday::Thu => { Weekday::Thursday },
+			chrono::Weekday::Fri => { Weekday::Friday },
+			chrono::Weekday::Sat => { Weekday::Saturday },
+			chrono::Weekday::Sun => { Weekday::Sunday },
+		};
 		let current_hour = time.hour() as HourMinute;
 		let current_minute = time.minute() as HourMinute;
 		let current_date = Some(Date {
@@ -163,7 +172,12 @@ where
 		}
 
 		if self.todos.is_some() && self.todos.as_ref().unwrap().database.mapping.get(&current_date).is_some() {
-			let items = &self.todos.as_ref().unwrap().database.mapping.get(&current_date).unwrap().items;
+			let mut items = self.todos.as_ref().unwrap().database.mapping.get(&current_date).unwrap().items.clone();
+			for item in self.todos.as_ref().unwrap().database.mapping.get(&None).unwrap().items.iter() {
+				if item.time.is_some() && item.time.unwrap().day.is_some() && item.time.unwrap().day.unwrap() == weekday {
+					items.push(item.clone());
+				}
+			}
 			
 			let mut color_index = 0;
 			for item in items {

@@ -13,6 +13,7 @@ pub use types::IO;
 pub use types::Item;
 pub use types::Resource;
 pub use types::Time;
+pub use types::Weekday;
 
 pub use io::read_database;
 pub use io::write_database;

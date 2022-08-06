@@ -101,15 +101,23 @@ impl View {
 			}
 		};
 
+		let has_time_day = |item: &bansheelong_types::Item| {
+			item.time.is_some() && item.time.unwrap().day.is_some()
+		};
+
 		for (_, day) in self.todos.as_ref().unwrap().database.mapping.iter() {
 			// find the last valid index in the list
 			let mut last_index = 0;
 			let mut index = 0;
 			for item in day.items.iter() {
-				if item.description != "" {
+				if item.description != "" && !has_time_day(&item) {
 					last_index = index;
 				}
 				index += 1;
+			}
+
+			if last_index == 0 {
+				continue;
 			}
 			
 			index = 0;
@@ -128,7 +136,7 @@ impl View {
 									.width(Length::Fill),
 								|acc, item| {
 									index += 1;
-									if index - 1 > last_index {
+									if index - 1 > last_index || has_time_day(&item) {
 										acc
 									} else {
 										let circle_or_dash = if item.time.is_some() && day.date == current_date {

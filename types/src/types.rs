@@ -6,7 +6,19 @@ use serde::{ Serialize, Deserialize };
 use serde_with::serde_as;
 
 #[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub enum Weekday {
+	Monday,
+	Tuesday,
+	Wednesday,
+	Thursday,
+	Friday,
+	Saturday,
+	Sunday,
+}
+
+#[derive(Clone, Copy, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Time {
+	pub day: Option<Weekday>,
 	pub start_hour: u8,
 	pub start_minute: u8,
 	pub end_hour: u8,
@@ -70,6 +82,7 @@ impl Item {
 			&& parameters.contains_key("end_minute")
 		{
 			Some(Time {
+				day: None,
 				start_hour: parameters.get("start_hour").unwrap().parse::<u8>().unwrap_or_else(|_| { 0 }),
 				start_minute: parameters.get("start_minute").unwrap().parse::<u8>().unwrap_or_else(|_| { 0 }),
 				end_hour: parameters.get("end_hour").unwrap().parse::<u8>().unwrap_or_else(|_| { 0 }),
