@@ -171,14 +171,22 @@ where
 			}
 		}
 
+		let mut items = Vec::new();
 		if self.todos.is_some() && self.todos.as_ref().unwrap().database.mapping.get(&current_date).is_some() {
-			let mut items = self.todos.as_ref().unwrap().database.mapping.get(&current_date).unwrap().items.clone();
+			for item in self.todos.as_ref().unwrap().database.mapping.get(&current_date).unwrap().items.iter() {
+				items.push(item.clone());
+			}
+		}
+
+		if self.todos.is_some() && self.todos.as_ref().unwrap().database.mapping.get(&None).is_some() {
 			for item in self.todos.as_ref().unwrap().database.mapping.get(&None).unwrap().items.iter() {
 				if item.time.is_some() && item.time.unwrap().day.is_some() && item.time.unwrap().day.unwrap() == weekday {
 					items.push(item.clone());
 				}
 			}
-			
+		}
+
+		if items.len() > 0 {
 			let mut color_index = 0;
 			for item in items {
 				let time = if item.time.is_none() {
