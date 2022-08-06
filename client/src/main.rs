@@ -1,5 +1,6 @@
 mod calendar;
 mod constants;
+mod flavor;
 mod storage;
 mod style;
 mod todos;
@@ -9,12 +10,13 @@ use std::sync::Arc;
 
 use iced::alignment;
 use iced::executor;
-use iced::{ Application, Command, Container, Element, Length, Row, Settings, Subscription, Text };
+use iced::{ Application, Column, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
 use bansheelong_types::{ Database, Error, IO, Resource, get_todos_host, get_todos_port, read_database };
 
 struct Window {
 	calendar: calendar::View,
+	flavor: flavor::View,
 	storage: storage::View,
 	todos: todos::View,
 	weather: weather::View,
@@ -26,6 +28,7 @@ struct Window {
 enum Message {
 	CalendarMessage(calendar::Message),
 	FetchedTodos(Result<Database, Error>),
+	FlavorMessage(flavor::Message),
 	Redraw,
 	Refresh,
 	RefreshTodos,
@@ -48,6 +51,7 @@ impl Application for Window {
 		(
 			Window {
 				calendar: calendar::View::new(),
+				flavor: flavor::View::new(),
 				storage: storage::View::new(),
 				todos: todos::View::new(),
 				weather: weather::View::new(),
@@ -122,6 +126,7 @@ impl Application for Window {
 					])
 				}
 			},
+			Self::Message::FlavorMessage(_) => { Command::none() },
 			Self::Message::Redraw => { Command::none() },
 			Self::Message::Refresh => {
 				Command::batch([
@@ -134,9 +139,7 @@ impl Application for Window {
 			Self::Message::RefreshTodos => {
 				Command::perform(read_database(self.io.resource.clone()), Self::Message::FetchedTodos)
 			},
-			Self::Message::StorageMessage(_) => {
-				Command::none()
-			},
+			Self::Message::StorageMessage(_) => { Command::none() },
 			Self::Message::TodoMessage(message) => {
 				self.todos.update(message).map(move |message| {
 					Self::Message::TodoMessage(message)
@@ -189,10 +192,18 @@ impl Application for Window {
 						Self::Message::CalendarMessage(message)
 					})
 				)
-				.push(
-					self.storage.view().map(move |message| {
-						Self::Message::StorageMessage(message)
-					})
+				.push( // storage thing & neat picture
+					Column::new()
+						.push(
+							self.storage.view().map(move |message| {
+								Self::Message::StorageMessage(message)
+							})
+						)
+						.push(
+							self.flavor.view().map(move |message| {
+								Self::Message::FlavorMessage(message)
+							})
+						)
 				)
 		)
 			.width(Length::Fill)
