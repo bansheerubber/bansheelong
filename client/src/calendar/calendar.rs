@@ -21,7 +21,7 @@ pub static TEXT_SPACING: Vector = Vector::new(0.0, 50.0);
 pub static ITEM_MARGIN_LEFT: Vector = Vector::new(30.0, 0.0);
 pub static ITEM_MARGIN_RIGHT: Vector = Vector::new(15.0, 0.0);
 pub static ITEM_PADDING_LEFT_BOTTOM: Vector = Vector::new(5.0, 0.0);
-pub static ITEM_PADDING_RIGHT_TOP: Vector = Vector::new(5.0, 0.0);
+pub static ITEM_PADDING_RIGHT_TOP: Vector = Vector::new(5.0, 1.0);
 pub static Y_OFFSET: f32 = 5.0;
 
 #[derive(Debug)]
@@ -207,7 +207,7 @@ where
 						size,
 						self.font.clone(),
 						Size::new(
-							item_width - ITEM_PADDING_RIGHT_TOP.x,
+							item_width - ITEM_PADDING_RIGHT_TOP.x - ITEM_PADDING_LEFT_BOTTOM.x,
 							item_height * 2.0
 						)
 					);
