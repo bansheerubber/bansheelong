@@ -111,7 +111,7 @@ impl View {
 			.height(Length::Fill)
 			.padding([20, 15, 20, 0])
 			.style(style::TodoScrollable)
-			.on_scroll(move |offset| Message::Scroll(offset))
+			.on_scroll_absolute(move |offset| Message::Scroll(offset))
 			.min_height((BUTTON_AREA_SIZE + constants::WINDOW_HEIGHT) as u32);
 
 		// add buttons to top button menu thing
@@ -122,7 +122,7 @@ impl View {
 			.fold(
 				Column::new()
 					.spacing(BUTTON_SPACING)
-					.padding([0, 0, 40, 0]),
+					.padding([0, 0, 20, 0]),
 				|button_column, (state, (name, menu_type))| {
 					if menu_type != &Menu::Todos {
 						button_column.push(

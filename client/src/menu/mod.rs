@@ -14,7 +14,7 @@ pub enum Menu {
 pub const BUTTON_COUNT: u16 = 2;
 pub const BUTTON_HEIGHT: u16 = 30;
 pub const BUTTON_SPACING: u16 = 15;
-pub const BUTTON_AREA_SIZE: u16 = BUTTON_HEIGHT * (BUTTON_COUNT - 1) + BUTTON_SPACING * (BUTTON_COUNT - 2) + 40;
+pub const BUTTON_AREA_SIZE: u16 = BUTTON_HEIGHT * (BUTTON_COUNT - 1) + BUTTON_SPACING * (BUTTON_COUNT - 2) + 20;
 
 lazy_static! {
 	pub static ref BUTTONS: [(String, Menu); BUTTON_COUNT as usize] = [
