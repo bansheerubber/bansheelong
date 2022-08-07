@@ -1,38 +1,70 @@
 use std::sync::Arc;
+use std::time::{ Duration, Instant };
 
-use iced::alignment;
-use iced::scrollable;
-use iced::{ Column, Command, Container, Element, Length, Row, Scrollable, Space, Text };
+use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, scrollable };
 
 use chrono::{ Datelike, Local, TimeZone, Utc, Weekday };
 
 use bansheelong_types::IO;
 
 use crate::constants;
+use crate::menu::{ Menu, BUTTONS, BUTTON_AREA_SIZE, BUTTON_COUNT, BUTTON_HEIGHT, BUTTON_SPACING };
 use crate::shared::Underline;
 use crate::style;
 
 #[derive(Debug)]
 pub struct View {
+	button_states: [button::State; BUTTON_COUNT as usize],
+	last_interaction: Option<Instant>,
 	scrollable_state: scrollable::State,
+	scroll_position: f32,
 	todos: Option<Arc<IO>>,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
+	MenuChange(Menu),
+	Scroll(f32),
+	Tick,
 	Update(Option<Arc<IO>>),
 }
 
 impl View {
 	pub fn new() -> Self {
+		let scroll_position = BUTTON_AREA_SIZE as f32;
+		
+		let mut scrollable_state = scrollable::State::new();
+		scrollable_state.snap_to_absolute(scroll_position);
 		View {
-			scrollable_state: scrollable::State::new(),
+			button_states: [button::State::new(); BUTTON_COUNT as usize],
+			last_interaction: None,
+			scrollable_state,
+			scroll_position,
 			todos: None,
 		}
 	}
 
 	pub fn update(&mut self, message: Message) -> Command<Message> {
 		match message {
+			Message::MenuChange(_) => {
+				Command::none()
+			},
+			Message::Scroll(scroll) => {
+				self.last_interaction = Some(Instant::now());
+				self.scroll_position = scroll;
+				Command::none()
+			},
+			Message::Tick => {
+				if self.last_interaction.is_some()
+					&& Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
+					&& self.scroll_position < BUTTON_AREA_SIZE as f32
+				{
+					self.scrollable_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
+					self.scroll_position = BUTTON_AREA_SIZE as f32;
+				}
+
+				Command::none()
+			},
 			Message::Update(io) => {
 				self.todos = io;
 				Command::none()
@@ -63,7 +95,7 @@ impl View {
 		if let None = self.todos {
 			return Container::new(
 				Container::new(Text::new(""))
-					.width(Length::Units(width - 20))
+					.width(Length::Units(width - 15))
 					.height(Length::Units(250))
 					.style(style::BlankWeatherContainer)
 			)
@@ -78,7 +110,39 @@ impl View {
 			.width(Length::Units(width))
 			.height(Length::Fill)
 			.padding([20, 15, 20, 0])
-			.style(style::TodoScrollable);
+			.style(style::TodoScrollable)
+			.on_scroll(move |offset| Message::Scroll(offset))
+			.min_height((BUTTON_AREA_SIZE + constants::WINDOW_HEIGHT) as u32);
+
+		// add buttons to top button menu thing
+		scrollable = scrollable.push(
+			self.button_states
+			.iter_mut()
+			.zip(BUTTONS.iter())
+			.fold(
+				Column::new()
+					.spacing(BUTTON_SPACING)
+					.padding([0, 0, 40, 0]),
+				|button_column, (state, (name, menu_type))| {
+					if menu_type != &Menu::Todos {
+						button_column.push(
+							Button::new(
+								state,
+								Text::new(name.clone())
+									.width(Length::Fill)
+									.horizontal_alignment(alignment::Horizontal::Center)
+							)
+								.style(style::TodoMenuButton)
+								.width(Length::Fill)
+								.height(Length::Units(BUTTON_HEIGHT))
+								.on_press(Message::MenuChange(menu_type.clone()))
+						)
+					} else {
+						button_column
+					}
+				}
+			)
+		);
 
 		let date_to_ui = |date: Option<bansheelong_types::Date>| {
 			if let Some(d) = date {

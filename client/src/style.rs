@@ -267,3 +267,46 @@ impl container::StyleSheet for MealsCalendarContainer {
 		}
 	}
 }
+
+pub struct TodoMenuButton;
+impl button::StyleSheet for TodoMenuButton {
+	fn active(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(BLUE_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn hovered(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(BLUE_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn pressed(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(BLUE_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn disabled(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(BLUE_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+}

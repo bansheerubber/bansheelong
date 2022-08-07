@@ -2,6 +2,8 @@ mod calendar;
 mod constants;
 mod flavor;
 mod meals;
+mod menu;
+mod shared;
 mod storage;
 mod style;
 mod todos;
@@ -16,10 +18,9 @@ use iced::{ Application, Column, Command, Container, Element, Length, Row, Setti
 use bansheelong_types::{ Database, Error, IO, Resource, get_todos_host, get_todos_port, read_database };
 
 struct Window {
-	calendar: calendar::View,
 	flavor: flavor::View,
+	menu: menu::View,
 	storage: storage::View,
-	todos: todos::View,
 	weather: weather::View,
 
 	io: Arc<IO>,
@@ -27,14 +28,12 @@ struct Window {
 
 #[derive(Debug)]
 enum Message {
-	CalendarMessage(calendar::Message),
 	FetchedTodos(Result<Database, Error>),
 	FlavorMessage(flavor::Message),
-	Redraw,
 	Refresh,
 	RefreshTodos,
 	StorageMessage(storage::Message),
-	TodoMessage(todos::Message),
+	MenuMessage(menu::Message),
 	Tick,
 	WeatherMessage(weather::Message),
 }
@@ -51,10 +50,9 @@ impl Application for Window {
 
 		(
 			Window {
-				calendar: calendar::View::new(),
 				flavor: flavor::View::new(),
+				menu: menu::View::new(),
 				storage: storage::View::new(),
-				todos: todos::View::new(),
 				weather: weather::View::new(),
 
 				io: Arc::new(IO {
@@ -83,8 +81,12 @@ impl Application for Window {
 			}),
 			todos::connect().map(|event| {
 				match event {
-					todos::Event::Error(_) => Self::Message::TodoMessage(todos::Message::Update(None)),
-					todos::Event::InvalidateState => Self::Message::TodoMessage(todos::Message::Update(None)),
+					todos::Event::Error(_) => Self::Message::MenuMessage(menu::Message::TodosMessage(
+						todos::Message::Update(None)
+					)),
+					todos::Event::InvalidateState => Self::Message::MenuMessage(menu::Message::TodosMessage(
+						todos::Message::Update(None)
+					)),
 					todos::Event::Refresh => Self::Message::RefreshTodos,
 				}
 			})
@@ -93,21 +95,20 @@ impl Application for Window {
 
 	fn update(&mut self, _message: Message) -> Command<Self::Message> {
 		match _message {
-			Self::Message::CalendarMessage(message) => {
-				self.calendar.update(message).map(move |message| {
-					Self::Message::CalendarMessage(message)
-				})
-			},
 			Self::Message::FetchedTodos(result) => {
 				if let Err(error) = result {
 					println!("{:?}", error);
 					
 					Command::batch([
-						self.calendar.update(calendar::Message::Update(None)).map(move |message| {
-							self::Message::CalendarMessage(message)
+						self.menu.update(menu::Message::CalendarMessage(
+							calendar::Message::Update(None)
+						)).map(move |message| {
+							self::Message::MenuMessage(message)
 						}),
-						self.todos.update(todos::Message::Update(None)).map(move |message| {
-							self::Message::TodoMessage(message)
+						self.menu.update(menu::Message::TodosMessage(
+							todos::Message::Update(None)
+						)).map(move |message| {
+							self::Message::MenuMessage(message)
 						}),
 					])
 				} else {
@@ -118,17 +119,25 @@ impl Application for Window {
 					});
 
 					Command::batch([
-						self.calendar.update(calendar::Message::Update(Some(self.io.clone()))).map(move |message| {
-							self::Message::CalendarMessage(message)
+						self.menu.update(menu::Message::CalendarMessage(
+							calendar::Message::Update(Some(self.io.clone()))
+						)).map(move |message| {
+							self::Message::MenuMessage(message)
 						}),
-						self.todos.update(todos::Message::Update(Some(self.io.clone()))).map(move |message| {
-							self::Message::TodoMessage(message)
+						self.menu.update(menu::Message::TodosMessage(
+							todos::Message::Update(Some(self.io.clone()))
+						)).map(move |message| {
+							self::Message::MenuMessage(message)
 						}),
 					])
 				}
 			},
 			Self::Message::FlavorMessage(_) => { Command::none() },
-			Self::Message::Redraw => { Command::none() },
+			Self::Message::MenuMessage(message) => {
+				self.menu.update(message).map(move |message| {
+					Self::Message::MenuMessage(message)
+				})
+			},
 			Self::Message::Refresh => {
 				Command::batch([
 					Command::perform(read_database(self.io.resource.clone()), Self::Message::FetchedTodos),
@@ -141,15 +150,10 @@ impl Application for Window {
 				Command::perform(read_database(self.io.resource.clone()), Self::Message::FetchedTodos)
 			},
 			Self::Message::StorageMessage(_) => { Command::none() },
-			Self::Message::TodoMessage(message) => {
-				self.todos.update(message).map(move |message| {
-					Self::Message::TodoMessage(message)
-				})
-			},
 			Self::Message::Tick => {
 				Command::batch([
-					self.calendar.update(calendar::Message::Tick).map(move |message| {
-						Self::Message::CalendarMessage(message)
+					self.menu.update(menu::Message::Tick).map(move |message| {
+						Self::Message::MenuMessage(message)
 					}),
 					self.weather.update(weather::Message::Tick).map(move |message| {
 						Self::Message::WeatherMessage(message)
@@ -183,14 +187,9 @@ impl Application for Window {
 						.padding([0, 25])
 						.align_y(alignment::Vertical::Center)
 				)
-				.push( // todo list
-					self.todos.view().map(move |_message| {
-						Self::Message::Redraw
-					})
-				)
-				.push( // calendar bar
-					self.calendar.view().map(move |message| {
-						Self::Message::CalendarMessage(message)
+				.push(
+					self.menu.view().map(move |message| {
+						Self::Message::MenuMessage(message)
 					})
 				)
 				.push( // storage thing & neat picture
