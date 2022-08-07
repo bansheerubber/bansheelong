@@ -54,15 +54,21 @@ impl View {
 			Message::Scroll(scroll) => {
 				self.last_interaction = Some(Instant::now());
 				self.scroll_position = scroll;
+				self.scrollable_state.set_force_disable(false);
 				Command::none()
 			},
 			Message::Tick => {
-				if self.last_interaction.is_some()
-					&& Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
-					&& self.scroll_position < BUTTON_AREA_SIZE as f32
-				{
-					self.scrollable_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
-					self.scroll_position = BUTTON_AREA_SIZE as f32;
+				if self.last_interaction.is_some() {
+					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
+						&& self.scroll_position < BUTTON_AREA_SIZE as f32
+					{
+						self.scrollable_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
+						self.scroll_position = BUTTON_AREA_SIZE as f32;
+					}
+
+					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(4) {
+						self.scrollable_state.set_force_disable(true);
+					}
 				}
 
 				Command::none()

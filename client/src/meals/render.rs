@@ -75,6 +75,7 @@ impl View {
 			Message::CurrentMealsScroll(scroll) => {
 				self.last_interaction = Some(Instant::now());
 				self.current_meals_position = scroll;
+				self.current_meals_state.set_force_disable(false);
 				Command::none()
 			},
 			Message::MenuChange(_) => {
@@ -83,12 +84,17 @@ impl View {
 				Command::none()
 			},
 			Message::Tick => {
-				if self.last_interaction.is_some()
-					&& Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
-					&& self.current_meals_position < BUTTON_AREA_SIZE as f32
-				{
-					self.current_meals_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
-					self.current_meals_position = BUTTON_AREA_SIZE as f32;
+				if self.last_interaction.is_some() {
+					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
+						&& self.current_meals_position < BUTTON_AREA_SIZE as f32
+					{
+						self.current_meals_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
+						self.current_meals_position = BUTTON_AREA_SIZE as f32;
+					}
+
+					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(4) {
+						self.current_meals_state.set_force_disable(true);
+					}
 				}
 
 				Command::none()

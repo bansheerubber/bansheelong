@@ -39,6 +39,7 @@ impl View {
 		match message {
 			Message::Scroll(_) => {
 				self.last_interaction = Some(Instant::now());
+				self.scrollable_state.set_force_disable(false);
 			},
 			Message::Tick => {
 				if self.last_interaction.is_none() || Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(120) {
@@ -52,7 +53,12 @@ impl View {
 						= calendar::TEXT_SPACING.y * (current_hour - calendar::START_TIME) as f32 + calendar::TEXT_SPACING.y * (current_minute as f32 / 60.0)  + calendar::TEXT_SPACING.y * (current_seconds as f32 / 60.0 / 60.0) + calendar::Y_OFFSET + 20.0 - (constants::WINDOW_HEIGHT / 2) as f32;
 
 					self.scrollable_state.snap_to(time_height / height);
+				} else if self.last_interaction.is_some()
+					&& Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(4)
+				{
+					self.scrollable_state.set_force_disable(true);
 				}
+				
 			},
 			Message::Update(io) => {
 				self.todos = io;
