@@ -96,7 +96,11 @@ where
 		_viewport: &Rectangle
 	) {
 		let time_to_position = |hour: HourMinute, minute: HourMinute| {
-			Vector::new(0.0, TEXT_SPACING.y * (hour - START_TIME) as f32 + TEXT_SPACING.y * (minute as f32 / 60.0))
+			if hour == 0 {
+				Vector::new(0.0, TEXT_SPACING.y * (24 - START_TIME) as f32 + TEXT_SPACING.y * (minute as f32 / 60.0))
+			} else {
+				Vector::new(0.0, TEXT_SPACING.y * (hour - START_TIME) as f32 + TEXT_SPACING.y * (minute as f32 / 60.0))
+			}
 		};
 
 		let time = Local::now();
@@ -109,8 +113,6 @@ where
 			chrono::Weekday::Sat => { Weekday::Saturday },
 			chrono::Weekday::Sun => { Weekday::Sunday },
 		};
-		let current_hour = time.hour() as HourMinute;
-		let current_minute = time.minute() as HourMinute;
 		let current_date = Some(Date {
 			day: time.day() as u8,
 			month: time.month() as u8,
@@ -271,6 +273,8 @@ where
 		}
 
 		// time line
+		let current_hour = time.hour() as HourMinute;
+		let current_minute = time.minute() as HourMinute;
 		renderer.fill_quad(
 			iced_native::renderer::Quad {
 				bounds: Rectangle {
