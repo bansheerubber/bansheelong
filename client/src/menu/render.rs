@@ -41,6 +41,10 @@ impl View {
 				})
 			},
 			Message::MealsMessage(message) => {
+				if let meals::Message::MenuChange(menu) = message {
+					self.menu = menu;
+				}
+				
 				self.meals.update(message).map(move |message| {
 					Message::MealsMessage(message)
 				})
@@ -49,6 +53,9 @@ impl View {
 				Command::batch([
 					self.calendar.update(calendar::Message::Tick).map(move |message| {
 						Message::CalendarMessage(message)
+					}),
+					self.meals.update(meals::Message::Tick).map(move |message| {
+						Message::MealsMessage(message)
 					}),
 					self.todos.update(todos::Message::Tick).map(move |message| {
 						Message::TodosMessage(message)
