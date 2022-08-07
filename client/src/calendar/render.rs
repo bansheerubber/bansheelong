@@ -4,7 +4,7 @@ use std::time::{ Duration, Instant };
 use chrono::{ Local, Timelike };
 
 use iced::scrollable;
-use iced::{ Command, Container, Element, Length, Scrollable };
+use iced::{ Command, Element, Length, Scrollable };
 
 use bansheelong_types::{ IO };
 
@@ -63,19 +63,16 @@ impl View {
 	}
 
 	pub fn view(&mut self) -> Element<Message> {
-		Container::new(
-				Scrollable::new(&mut self.scrollable_state)
-					.width(Length::Units(350))
-					.height(Length::Fill)
-					.padding([20, 15, 20, 0])
-					.style(style::TodoScrollable)
-					.push(
-						calendar::Calendar::new(self.todos.clone())
-							.width(Length::Fill)
-					)
-					.on_scroll(move |offset| Message::Scroll(offset))
-		)
-			.padding([0, 0, 0, 5])
+		Scrollable::new(&mut self.scrollable_state)
+			.width(Length::Units(355))
+			.height(Length::Fill)
+			.padding([20, 15, 20, 5])
+			.style(style::TodoScrollable)
+			.push(
+				calendar::Calendar::new(self.todos.clone())
+					.width(Length::Fill)
+			)
+			.on_scroll(move |offset| Message::Scroll(offset))
 			.into()
 	}
 }
