@@ -5,7 +5,7 @@ use iced_native::text;
 use iced_native::{ Color, Element, Layout, Length, Point, Rectangle, Size, Widget };
 
 #[derive(Debug)]
-pub struct Date<Renderer: text::Renderer> {
+pub struct Underline<Renderer: text::Renderer> {
 	content: String,
 	size: Option<u16>,
 	color: Option<Color>,
@@ -16,10 +16,10 @@ pub struct Date<Renderer: text::Renderer> {
 	vertical_alignment: alignment::Vertical,
 }
 
-impl<Renderer: text::Renderer> Date<Renderer> {
-	/// Create a new fragment of [`Date`] with the given contents.
+impl<Renderer: text::Renderer> Underline<Renderer> {
+	/// Create a new fragment of [`Underline`] with the given contents.
 	pub fn new<T: Into<String>>(label: T) -> Self {
-		Date {
+		Underline {
 			content: label.into(),
 			size: None,
 			color: None,
@@ -31,19 +31,19 @@ impl<Renderer: text::Renderer> Date<Renderer> {
 		}
 	}
 
-	/// Sets the size of the [`Date`].
+	/// Sets the size of the [`Underline`].
 	pub fn size(mut self, size: u16) -> Self {
 		self.size = Some(size);
 		self
 	}
 
-	/// Sets the [`Color`] of the [`Date`].
+	/// Sets the [`Color`] of the [`Underline`].
 	pub fn color<C: Into<Color>>(mut self, color: C) -> Self {
 		self.color = Some(color.into());
 		self
 	}
 
-	/// Sets the [`Font`] of the [`Date`].
+	/// Sets the [`Font`] of the [`Underline`].
 	///
 	/// [`Font`]: crate::text::Renderer::Font
 	pub fn font(mut self, font: impl Into<Renderer::Font>) -> Self {
@@ -51,19 +51,19 @@ impl<Renderer: text::Renderer> Date<Renderer> {
 		self
 	}
 
-	/// Sets the width of the [`Date`] boundaries.
+	/// Sets the width of the [`Underline`] boundaries.
 	pub fn width(mut self, width: Length) -> Self {
 		self.width = width;
 		self
 	}
 
-	/// Sets the height of the [`Date`] boundaries.
+	/// Sets the height of the [`Underline`] boundaries.
 	pub fn height(mut self, height: Length) -> Self {
 		self.height = height;
 		self
 	}
 
-	/// Sets the [`alignment::Horizontal`] of the [`Date`].
+	/// Sets the [`alignment::Horizontal`] of the [`Underline`].
 	pub fn horizontal_alignment(
 		mut self,
 		alignment: alignment::Horizontal,
@@ -72,7 +72,7 @@ impl<Renderer: text::Renderer> Date<Renderer> {
 		self
 	}
 
-	/// Sets the [`alignment::Vertical`] of the [`Date`].
+	/// Sets the [`alignment::Vertical`] of the [`Underline`].
 	pub fn vertical_alignment(
 		mut self,
 		alignment: alignment::Vertical,
@@ -82,7 +82,7 @@ impl<Renderer: text::Renderer> Date<Renderer> {
 	}
 }
 
-impl<Message, Renderer> Widget<Message, Renderer> for Date<Renderer>
+impl<Message, Renderer> Widget<Message, Renderer> for Underline<Renderer>
 where
 	Renderer: text::Renderer,
 {
@@ -150,17 +150,17 @@ where
 	}
 }
 
-impl<'a, Message, Renderer> From<Date<Renderer>>
+impl<'a, Message, Renderer> From<Underline<Renderer>>
 	for Element<'a, Message, Renderer>
 where
 	Renderer: text::Renderer + 'a,
 {
-	fn from(text: Date<Renderer>) -> Element<'a, Message, Renderer> {
+	fn from(text: Underline<Renderer>) -> Element<'a, Message, Renderer> {
 		Element::new(text)
 	}
 }
 
-impl<Renderer: text::Renderer> Clone for Date<Renderer> {
+impl<Renderer: text::Renderer> Clone for Underline<Renderer> {
 	fn clone(&self) -> Self {
 		Self {
 			content: self.content.clone(),
@@ -174,4 +174,3 @@ impl<Renderer: text::Renderer> Clone for Date<Renderer> {
 		}
 	}
 }
-

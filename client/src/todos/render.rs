@@ -9,7 +9,7 @@ use chrono::{ Datelike, Local, TimeZone, Utc, Weekday };
 use bansheelong_types::IO;
 
 use crate::constants;
-use crate::todos::Date;
+use crate::shared::Underline;
 use crate::style;
 
 #[derive(Debug)]
@@ -94,10 +94,10 @@ impl View {
 					Weekday::Sun => "su",
 				};
 
-				Date::new(format!("{}/{}/{}({}):", d.month, d.day, d.year, abbreviation))
+				Underline::new(format!("{}/{}/{}({}):", d.month, d.day, d.year, abbreviation))
 					.font(constants::NOTOSANS_THIN)
 			} else {
-				Date::new("General list")
+				Underline::new("General list")
 			}
 		};
 
