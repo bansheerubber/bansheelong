@@ -245,3 +245,25 @@ impl container::StyleSheet for TodoCircleCyan {
 		}
 	}
 }
+
+pub struct MealsDayContainer;
+impl container::StyleSheet for MealsDayContainer {
+	fn style(&self) -> container::Style {
+		container::Style {
+			background: Some(Background::Color(BACKGROUND_LIGHT_PURPLE)),
+			text_color: Some(TEXT_COLOR),
+			..container::Style::default()
+		}
+	}
+}
+
+pub struct MealsCalendarContainer;
+impl container::StyleSheet for MealsCalendarContainer {
+	fn style(&self) -> container::Style {
+		container::Style {
+			background: Some(Background::Color(BACKGROUND_DARK_PURPLE)),
+			text_color: Some(TEXT_COLOR),
+			..container::Style::default()
+		}
+	}
+}

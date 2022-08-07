@@ -1,6 +1,7 @@
 mod calendar;
 mod constants;
 mod flavor;
+mod meals;
 mod storage;
 mod style;
 mod todos;
