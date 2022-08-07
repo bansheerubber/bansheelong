@@ -47,6 +47,8 @@ impl View {
 	pub fn update(&mut self, message: Message) -> Command<Message> {
 		match message {
 			Message::MenuChange(_) => {
+				self.scrollable_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
+				self.scroll_position = BUTTON_AREA_SIZE as f32;
 				Command::none()
 			},
 			Message::Scroll(scroll) => {
