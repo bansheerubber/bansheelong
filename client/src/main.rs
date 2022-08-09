@@ -132,7 +132,12 @@ impl Application for Window {
 					])
 				}
 			},
-			Self::Message::FlavorMessage(_) => { Command::none() },
+			Self::Message::FlavorMessage(message) => {
+				println!("try to update the thing");
+				self.flavor.update(message).map(move |message| {
+					Self::Message::FlavorMessage(message)
+				})
+			},
 			Self::Message::MenuMessage(message) => {
 				self.menu.update(message).map(move |message| {
 					Self::Message::MenuMessage(message)
