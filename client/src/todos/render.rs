@@ -179,7 +179,7 @@ impl View {
 
 		for (_, day) in self.todos.as_ref().unwrap().database.mapping.iter() {
 			// find the last valid index in the list
-			let mut last_index = 0;
+			let mut last_index = -1;
 			let mut index = 0;
 			for item in day.items.iter() {
 				if item.description != "" && !has_time_day(&item) {
@@ -188,7 +188,7 @@ impl View {
 				index += 1;
 			}
 
-			if last_index == 0 {
+			if last_index == -1 {
 				continue;
 			}
 			
