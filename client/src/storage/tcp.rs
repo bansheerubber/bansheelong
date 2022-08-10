@@ -12,12 +12,23 @@ enum State {
 	WaitToConnect,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Clone, Debug)]
+pub struct Data {
+	pub has_zpool_error: bool,
+
+	pub used_size: u64,
+	pub total_size: u64,
+
+	pub dailies: u8,
+	pub weeklies: u8,
+}
+
+#[derive(Clone, Debug)]
 pub enum Event {
 	Error(String),
 	Ignore,
 	InvalidateState,
-	Message(String),
+	Message(Data),
 }
 
 pub fn connect() -> Subscription<Event> {
@@ -48,9 +59,40 @@ pub fn connect() -> Subscription<Event> {
 								},
 							};
 
+							let message = match message.split("\n").nth(0) {
+								None => return (Some(Event::Error(String::from("Malformed message"))), State::WaitToConnect),
+								Some(message) => message,
+							};
+
+							let parts: Vec<u64> = message.split(" ").map(|x| {
+								match x.parse::<u64>() {
+									Err(_) => 0,
+									Ok(value) => value
+								}
+							}).collect();
+
+							if parts.len() != 5 {
+								return (Some(Event::Error(String::from("Malformed message"))), State::WaitToConnect);
+							}
+
 							sleep(Duration::from_secs(1)).await;
 
-							(Some(Event::Message(message)), State::Connected(socket))
+							(
+								Some(Event::Message(Data {
+									has_zpool_error: if parts[0] == 0 {
+										false
+									} else {
+										true
+									},
+
+									used_size: parts[1],
+									total_size: parts[2],
+
+									dailies: parts[3] as u8,
+									weeklies: parts[4] as u8,
+								})),
+								State::Connected(socket)
+							)
 						},
 						Err(ref error) if error.kind() == tokio::io::ErrorKind::WouldBlock => {
 							sleep(Duration::from_secs(1)).await;
