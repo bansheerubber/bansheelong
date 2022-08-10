@@ -21,7 +21,7 @@ pub use io::write_database;
 pub fn get_todos_port() -> u16 {
 	match env::var("BANSHEELONG_TODOS_PORT") {
 		Ok(port) => port.parse().unwrap(),
-		Err(_) => 80,
+		Err(_) => 0,
 	}
 }
 
@@ -36,5 +36,19 @@ pub fn get_todos_secret() -> String {
 	match env::var("BANSHEELONG_TODOS_SECRET") {
 		Ok(secret) => secret,
 		Err(_) => String::from(""),
+	}
+}
+
+pub fn get_storage_port() -> u16 {
+	match env::var("BANSHEELONG_STORAGE_PORT") {
+		Ok(port) => port.parse().unwrap(),
+		Err(_) => 0,
+	}
+}
+
+pub fn get_storage_host() -> String {
+	match env::var("BANSHEELONG_STORAGE_HOST") {
+		Ok(host) => host,
+		Err(_) => String::from("localhost"),
 	}
 }

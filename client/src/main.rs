@@ -89,7 +89,11 @@ impl Application for Window {
 					)),
 					todos::Event::Refresh => Self::Message::RefreshTodos,
 				}
-			})
+			}),
+			storage::connect().map(|event| {
+				println!("{:?}", event);
+				Self::Message::Tick
+			}),
 		])
 	}
 
