@@ -91,8 +91,12 @@ impl Application for Window {
 				}
 			}),
 			storage::connect().map(|event| {
-				println!("{:?}", event);
-				Self::Message::Tick
+				match event {
+					storage::tcp::Event::Error(_) => Self::Message::StorageMessage(storage::Message::Received(None)),
+					storage::tcp::Event::Ignore => { Self::Message::Tick },
+					storage::tcp::Event::InvalidateState => Self::Message::StorageMessage(storage::Message::Received(None)),
+					storage::tcp::Event::Message(data) => Self::Message::StorageMessage(storage::Message::Received(Some(data))),
+				}
 			}),
 		])
 	}
@@ -137,7 +141,6 @@ impl Application for Window {
 				}
 			},
 			Self::Message::FlavorMessage(message) => {
-				println!("try to update the thing");
 				self.flavor.update(message).map(move |message| {
 					Self::Message::FlavorMessage(message)
 				})
@@ -158,7 +161,11 @@ impl Application for Window {
 			Self::Message::RefreshTodos => {
 				Command::perform(read_database(self.io.resource.clone()), Self::Message::FetchedTodos)
 			},
-			Self::Message::StorageMessage(_) => { Command::none() },
+			Self::Message::StorageMessage(message) => {
+				self.storage.update(message).map(move |message| {
+					Self::Message::StorageMessage(message)
+				})
+			},
 			Self::Message::Tick => {
 				Command::batch([
 					self.menu.update(menu::Message::Tick).map(move |message| {
