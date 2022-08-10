@@ -177,6 +177,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "bansheelong_storage_server"
+version = "0.1.0"
+dependencies = [
+ "futures",
+ "tokio",
+]
+
+[[package]]
 name = "bansheelong_types"
 version = "0.1.0"
 dependencies = [
