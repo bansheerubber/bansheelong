@@ -1,5 +1,6 @@
-use std::sync::Arc;
+use std::path::Path;
 use std::process::{ Command, Stdio };
+use std::sync::Arc;
 
 use futures::future;
 
@@ -7,6 +8,8 @@ use tokio::net::tcp::{ OwnedReadHalf, OwnedWriteHalf };
 use tokio::net::TcpListener;
 use tokio::time::{ Duration, sleep };
 use tokio::sync::Mutex;
+
+use bansheelong_types::JobFlags;
 
 #[derive(Debug)]
 enum Error {
@@ -101,7 +104,7 @@ fn get_disk_usage() -> Result<(u64, u64), Error> {
 	Ok((used_size, total_size))
 }
 
-fn get_local_info() -> Result<(u8, u8), Error> {
+fn get_backups_count() -> Result<(u8, u8), Error> {
 	let read_count = |file_name: &str| {
 		let value = match std::fs::read_to_string(format!("/home/me/bansheestorage/{}-count", file_name)) {
 			Err(error) => {
@@ -119,6 +122,27 @@ fn get_local_info() -> Result<(u8, u8), Error> {
 	};
 
 	Ok((read_count("dailies")?, read_count("weeklies")?))
+}
+
+fn get_job_flags() -> Result<JobFlags, Error> {
+	let mut result = JobFlags::IDLE;
+
+	// check daily backup
+	if Path::new("/home/me/bansheestorage/writing-daily-backup").exists() {
+		result |= JobFlags::DOWNLOADING_DAILY;
+	}
+
+	// check weekly backup
+	if Path::new("/home/me/bansheestorage/writing-weekly-backup").exists() {
+		result |= JobFlags::CREATING_WEEKLY;
+	}
+
+	// check monthly backup
+	if Path::new("/home/me/bansheestorage/writing-monthly-backup").exists() {
+		result |= JobFlags::CREATING_MONTHLY;
+	}
+
+	Ok(result)
 }
 
 async fn read_socket(
@@ -240,6 +264,15 @@ async fn main() {
 					}
 				};
 
+				// get server job status
+				let job_status = match get_job_flags() {
+					Err(error) => {
+						eprintln!("job status error: {:?}", error);
+						0
+					},
+					Ok(value) => value.bits(),
+				};
+
 				// get df
 				let (used_size, total_size) = match get_disk_usage() {
 					Err(error) => {
@@ -250,7 +283,7 @@ async fn main() {
 				};
 
 				// get dailies/weeklies count
-				let (dailies, weeklies) = match get_local_info() {
+				let (dailies, weeklies) = match get_backups_count() {
 					Err(error) => {
 						eprintln!("dailies/weeklies error: {:?}", error);
 						(0, 0)
@@ -260,7 +293,7 @@ async fn main() {
 		
 				// update message
 				let mut locked_message = message.lock().await;
-				*locked_message = format!("{} {} {} {} {}\n", has_zpool_error, used_size, total_size, dailies, weeklies);
+				*locked_message = format!("{} {} {} {} {} {}\n", has_zpool_error, job_status, used_size, total_size, dailies, weeklies);
 
 				// send to all sockets
 				let locked = sockets_reference.lock().await;

@@ -1,4 +1,5 @@
 use std::env;
+use bitflags::bitflags;
 
 pub(crate) mod io;
 pub(crate) mod types;
@@ -50,5 +51,15 @@ pub fn get_storage_host() -> String {
 	match env::var("BANSHEELONG_STORAGE_HOST") {
 		Ok(host) => host,
 		Err(_) => String::from("localhost"),
+	}
+}
+
+bitflags! {
+	pub struct JobFlags: u32 {
+		const IDLE              = 0b00000000;
+		const DOWNLOADING_DAILY = 0b00000001;
+		const CREATING_WEEKLY   = 0b00000010;
+		const CREATING_MONTHLY  = 0b00000100;
+		const SYNCING_GITHUB    = 0b00001000;
 	}
 }

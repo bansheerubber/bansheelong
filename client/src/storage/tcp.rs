@@ -3,7 +3,7 @@ use iced_native::subscription::{ self, Subscription };
 use tokio::time::{ Duration, sleep };
 use tokio::net::TcpStream;
 
-use bansheelong_types::{ get_storage_port, get_storage_host };
+use bansheelong_types::{ JobFlags, get_storage_port, get_storage_host };
 
 #[derive(Debug)]
 enum State {
@@ -15,6 +15,8 @@ enum State {
 #[derive(Clone, Debug)]
 pub struct Data {
 	pub has_zpool_error: bool,
+
+	pub job_flags: JobFlags,
 
 	pub used_size: u64,
 	pub total_size: u64,
@@ -71,7 +73,7 @@ pub fn connect() -> Subscription<Event> {
 								}
 							}).collect();
 
-							if parts.len() != 5 {
+							if parts.len() != 6 {
 								return (Some(Event::Error(String::from("Malformed message"))), State::WaitToConnect);
 							}
 
@@ -85,11 +87,17 @@ pub fn connect() -> Subscription<Event> {
 										true
 									},
 
-									used_size: parts[1],
-									total_size: parts[2],
+									job_flags: if JobFlags::from_bits(parts[1] as u32).is_none() {
+										JobFlags::IDLE
+									} else {
+										JobFlags::from_bits(parts[1] as u32).unwrap()
+									},
 
-									dailies: parts[3] as u8,
-									weeklies: parts[4] as u8,
+									used_size: parts[2],
+									total_size: parts[3],
+
+									dailies: parts[4] as u8,
+									weeklies: parts[5] as u8,
 								})),
 								State::Connected(socket)
 							)

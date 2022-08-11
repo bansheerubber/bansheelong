@@ -1,5 +1,7 @@
 use iced::{ Column, Command, Container, Element, Length, Row, Space, Text };
 
+use bansheelong_types::JobFlags;
+
 use crate::style;
 use super::Data;
 
@@ -81,9 +83,19 @@ impl View {
 					.push(
 						Text::new(
 							if self.data.is_none() || self.data.as_ref().unwrap().has_zpool_error {
-								"Error"
+								String::from("Error")
 							} else {
-								"Idle"
+								if self.data.as_ref().unwrap().job_flags.contains(JobFlags::CREATING_MONTHLY) {
+									String::from("Creating monthly backup") + &ellipses
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobFlags::CREATING_WEEKLY) {
+									String::from("Creating weekly backup") + &ellipses
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobFlags::DOWNLOADING_DAILY) {
+									String::from("Downloading daily backup") + &ellipses
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobFlags::SYNCING_GITHUB) {
+									String::from("Syncing GitHub to backup") + &ellipses
+								} else {
+									String::from("Idle")
+								}
 							}
 						)
 					)
