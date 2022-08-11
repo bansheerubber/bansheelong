@@ -153,6 +153,11 @@ fn get_job_flags() -> Result<JobStatusFlags, Error> {
 		result |= JobStatusFlags::CREATING_MONTHLY;
 	}
 
+	// check git backup
+	if Path::new("/home/me/bansheestorage/writing-git-backup").exists() {
+		result |= JobStatusFlags::SYNCING_GITHUB;
+	}
+
 	Ok(result)
 }
 
