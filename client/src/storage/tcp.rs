@@ -3,7 +3,7 @@ use iced_native::subscription::{ self, Subscription };
 use tokio::time::{ Duration, sleep };
 use tokio::net::TcpStream;
 
-use bansheelong_types::{ JobStatusFlags, get_storage_port, get_storage_host };
+use bansheelong_types::{ JobStatusFlags, STORAGE_MESSAGE_COUNT, get_storage_port, get_storage_host };
 
 #[derive(Debug)]
 enum State {
@@ -71,7 +71,7 @@ pub fn connect() -> Subscription<Event> {
 								}
 							}).collect();
 
-							if parts.len() != 5 {
+							if parts.len() != STORAGE_MESSAGE_COUNT as usize {
 								return (Some(Event::Error(String::from("Malformed message"))), State::WaitToConnect);
 							}
 

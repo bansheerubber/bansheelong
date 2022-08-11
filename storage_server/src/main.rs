@@ -9,7 +9,7 @@ use tokio::net::TcpListener;
 use tokio::time::{ Duration, sleep };
 use tokio::sync::Mutex;
 
-use bansheelong_types::JobStatusFlags;
+use bansheelong_types::{ JobStatusFlags, STORAGE_MESSAGE_COUNT };
 
 #[derive(Debug)]
 enum Error {
@@ -295,6 +295,19 @@ async fn main() {
 				// update message
 				let mut locked_message = message.lock().await;
 				*locked_message = format!("{} {} {} {} {}\n", job_status, used_size, total_size, dailies, weeklies);
+
+				let whitespace_count = locked_message.chars()
+					.fold(0, |prev, c| {
+						prev + if c.is_whitespace() {
+							1
+						} else {
+							0
+						}
+					});
+
+				if whitespace_count != STORAGE_MESSAGE_COUNT {
+					eprintln!("error: unexpected sent message word length {}", whitespace_count);
+				}
 
 				// send to all sockets
 				let locked = sockets_reference.lock().await;

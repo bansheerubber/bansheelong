@@ -54,6 +54,9 @@ pub fn get_storage_host() -> String {
 	}
 }
 
+// how many words we send to clients using the storage server
+pub const STORAGE_MESSAGE_COUNT: u8 = 5;
+
 bitflags! {
 	pub struct JobStatusFlags: u64 {
 		const IDLE              = 0b00000000;
