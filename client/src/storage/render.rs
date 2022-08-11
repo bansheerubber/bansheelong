@@ -8,28 +8,39 @@ use super::Data;
 #[derive(Debug)]
 pub struct View {
 	data: Option<Data>,
+	ellipses: u8,
 }
 
 #[derive(Debug, Clone)]
 pub enum Message {
 	Received(Option<Data>),
+	Tick,
 }
 
 impl View {
 	pub fn new() -> Self {
 		View {
 			data: None,
+			ellipses: 0,
 		}
 	}
 
 	pub fn update(&mut self, message: Message) -> Command<Message> {
-		let Message::Received(data) = message;
-		self.data = data;
-
-		Command::none()
+		match message {
+			Message::Received(data) => {
+				self.data = data;
+				Command::none()
+			},
+			Message::Tick => {
+				self.ellipses = (self.ellipses + 1) % 5;
+				Command::none()
+			},
+		}
 	}
 
 	pub fn view(&mut self) -> Element<Message> {
+		let ellipses: String = std::iter::repeat(".").take(std::cmp::min((self.ellipses + 1) as usize, 4)).collect();
+		
 		Container::new(
 			Container::new(
 				Column::new()

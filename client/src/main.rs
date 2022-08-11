@@ -30,10 +30,11 @@ struct Window {
 enum Message {
 	FetchedTodos(Result<Database, Error>),
 	FlavorMessage(flavor::Message),
+	MenuMessage(menu::Message),
+	Noop,
 	Refresh,
 	RefreshTodos,
 	StorageMessage(storage::Message),
-	MenuMessage(menu::Message),
 	Tick,
 	WeatherMessage(weather::Message),
 }
@@ -93,7 +94,7 @@ impl Application for Window {
 			storage::connect().map(|event| {
 				match event {
 					storage::tcp::Event::Error(_) => Self::Message::StorageMessage(storage::Message::Received(None)),
-					storage::tcp::Event::Ignore => { Self::Message::Tick },
+					storage::tcp::Event::Ignore => { Self::Message::Noop },
 					storage::tcp::Event::InvalidateState => Self::Message::StorageMessage(storage::Message::Received(None)),
 					storage::tcp::Event::Message(data) => Self::Message::StorageMessage(storage::Message::Received(Some(data))),
 				}
@@ -150,6 +151,7 @@ impl Application for Window {
 					Self::Message::MenuMessage(message)
 				})
 			},
+			Self::Message::Noop => { Command::none() },
 			Self::Message::Refresh => {
 				Command::batch([
 					Command::perform(read_database(self.io.resource.clone()), Self::Message::FetchedTodos),
@@ -170,6 +172,9 @@ impl Application for Window {
 				Command::batch([
 					self.menu.update(menu::Message::Tick).map(move |message| {
 						Self::Message::MenuMessage(message)
+					}),
+					self.storage.update(storage::Message::Tick).map(move |message| {
+						Self::Message::StorageMessage(message)
 					}),
 					self.weather.update(weather::Message::Tick).map(move |message| {
 						Self::Message::WeatherMessage(message)
