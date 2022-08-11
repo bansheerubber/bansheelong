@@ -9,7 +9,7 @@ use tokio::net::TcpListener;
 use tokio::time::{ Duration, sleep };
 use tokio::sync::Mutex;
 
-use bansheelong_types::JobFlags;
+use bansheelong_types::JobStatusFlags;
 
 #[derive(Debug)]
 enum Error {
@@ -52,7 +52,7 @@ fn run_command(command: &mut Command) -> Result<String, Error> {
 	}
 }
 
-fn get_zpool_status() -> Result<bool, Error> {
+fn get_zpool_error() -> Result<bool, Error> {
 	let stdout = run_command(
 		Command::new("zpool")
 			.arg("status")
@@ -124,22 +124,33 @@ fn get_backups_count() -> Result<(u8, u8), Error> {
 	Ok((read_count("dailies")?, read_count("weeklies")?))
 }
 
-fn get_job_flags() -> Result<JobFlags, Error> {
-	let mut result = JobFlags::IDLE;
+fn get_job_flags() -> Result<JobStatusFlags, Error> {
+	let mut result = JobStatusFlags::IDLE;
+
+	match get_zpool_error() { // handle zpool error by indicating it on the bansheelong
+		Err(_) => {
+			result |= JobStatusFlags::ERROR;
+		},
+		Ok(status) => {
+			if status {
+				result |= JobStatusFlags::ERROR;
+			}
+		},
+	};
 
 	// check daily backup
 	if Path::new("/home/me/bansheestorage/writing-daily-backup").exists() {
-		result |= JobFlags::DOWNLOADING_DAILY;
+		result |= JobStatusFlags::DOWNLOADING_DAILY;
 	}
 
 	// check weekly backup
 	if Path::new("/home/me/bansheestorage/writing-weekly-backup").exists() {
-		result |= JobFlags::CREATING_WEEKLY;
+		result |= JobStatusFlags::CREATING_WEEKLY;
 	}
 
 	// check monthly backup
 	if Path::new("/home/me/bansheestorage/writing-monthly-backup").exists() {
-		result |= JobFlags::CREATING_MONTHLY;
+		result |= JobStatusFlags::CREATING_MONTHLY;
 	}
 
 	Ok(result)
@@ -249,21 +260,6 @@ async fn main() {
 				sleep(Duration::from_secs(sleep_time)).await;
 				sleep_time = 30;
 
-				// get zpool status
-				let has_zpool_error = match get_zpool_status() {
-					Err(error) => {
-						eprintln!("zpool status error: {:?}", error);
-						1
-					},
-					Ok(value) => {
-						if value {
-							1
-						} else {
-							0
-						}
-					}
-				};
-
 				// get server job status
 				let job_status = match get_job_flags() {
 					Err(error) => {
@@ -293,7 +289,7 @@ async fn main() {
 		
 				// update message
 				let mut locked_message = message.lock().await;
-				*locked_message = format!("{} {} {} {} {} {}\n", has_zpool_error, job_status, used_size, total_size, dailies, weeklies);
+				*locked_message = format!("{} {} {} {} {}\n", job_status, used_size, total_size, dailies, weeklies);
 
 				// send to all sockets
 				let locked = sockets_reference.lock().await;

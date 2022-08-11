@@ -55,11 +55,12 @@ pub fn get_storage_host() -> String {
 }
 
 bitflags! {
-	pub struct JobFlags: u32 {
+	pub struct JobStatusFlags: u64 {
 		const IDLE              = 0b00000000;
-		const DOWNLOADING_DAILY = 0b00000001;
-		const CREATING_WEEKLY   = 0b00000010;
-		const CREATING_MONTHLY  = 0b00000100;
-		const SYNCING_GITHUB    = 0b00001000;
+		const ERROR             = 0b00000001;
+		const DOWNLOADING_DAILY = 0b00000010;
+		const CREATING_WEEKLY   = 0b00000100;
+		const CREATING_MONTHLY  = 0b00001000;
+		const SYNCING_GITHUB    = 0b00010000;
 	}
 }
