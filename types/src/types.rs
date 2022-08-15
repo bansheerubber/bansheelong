@@ -217,7 +217,7 @@ pub struct IO {
 	pub count: i32,
 	pub dirty: Dirty,
 
-	pub write_log: Vec<(Item, Option<Date>)>
+	pub write_log: Vec<(Item, Option<Date>)>,
 }
 
 impl Default for IO {
@@ -230,6 +230,55 @@ impl Default for IO {
 			count: 0,
 			dirty: Dirty::Read,
 			write_log: Vec::new(),
+		}
+	}
+}
+
+#[derive(Clone, Debug)]
+pub struct Ingredient {
+	pub name: String,
+}
+
+impl Ingredient {
+	pub fn new(name: String) -> Self {
+		Ingredient {
+			name,
+		}
+	}
+}
+
+#[derive(Clone, Debug)]
+pub struct Recipe {
+	pub ingredients: Vec<Ingredient>,
+	pub name: String,
+}
+
+#[derive(Clone, Debug)]
+pub struct PlannedIngredient {
+	pub acquired: bool,
+	pub ingredient: Ingredient,
+}
+
+#[derive(Clone, Debug)]
+pub struct PlannedMeal {
+	pub date: Date,
+	pub ingredients: Vec<PlannedIngredient>,
+	pub recipe: Recipe,
+}
+
+impl PlannedMeal {
+	pub fn new(date: Date, recipe: Recipe) -> Self {
+		PlannedMeal {
+			date,
+			ingredients: recipe.ingredients.iter()
+				.map(|x| {
+					PlannedIngredient {
+						acquired: false,
+						ingredient: x.clone(),
+					}
+				})
+				.collect(),
+			recipe,
 		}
 	}
 }
