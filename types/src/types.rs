@@ -180,7 +180,7 @@ impl PartialOrd for Day {
 
 #[serde_as]
 #[derive(Clone, Debug, Default, Deserialize, Serialize)]
-pub struct Database {
+pub struct TodosDatabase {
 	#[serde_as(as = "Vec<(_, _)>")]
 	pub mapping: BTreeMap<Option<Date>, Day>,
 }
@@ -212,29 +212,39 @@ pub struct Resource {
 
 #[derive(Clone, Debug)]
 pub struct IO {
-	pub database: Database,
-	pub resource: Resource,
 	pub count: i32,
 	pub dirty: Dirty,
+	pub meals_database: MealsDatabase,
+	pub resource: Resource,
+	pub todos_database: TodosDatabase,
 
-	pub write_log: Vec<(Item, Option<Date>)>,
+	pub todos_write_log: Vec<(Item, Option<Date>)>,
 }
 
 impl Default for IO {
 	fn default() -> Self {
 		IO {
-			database: Database::default(),
+			count: 0,
+			dirty: Dirty::Read,
+			meals_database: MealsDatabase::default(),
 			resource: Resource {
 				reference: String::from("todos")
 			},
-			count: 0,
-			dirty: Dirty::Read,
-			write_log: Vec::new(),
+			todos_database: TodosDatabase::default(),
+			todos_write_log: Vec::new(),
 		}
 	}
 }
 
-#[derive(Clone, Debug)]
+#[serde_as]
+#[derive(Clone, Debug, Default, Deserialize, Serialize)]
+pub struct MealsDatabase {
+	pub recipes: Vec<Recipe>,
+	#[serde_as(as = "Vec<(_, _)>")]
+	pub planned_meal_mapping: BTreeMap<Date, PlannedMeal>,
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Ingredient {
 	pub name: String,
 }
@@ -247,19 +257,19 @@ impl Ingredient {
 	}
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct Recipe {
 	pub ingredients: Vec<Ingredient>,
 	pub name: String,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PlannedIngredient {
 	pub acquired: bool,
 	pub ingredient: Ingredient,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct PlannedMeal {
 	pub date: Date,
 	pub ingredients: Vec<PlannedIngredient>,

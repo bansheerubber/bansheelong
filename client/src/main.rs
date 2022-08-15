@@ -15,7 +15,7 @@ use iced::alignment;
 use iced::executor;
 use iced::{ Application, Column, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
-use bansheelong_types::{ Database, Error, IO, Resource, get_todos_host, get_todos_port, read_database };
+use bansheelong_types::{ Error, IO, MealsDatabase, Resource, TodosDatabase, get_todos_host, get_todos_port, read_database };
 
 struct Window {
 	flavor: flavor::View,
@@ -28,7 +28,7 @@ struct Window {
 
 #[derive(Debug)]
 enum Message {
-	FetchedTodos(Result<Database, Error>),
+	FetchedTodos(Result<(TodosDatabase, MealsDatabase), Error>),
 	FlavorMessage(flavor::Message),
 	MenuMessage(menu::Message),
 	Noop,
@@ -121,9 +121,11 @@ impl Application for Window {
 						}),
 					])
 				} else {
+					let result = result.unwrap();
 					self.io = Arc::new(IO { // TODO clean this up
-						database: result.unwrap(),
+						meals_database: result.1,
 						resource: self.io.resource.clone(),
+						todos_database: result.0,
 						..IO::default()
 					});
 

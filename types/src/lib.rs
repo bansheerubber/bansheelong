@@ -4,7 +4,6 @@ use bitflags::bitflags;
 pub(crate) mod io;
 pub(crate) mod types;
 
-pub use types::Database;
 pub use types::Date;
 pub use types::Day;
 pub use types::Dirty;
@@ -13,11 +12,13 @@ pub use types::ErrorTag;
 pub use types::IO;
 pub use types::Ingredient;
 pub use types::Item;
+pub use types::MealsDatabase;
 pub use types::PlannedIngredient;
 pub use types::PlannedMeal;
 pub use types::Recipe;
 pub use types::Resource;
 pub use types::Time;
+pub use types::TodosDatabase;
 pub use types::Weekday;
 
 pub use io::read_database;

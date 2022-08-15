@@ -20,16 +20,21 @@ async fn main() {
 	loop {
 		match rx.recv() {
 			Ok(RawEvent{ path: Some(path), op: Ok(op), cookie: _ }) => {
+				println!("{}", file);
 				if path.to_str() == Some(file) && op == Op::CLOSE_WRITE {
 					if let Err(error)
 						= io.parse_from_human_readable(String::from(file))
 					{
-						println!("{:?}", error);
+						eprintln!("{:?}", error);
 						continue;
 					}
 
-					if let Err(error) = write_database(&io.database, None, io.resource.clone()).await {
-						println!("{:?}", error);
+					if let Err(error) = write_database(
+						(&io.todos_database, &io.meals_database),
+						None,
+						io.resource.clone()
+					).await {
+						eprintln!("{:?}", error);
 					}
 				}
 			},

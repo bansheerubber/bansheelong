@@ -9,7 +9,7 @@ use tokio::sync::{ Mutex, mpsc };
 use tokio;
 
 use crate::types;
-use bansheelong_types::{ Date, Database, Dirty, IO, Item, get_todos_port, get_todos_secret };
+use bansheelong_types::{ Date, Dirty, IO, Item, MealsDatabase, TodosDatabase, get_todos_port, get_todos_secret };
 
 // TODO move this under warp framework
 async fn service(
@@ -32,7 +32,7 @@ async fn service(
 	}
 
 	match (parts.method, parts.uri.path()) {
-		(Method::GET, "/get-todos/") | (Method::GET, "/get-todos") => {
+		(Method::GET, "/get-database/") | (Method::GET, "/get-database") => {
 			let mut guard = io.lock().await;
 			let result = guard.read_database().await;
 			if let Err(error) = result {
@@ -79,7 +79,7 @@ async fn service(
 					let mut guard = io.lock().await;
 
 					for (item, date) in items { // add items to database
-						let result = guard.add_to_database(item, date);
+						let result = guard.add_to_todos_database(item, date);
 						if let Err(error) = result {
 							eprintln!(" -> Error on request, {:?}", error);
 							return Ok(
@@ -124,7 +124,7 @@ async fn service(
 					.unwrap()
 			)
 		},
-		(Method::POST, "/set-todos/") | (Method::POST, "/set-todos") => {
+		(Method::POST, "/set-database/") | (Method::POST, "/set-todos") => {
 			let json = match String::from_utf8(
 				body.try_fold(Vec::new(), |mut data, chunk| async move {
 					data.extend_from_slice(&chunk);
@@ -144,10 +144,11 @@ async fn service(
 				}
 			};
 
-			match serde_json::from_str::<Database>(&json) { // parse JSON
-				Ok(database) => {
+			match serde_json::from_str::<(TodosDatabase, MealsDatabase)>(&json) { // parse JSON
+				Ok(databases) => {
 					let mut guard = io.lock().await;
-					guard.database = database;
+					guard.meals_database = databases.1;
+					guard.todos_database = databases.0;
 					guard.dirty = Dirty::Write;
 					if let Err(error) = guard.sync().await {
 						eprintln!(" -> Error on request, {:?}", error);

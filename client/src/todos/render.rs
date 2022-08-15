@@ -177,7 +177,7 @@ impl View {
 			item.time.is_some() && item.time.unwrap().day.is_some()
 		};
 
-		for (_, day) in self.todos.as_ref().unwrap().database.mapping.iter() {
+		for (_, day) in self.todos.as_ref().unwrap().todos_database.mapping.iter() {
 			// find the last valid index in the list
 			let mut last_index = -1;
 			let mut index = 0;

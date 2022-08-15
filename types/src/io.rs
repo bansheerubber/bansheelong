@@ -7,14 +7,14 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{ Serialize, Deserialize };
 
-use crate::{ Database, Date, Day, Dirty, Error, ErrorTag, IO, Item, Resource, Time, Weekday };
+use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Item, MealsDatabase, Resource, Time, TodosDatabase, Weekday };
 
 use crate::get_todos_secret;
 
-pub async fn read_database(resource: Resource) -> Result<Database, Error> {
+pub async fn read_database(resource: Resource) -> Result<(TodosDatabase, MealsDatabase), Error> {
 	if resource.reference.contains("http") {
 		let client = reqwest::Client::new();
-		let response_result = client.get(format!("{}/get-todos", resource.reference))
+		let response_result = client.get(format!("{}/get-database", resource.reference))
 			.header(reqwest::header::CONTENT_TYPE, "application/json")
 			.header(reqwest::header::ACCEPT, "application/json")
 			.header("Secret", get_todos_secret())
@@ -29,7 +29,7 @@ pub async fn read_database(resource: Resource) -> Result<Database, Error> {
 		}
 		let response = response_result.unwrap();
 
-		match response.json::<Database>().await {
+		match response.json::<(TodosDatabase, MealsDatabase)>().await {
 			Ok(result) => Ok(result),
 			Err(error) => Err(Error {
 				message: format!("Could not deserialize JSON: {:?}", error),
@@ -70,7 +70,7 @@ pub async fn read_database(resource: Resource) -> Result<Database, Error> {
 			}),
 		};
 
-		match Database::deserialize(root) {
+		match <(TodosDatabase, MealsDatabase)>::deserialize(root) {
 			Ok(database) => Ok(database),
 			Err(error) => Err(Error {
 				message: format!("{:?}", error),
@@ -81,7 +81,7 @@ pub async fn read_database(resource: Resource) -> Result<Database, Error> {
 }
 
 pub async fn write_database(
-	database: &Database,
+	databases: (&TodosDatabase, &MealsDatabase),
 	write_log: Option<&Vec<(Item, Option<Date>)>>,
 	resource: Resource
 ) -> Result<(), Error> {
@@ -94,9 +94,9 @@ pub async fn write_database(
 				.send()
 				.await
 		} else { // if no write log is specified, write the whole database
-			client.post(format!("{}/set-todos", resource.reference))
+			client.post(format!("{}/set-database", resource.reference))
 				.header("Secret", get_todos_secret())
-				.body(serde_json::to_string(&database).unwrap())
+				.body(serde_json::to_string(&databases).unwrap())
 				.send()
 				.await
 		};
@@ -111,7 +111,7 @@ pub async fn write_database(
 		Ok(())
 	} else {
 		let mut serializer = flexbuffers::FlexbufferSerializer::new();
-		if let Err(error) = database.serialize(&mut serializer) {
+		if let Err(error) = databases.serialize(&mut serializer) {
 			return Err(Error {
 				message: format!("{:?}", error),
 				..Error::default()
@@ -130,47 +130,48 @@ pub async fn write_database(
 }
 
 impl IO {
-	pub async fn read_database(&mut self) -> Result<&Database, Error> {
+	pub async fn read_database(&mut self) -> Result<(&TodosDatabase, &MealsDatabase), Error> {
 		match read_database(self.resource.clone()).await {
 			Ok(database) => {
-				self.database = database;
+				self.todos_database = database.0;
+				self.meals_database = database.1;
 				self.dirty = Dirty::None;
-				Ok(&self.database)
+				Ok((&self.todos_database, &self.meals_database))
 			},
 			Err(error) => {
 				if error.tag == ErrorTag::CouldNotFindFile {
 					self.write_database().await?;
-					return Ok(&self.database);
+					return Ok((&self.todos_database, &self.meals_database));
 				}
 				Err(error)
 			},
 		}
 	}
 
-	pub fn add_to_database(&mut self, item: Item, date: Option<Date>) -> Result<&Database, Error> {
-		self.write_log.push((item.clone(), date.clone()));
+	pub fn add_to_todos_database(&mut self, item: Item, date: Option<Date>) -> Result<&TodosDatabase, Error> {
+		self.todos_write_log.push((item.clone(), date.clone()));
 		self.dirty = Dirty::Write;
-		if self.database.mapping.contains_key(&date) {
-			self.database.mapping.get_mut(&date).unwrap().items.push(item);
+		if self.todos_database.mapping.contains_key(&date) {
+			self.todos_database.mapping.get_mut(&date).unwrap().items.push(item);
 		} else {
-			self.database.mapping.insert(date, Day {
+			self.todos_database.mapping.insert(date, Day {
 				items: vec![item],
 				date,
 			});
 		}
 
-		Ok(&self.database)
+		Ok(&self.todos_database)
 	}
 
-	pub async fn add_to_database_sync(&mut self, item: Item, date: Option<Date>) -> Result<&Database, Error> {
+	pub async fn add_to_todos_database_sync(&mut self, item: Item, date: Option<Date>) -> Result<&TodosDatabase, Error> {
 		self.sync().await?;
 		
-		self.write_log.push((item.clone(), date.clone()));
+		self.todos_write_log.push((item.clone(), date.clone()));
 		self.dirty = Dirty::Write;
-		if self.database.mapping.contains_key(&date) {
-			self.database.mapping.get_mut(&date).unwrap().items.push(item);
+		if self.todos_database.mapping.contains_key(&date) {
+			self.todos_database.mapping.get_mut(&date).unwrap().items.push(item);
 		} else {
-			self.database.mapping.insert(date, Day {
+			self.todos_database.mapping.insert(date, Day {
 				items: vec![item],
 				date,
 			});
@@ -178,13 +179,17 @@ impl IO {
 
 		self.sync().await?;
 
-		Ok(&self.database)
+		Ok(&self.todos_database)
 	}
 
 	pub async fn write_database(&mut self) -> Result<(), Error> {
-		match write_database(&self.database, Some(&self.write_log), self.resource.clone()).await {
+		match write_database(
+			(&self.todos_database, &self.meals_database),
+			Some(&self.todos_write_log),
+			self.resource.clone()
+		).await {
 			Ok(_) => {
-				self.write_log.clear();
+				self.todos_write_log.clear();
 				self.dirty = Dirty::None;
 				Ok(())
 			},
@@ -207,7 +212,7 @@ impl IO {
 	}
 
 	pub fn parse_from_human_readable(&mut self, file: String) -> Result<(), Error> {
-		self.database = Database::default();
+		self.todos_database = TodosDatabase::default();
 		
 		let string = match std::fs::read_to_string(file) {
 			Ok(string) => string,
@@ -253,7 +258,9 @@ impl IO {
 					time,
 				};
 
-				self.add_to_database(item, date)?;
+				self.add_to_todos_database(item, date)?;
+
+				println!("{:?}", self);
 			}
 		}
 
@@ -443,7 +450,7 @@ mod tests {
 
 		for date in dates {
 			for _ in 0..100 {
-				if let Err(error) = io.add_to_database(
+				if let Err(error) = io.add_to_todos_database(
 					Item {
 						description: String::from(""),
 						time: Some(Time {
@@ -460,7 +467,7 @@ mod tests {
 				}
 			}
 
-			if let Err(error) = io.add_to_database(
+			if let Err(error) = io.add_to_todos_database(
 				Item {
 					description: String::from(""),
 					time: None,
@@ -479,7 +486,7 @@ mod tests {
 		let io = setup();
 		
 		let mut last_date = None;
-		for (_, day) in io.database.mapping.iter() {
+		for (_, day) in io.todos_database.mapping.iter() {
 			println!("{:?} >= {:?}", day.date, last_date);
 			assert!(day.date >= last_date);
 			last_date = day.date;
