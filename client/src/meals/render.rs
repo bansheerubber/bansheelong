@@ -42,11 +42,17 @@ static DAY_COUNT: [i8; 12] = [
 	31, // december
 ];
 
+fn get_current_month() -> usize {
+	Local::now().month() as usize - 1
+}
+
 #[derive(Debug)]
 struct PlannerInfo {
+	month_index: usize,
 	recipe_button_states: Vec<button::State>,
 	recipes_position: f32,
 	recipes_state: scrollable::State,
+	week_button_states: Vec<button::State>,
 }
 
 #[derive(Debug)]
@@ -80,6 +86,7 @@ pub enum Message {
 	PlannedIngredientSelect(usize),
 	PlannedMealsScroll(f32),
 	PlannedMealSelect(usize),
+	PlannerWeekSelect(usize),
 	RecipesScroll(f32),
 	SwitchToPlanner,
 	Tick,
@@ -105,7 +112,7 @@ impl View {
 		let mut recipes_state = scrollable::State::new();
 		recipes_state.snap_to_absolute(scroll_position);
 
-		View {
+		let mut view = View {
 			button_states: [button::State::new(); BUTTON_COUNT as usize],
 			database: None,
 			last_interaction: None,
@@ -141,12 +148,18 @@ impl View {
 				switch_planner_state: button::State::new(),
 			},
 			planner: PlannerInfo {
+				month_index: 0,
 				recipe_button_states: Vec::new(),
 				recipes_position: scroll_position,
-				recipes_state
+				recipes_state,
+				week_button_states: Vec::new(),
 			},
 			showing_planner: false,
-		}
+		};
+
+		view.select_month(get_current_month());
+
+		return view;
 	}
 
 	fn select_planned_meal(&mut self, meal_index: usize) {
@@ -155,6 +168,23 @@ impl View {
 		self.planned.ingredient_button_states.clear();
 		for _ in 0..self.planned.meals[self.planned.meal_index.unwrap()].ingredients.len() {
 			self.planned.ingredient_button_states.push(button::State::new());
+		}
+	}
+
+	fn select_month(&mut self, month_index: usize) {
+		self.planner.month_index = month_index;
+
+		let time = Local::now();
+		let current_month = time.month();
+		let current_year = time.year();
+
+		let start_of_month = NaiveDate::from_ymd(current_year, current_month, 1);
+		let end_of_month = NaiveDate::from_ymd(current_year, current_month, DAY_COUNT[current_month as usize - 1] as u32);
+		let weeks = end_of_month.iso_week().week0() - start_of_month.iso_week().week0() + 1;
+
+		self.planner.week_button_states.clear();
+		for _ in 0..weeks {
+			self.planner.week_button_states.push(button::State::new());
 		}
 	}
 
@@ -180,7 +210,7 @@ impl View {
 
 		let start_of_month = NaiveDate::from_ymd(current_year, current_month, 1);
 		let end_of_month = NaiveDate::from_ymd(current_year, current_month, DAY_COUNT[current_month as usize - 1] as u32);
-		let weeks = end_of_month.iso_week().week0() - start_of_month.iso_week().week0() + 1;
+		let weeks = (end_of_month.iso_week().week0() - start_of_month.iso_week().week0() + 1) as usize;
 
 		// day picker
 		let mut month = Column::new()
@@ -206,32 +236,44 @@ impl View {
 			chrono::Weekday::Sat => -5,
 		};
 
-		for _ in 0..weeks {
-			let mut week = Row::new();
-			for _ in 0..7 {
-				week = week.push(
-					Container::new(
-						if day >= 1 && day <= DAY_COUNT[current_month as usize - 1] {
-							Text::new(day.to_string())
-								.size(18)
-						} else {
-							Text::new("")
-						}
-					)
-						.padding([0, 0, 0, 3])
-						.width(size)
-						.height(size)
-						.style(style::MealsDayContainer)
-				)
-				.push(Space::new(spacing, Length::Units(0)));
+		month = self.planner.week_button_states.iter_mut()
+			.enumerate()
+			.fold(
+				month,
+				|month, (week_index, state)| {
+					let mut week = Row::new();
+					for _ in 0..7 {
+						week = week.push(
+							Container::new(
+								if day >= 1 && day <= DAY_COUNT[current_month as usize - 1] {
+									Text::new(day.to_string())
+										.size(18)
+								} else {
+									Text::new("")
+								}
+							)
+								.padding([0, 0, 0, 3])
+								.width(size)
+								.height(size)
+								.style(style::MealsDayContainer)
+						)
+						.push(Space::new(spacing, Length::Units(0)));
 
-				day += 1;
-			}
+						day += 1;
+					}
 
-			month = month
-				.push(week)
-				.push(Space::new(Length::Units(0), spacing));
-		}
+					month.push(
+							Button::new(
+								state,
+								week
+							)
+								.on_press(Message::PlannerWeekSelect(week_index))
+								.style(style::DarkButton)
+								.padding(0)
+						)
+						.push(Space::new(Length::Units(0), spacing))
+				}
+			);
 
 		month = month.push(Space::new(Length::Units(0), Length::Units(10)));
 
@@ -288,6 +330,17 @@ impl View {
 								.push(
 									Text::new(x.name.clone())
 										.width(Length::Fill)
+								)
+								.push(
+									Text::new(format!(
+										"{} ingredient{}",
+										x.ingredients.len(),
+										if x.ingredients.len() != 1 {
+											"s"
+										} else {
+											""
+										}
+									))
 								)
 						)
 							.width(Length::Fill)
@@ -544,6 +597,11 @@ impl View {
 			Message::PlannedMealSelect(index) => {
 				self.select_planned_meal(index);
 				self.planned.ingredients_state.snap_to_absolute(0.0);
+				Command::none()
+			},
+			Message::PlannerWeekSelect(index) => {
+				println!("{}", index);
+				
 				Command::none()
 			},
 			Message::RecipesScroll(scroll) => {
