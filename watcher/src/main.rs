@@ -20,7 +20,6 @@ async fn main() {
 	loop {
 		match rx.recv() {
 			Ok(RawEvent{ path: Some(path), op: Ok(op), cookie: _ }) => {
-				println!("{}", file);
 				if path.to_str() == Some(file) && op == Op::CLOSE_WRITE {
 					if let Err(error)
 						= io.parse_from_human_readable(String::from(file))

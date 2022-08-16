@@ -166,7 +166,6 @@ version = "0.1.0"
 dependencies = [
  "bansheelong_types",
  "futures",
- "hyper",
  "lazy_static",
  "serde",
  "serde_json",

@@ -94,7 +94,7 @@ pub async fn write_database(
 				.send()
 				.await
 		} else { // if no write log is specified, write the whole database
-			client.post(format!("{}/set-database", resource.reference))
+			client.post(format!("{}/set-database/", resource.reference))
 				.header("Secret", get_todos_secret())
 				.body(serde_json::to_string(&databases).unwrap())
 				.send()
@@ -104,6 +104,13 @@ pub async fn write_database(
 		if let Err(error) = response_result {
 			return Err(Error {
 				message: format!("{:?}", error),
+				..Error::default()
+			});
+		}
+
+		if response_result.as_ref().unwrap().status() != reqwest::StatusCode::OK {
+			return Err(Error {
+				message: response_result.unwrap().text().await.unwrap().clone(),
 				..Error::default()
 			});
 		}
@@ -259,8 +266,6 @@ impl IO {
 				};
 
 				self.add_to_todos_database(item, date)?;
-
-				println!("{:?}", self);
 			}
 		}
 
@@ -351,7 +356,7 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 					number
 				},
 				Err(_) => {
-					println!("{:?}", captures.get(7).unwrap().as_str());
+					eprintln!("{:?}", captures.get(7).unwrap().as_str());
 					return Err(TimeError::BadEndMinutes);
 				}
 			}

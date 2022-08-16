@@ -6,7 +6,6 @@ edition = "2021"
 [dependencies]
 bansheelong_types = { path = "../types" }
 futures = "0.3.21"
-hyper = { features = ["full"], version = "0.14.20" }
 lazy_static = "1.4.0"
 url = "2.2.2"
 serde = { features = ["derive"], version = "1.0.140" }

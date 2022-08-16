@@ -20,9 +20,7 @@ async fn main() {
 	let http_host: Pin<Box<dyn Future<Output = ()>>> = Box::pin(async {
 		let io = Arc::new(Mutex::new(IO::default()));
 		println!("Running HTTP server");
-		if let Err(error) = http::host(tx.clone(), io.clone()).await {
-			panic!("{:?}", error);
-		}
+		http::host(tx.clone(), io.clone()).await;
 	});
 
 	let ws_host = Box::pin(async {
