@@ -15,7 +15,7 @@ use iced::alignment;
 use iced::executor;
 use iced::{ Application, Column, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
-use bansheelong_types::{ Date, Error, IO, MealsDatabase, Recipe, Resource, TodosDatabase, get_todos_host, get_todos_port, read_database, write_database };
+use bansheelong_types::{ Error, IO, MealsDatabase, PlannedMeal, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
 
 struct Window {
 	flavor: flavor::View,
@@ -28,7 +28,7 @@ struct Window {
 
 #[derive(Debug)]
 enum Message {
-	AddPlannedMeal(Recipe, Date),
+	AddPlannedMeal(PlannedMeal),
 	FetchedTodos(Result<(TodosDatabase, MealsDatabase), Error>),
 	FlavorMessage(flavor::Message),
 	MenuMessage(menu::Message),
@@ -105,26 +105,24 @@ impl Application for Window {
 
 	fn update(&mut self, _message: Message) -> Command<Self::Message> {
 		match _message {
-			Self::Message::AddPlannedMeal(recipe, date) => {
-				let mut io = self.io.as_ref().clone();
-				if let Err(error) = io.add_planned_meal(recipe.clone(), date) {
-					eprintln!("{:?}", error);
-				}
+			Self::Message::AddPlannedMeal(meal) => {
+				let log = self.io.as_ref().add_planned_meal_log(meal.clone());
 
-				self.io = Arc::new(io);
-
-				let io = self.io.clone();
+				let resource = self.io.resource.clone();
 				Command::batch([
 					self.menu.update(menu::Message::MealsMessage(
-						meals::Message::APIAddPlannedMeal(recipe, date)
+						meals::Message::APIAddPlannedMeal(meal)
 					)).map(move |message| {
 						self::Message::MenuMessage(message)
 					}),
 					Command::perform(async move {
-						let io = io.clone();
-						let todos_database = &io.todos_database;
-						let meals_database = &io.meals_database;
-						if let Err(error) = write_database((todos_database, meals_database), None, io.resource.clone()).await {
+						if let Err(error) = write_database(
+							WriteDatabase::Partial {
+								planned_meals_write_log: &log,
+								todos_write_log: &Vec::new(),
+							},
+							resource
+						).await {
 							eprintln!("{:?}", error);
 						}
 					}, move |()| {
@@ -245,8 +243,8 @@ impl Application for Window {
 				)
 				.push(
 					self.menu.view().map(move |message| {
-						if let menu::Message::MealsMessage(meals::Message::APIAddPlannedMeal(recipe, date)) = &message {
-							Self::Message::AddPlannedMeal(recipe.clone(), date.clone())
+						if let menu::Message::MealsMessage(meals::Message::APIAddPlannedMeal(meal)) = &message {
+							Self::Message::AddPlannedMeal(meal.clone())
 						} else {
 							Self::Message::MenuMessage(message)
 						}

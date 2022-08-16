@@ -210,6 +210,9 @@ pub struct Resource {
 	pub reference: String,
 }
 
+pub type PlannedMealsWriteLog = Vec<PlannedMeal>;
+pub type TodosWriteLog = Vec<(Item, Option<Date>)>;
+
 #[derive(Clone, Debug)]
 pub struct IO {
 	pub count: i32,
@@ -218,7 +221,8 @@ pub struct IO {
 	pub resource: Resource,
 	pub todos_database: TodosDatabase,
 
-	pub todos_write_log: Vec<(Item, Option<Date>)>,
+	pub planned_meals_write_log: PlannedMealsWriteLog,
+	pub todos_write_log: TodosWriteLog,
 }
 
 impl Default for IO {
@@ -227,6 +231,7 @@ impl Default for IO {
 			count: 0,
 			dirty: Dirty::Read,
 			meals_database: MealsDatabase::default(),
+			planned_meals_write_log: Vec::new(),
 			resource: Resource {
 				reference: String::from("todos")
 			},
@@ -291,4 +296,15 @@ impl PlannedMeal {
 			recipe,
 		}
 	}
+}
+
+pub enum WriteDatabase<'a> {
+	Full {
+		meals: &'a MealsDatabase,
+		todos: &'a TodosDatabase,
+	},
+	Partial {
+		planned_meals_write_log: &'a PlannedMealsWriteLog,
+		todos_write_log: &'a TodosWriteLog,
+	},
 }

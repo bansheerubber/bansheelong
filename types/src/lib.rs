@@ -15,11 +15,13 @@ pub use types::Item;
 pub use types::MealsDatabase;
 pub use types::PlannedIngredient;
 pub use types::PlannedMeal;
+pub use types::PlannedMealsWriteLog;
 pub use types::Recipe;
 pub use types::Resource;
 pub use types::Time;
 pub use types::TodosDatabase;
 pub use types::Weekday;
+pub use types::WriteDatabase;
 
 pub use io::read_database;
 pub use io::write_database;

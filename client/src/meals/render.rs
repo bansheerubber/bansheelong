@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
-use bansheelong_types::{ Date, IO, Recipe };
+use bansheelong_types::{ Date, IO, PlannedMeal };
 use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
@@ -267,7 +267,7 @@ fn get_planner_right_panel<'a, I>(
 								.style(style::TodoMenuButton)
 								.width(Length::Fill)
 								.height(Length::Units(BUTTON_HEIGHT))
-								.on_press(Message::APIAddPlannedMeal(selected_recipe.clone(), selected_date.unwrap()))
+								.on_press(Message::APIAddPlannedMeal(PlannedMeal::new(selected_date.unwrap(), selected_recipe.clone())))
 						);
 				}
 
@@ -339,7 +339,7 @@ pub struct View {
 
 #[derive(Debug, Clone)]
 pub enum Message {
-	APIAddPlannedMeal(Recipe, Date),
+	APIAddPlannedMeal(PlannedMeal),
 	MenuChange(Menu),
 	PlannedIngredientsScroll,
 	PlannedIngredientSelect(usize),
@@ -777,7 +777,7 @@ impl View {
 
 	pub fn update(&mut self, message: Message) -> Command<Message> {
 		match message {
-			Message::APIAddPlannedMeal(_, _) => {
+			Message::APIAddPlannedMeal(_) => {
 				self.transition_planner_state(PlannerState::WeekSelect);
 				Command::none()
 			},

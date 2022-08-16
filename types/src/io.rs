@@ -7,14 +7,14 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{ Serialize, Deserialize };
 
-use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Ingredient, Item, MealsDatabase, PlannedMeal, Recipe, Resource, Time, TodosDatabase, Weekday };
+use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Ingredient, Item, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Recipe, Resource, Time, TodosDatabase, Weekday, WriteDatabase };
 
 use crate::get_todos_secret;
 
 pub async fn read_database(resource: Resource) -> Result<(TodosDatabase, MealsDatabase), Error> {
 	if resource.reference.contains("http") {
 		let client = reqwest::Client::new();
-		let response_result = client.get(format!("{}/get-database", resource.reference))
+		let response_result = client.get(format!("{}/get-database/", resource.reference))
 			.header(reqwest::header::CONTENT_TYPE, "application/json")
 			.header(reqwest::header::ACCEPT, "application/json")
 			.header("Secret", get_todos_secret())
@@ -81,43 +81,114 @@ pub async fn read_database(resource: Resource) -> Result<(TodosDatabase, MealsDa
 }
 
 pub async fn write_database<'a>(
-	databases: (&'a TodosDatabase, &'a MealsDatabase),
-	write_log: Option<&'a Vec<(Item, Option<Date>)>>,
+	data: WriteDatabase<'a>,
 	resource: Resource
 ) -> Result<(), Error> {
 	if resource.reference.contains("http") {
 		let client = reqwest::Client::new();
-		let response_result = if let Some(log) = write_log {
-			client.post(format!("{}/add-todos", resource.reference))
-				.header("Secret", get_todos_secret())
-				.body(serde_json::to_string(&log).unwrap())
-				.send()
-				.await
-		} else { // if no write log is specified, write the whole database
-			client.post(format!("{}/set-database/", resource.reference))
-				.header("Secret", get_todos_secret())
-				.body(serde_json::to_string(&databases).unwrap())
-				.send()
-				.await
+		let response_result = match data {
+    	WriteDatabase::Full {
+				meals,
+				todos,
+			} => {
+				Some(
+					client.post(format!("{}/set-database/", resource.reference))
+						.header("Secret", get_todos_secret())
+						.body(serde_json::to_string(&(todos, meals)).unwrap())
+						.send()
+						.await
+				)
+			},
+    	WriteDatabase::Partial {
+				planned_meals_write_log,
+				todos_write_log
+			} => {
+				let mut result = None;
+				
+				if planned_meals_write_log.len() > 0 {
+					result = Some(
+						client.post(format!("{}/add-planned-meals/", resource.reference))
+							.header("Secret", get_todos_secret())
+							.body(serde_json::to_string(planned_meals_write_log).unwrap())
+							.send()
+							.await
+					);
+				}
+				
+				if todos_write_log.len() > 0 {
+					result = Some(
+						client.post(format!("{}/add-todos/", resource.reference))
+							.header("Secret", get_todos_secret())
+							.body(serde_json::to_string(todos_write_log).unwrap())
+							.send()
+							.await
+					);
+				}
+
+				result
+			},
 		};
 
-		if let Err(error) = response_result {
-			return Err(Error {
-				message: format!("{:?}", error),
-				..Error::default()
-			});
+		if let Some(response_result) = response_result.as_ref() {
+			if let Err(error) = response_result {
+				return Err(Error {
+					message: format!("{:?}", error),
+					..Error::default()
+				});
+			}
 		}
 
-		if response_result.as_ref().unwrap().status() != reqwest::StatusCode::OK {
-			return Err(Error {
-				message: response_result.unwrap().text().await.unwrap().clone(),
-				..Error::default()
-			});
+		if let Some(response_result) = response_result {
+			if response_result.as_ref().unwrap().status() != reqwest::StatusCode::OK {
+				return Err(Error {
+					message: response_result.unwrap().text().await.unwrap().clone(),
+					..Error::default()
+				});
+			}
 		}
 
 		Ok(())
 	} else {
 		let mut serializer = flexbuffers::FlexbufferSerializer::new();
+
+		let mut read_databases: (Option<TodosDatabase>, Option<MealsDatabase>);
+
+		let databases = match data {
+    	WriteDatabase::Full {
+				meals,
+				todos,
+			} => {
+				(todos, meals)
+			},
+    	WriteDatabase::Partial {
+				planned_meals_write_log,
+				todos_write_log
+			} => {
+				let databases = read_database(resource.clone()).await?;
+				read_databases = (Some(databases.0), Some(databases.1));
+				
+				for planned_meal in planned_meals_write_log {
+					read_databases.1.as_mut().unwrap().planned_meal_mapping.insert(
+						planned_meal.date,
+						planned_meal.clone()
+					);
+				}
+				
+				for (item, date) in todos_write_log {
+					if read_databases.0.as_mut().unwrap().mapping.contains_key(&date) {
+						read_databases.0.as_mut().unwrap().mapping.get_mut(&date).unwrap().items.push(item.clone());
+					} else {
+						read_databases.0.as_mut().unwrap().mapping.insert(date.clone(), Day {
+							items: vec![item.clone()],
+							date: date.clone(),
+						});
+					}
+				}
+
+				(read_databases.0.as_ref().unwrap(), read_databases.1.as_ref().unwrap())
+			},
+		};
+
 		if let Err(error) = databases.serialize(&mut serializer) {
 			return Err(Error {
 				message: format!("{:?}", error),
@@ -161,10 +232,16 @@ impl IO {
 		Ok(&self.meals_database)
 	}
 
-	pub fn add_planned_meal(&mut self, recipe: Recipe, date: Date) -> Result<&MealsDatabase, Error> {
+	pub fn add_planned_meal(&mut self, meal: PlannedMeal) -> Result<&MealsDatabase, Error> {
 		self.dirty = Dirty::Write;
-		self.meals_database.planned_meal_mapping.insert(date, PlannedMeal::new(date, recipe));
+		self.meals_database.planned_meal_mapping.insert(meal.date.clone(), meal);
 		Ok(&self.meals_database)
+	}
+
+	pub fn add_planned_meal_log(&self, meal: PlannedMeal) -> PlannedMealsWriteLog {
+		let mut log = self.planned_meals_write_log.clone();
+		log.push(meal);
+		return log;
 	}
 
 	pub fn add_to_todos_database(&mut self, item: Item, date: Option<Date>) -> Result<&TodosDatabase, Error> {
@@ -182,32 +259,16 @@ impl IO {
 		Ok(&self.todos_database)
 	}
 
-	pub async fn add_to_todos_database_sync(&mut self, item: Item, date: Option<Date>) -> Result<&TodosDatabase, Error> {
-		self.sync().await?;
-		
-		self.todos_write_log.push((item.clone(), date.clone()));
-		self.dirty = Dirty::Write;
-		if self.todos_database.mapping.contains_key(&date) {
-			self.todos_database.mapping.get_mut(&date).unwrap().items.push(item);
-		} else {
-			self.todos_database.mapping.insert(date, Day {
-				items: vec![item],
-				date,
-			});
-		}
-
-		self.sync().await?;
-
-		Ok(&self.todos_database)
-	}
-
 	pub async fn write_database(&mut self) -> Result<(), Error> {
 		match write_database(
-			(&self.todos_database, &self.meals_database),
-			Some(&self.todos_write_log),
+			WriteDatabase::Full {
+				meals: &self.meals_database,
+				todos: &self.todos_database,
+			},
 			self.resource.clone()
 		).await {
 			Ok(_) => {
+				self.planned_meals_write_log.clear();
 				self.todos_write_log.clear();
 				self.dirty = Dirty::None;
 				Ok(())

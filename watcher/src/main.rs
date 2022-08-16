@@ -1,7 +1,7 @@
 use notify::{ Op, RawEvent, RecursiveMode, Watcher, raw_watcher };
 use std::sync::mpsc::channel;
 
-use bansheelong_types::{ IO, Resource, get_todos_host, get_todos_port, write_database };
+use bansheelong_types::{ IO, Resource, WriteDatabase, get_todos_host, get_todos_port, write_database };
 
 #[tokio::main]
 async fn main() {
@@ -31,8 +31,10 @@ async fn main() {
 					}
 
 					if let Err(error) = write_database(
-						(&io.todos_database, &io.meals_database),
-						None,
+						WriteDatabase::Full {
+							meals: &io.meals_database,
+							todos: &io.todos_database,
+						},
 						io.resource.clone()
 					).await {
 						eprintln!("{:?}", error);
