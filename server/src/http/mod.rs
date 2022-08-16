@@ -1,3 +1,4 @@
+pub(crate) mod add_planned_meal;
 pub(crate) mod add_todos;
 pub(crate) mod add_recipes;
 pub(crate) mod failed_secret;

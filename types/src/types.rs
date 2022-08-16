@@ -244,7 +244,7 @@ pub struct MealsDatabase {
 	pub planned_meal_mapping: BTreeMap<Date, PlannedMeal>,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Ingredient {
 	pub name: String,
 }
@@ -257,13 +257,13 @@ impl Ingredient {
 	}
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Recipe {
 	pub ingredients: Vec<Ingredient>,
 	pub name: String,
 }
 
-#[derive(Clone, Debug, Deserialize, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct PlannedIngredient {
 	pub acquired: bool,
 	pub ingredient: Ingredient,

@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{ Serialize, Deserialize };
 
-use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Ingredient, Item, MealsDatabase, Recipe, Resource, Time, TodosDatabase, Weekday };
+use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Ingredient, Item, MealsDatabase, PlannedMeal, Recipe, Resource, Time, TodosDatabase, Weekday };
 
 use crate::get_todos_secret;
 
@@ -158,6 +158,12 @@ impl IO {
 	pub fn add_recipe(&mut self, recipe: Recipe) -> Result<&MealsDatabase, Error> {
 		self.dirty = Dirty::Write;
 		self.meals_database.recipes.push(recipe);
+		Ok(&self.meals_database)
+	}
+
+	pub fn add_planned_meal(&mut self, recipe: Recipe, date: Date) -> Result<&MealsDatabase, Error> {
+		self.dirty = Dirty::Write;
+		self.meals_database.planned_meal_mapping.insert(date, PlannedMeal::new(date, recipe));
 		Ok(&self.meals_database)
 	}
 

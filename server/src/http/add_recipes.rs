@@ -49,7 +49,7 @@ async fn add_recipes_endpoint(
 
 	println!(" -> Valid request, adding recipes and syncing...");
 	if let Err(error) = tx.lock().await.send(types::WSCommand::Refresh) {
-		eprintln!("WS Could not send refresh through http -> ws channel {:?}", error);
+		eprintln!("WS could not send refresh through http -> ws channel {:?}", error);
 	}
 	
 	Ok(warp::reply::with_status(

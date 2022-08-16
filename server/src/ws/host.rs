@@ -59,7 +59,7 @@ async fn user_connected(ws: WebSocket, users: Users) {
 async fn user_disconnect(user_id: usize, users: Users) {
 	let index = users.read().await.iter().position(|u| u.id == user_id);
 	if let None = index {
-		eprintln!("WS Could not remove user {}", user_id);
+		eprintln!("WS could not remove user {}", user_id);
 	}
 
 	println!("WS User {} disconnected", user_id);
