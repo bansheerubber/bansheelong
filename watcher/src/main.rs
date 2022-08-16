@@ -5,7 +5,9 @@ use bansheelong_types::{ IO, Resource, get_todos_host, get_todos_port, write_dat
 
 #[tokio::main]
 async fn main() {
-	let file = "/home/me/Projects/bansheetodo/todo-list";
+	let todo_list = "/home/me/Projects/bansheetodo/todo-list";
+	let recipe_list = "/home/me/Projects/bansheetodo/recipe-list";
+
 	let (tx, rx) = channel();
 	let mut watcher = raw_watcher(tx).unwrap();
 	watcher.watch("/home/me/Projects/bansheetodo", RecursiveMode::Recursive).unwrap();
@@ -20,9 +22,9 @@ async fn main() {
 	loop {
 		match rx.recv() {
 			Ok(RawEvent{ path: Some(path), op: Ok(op), cookie: _ }) => {
-				if path.to_str() == Some(file) && op == Op::CLOSE_WRITE {
+				if (path.to_str() == Some(todo_list) || path.to_str() == Some(recipe_list)) && op == Op::CLOSE_WRITE {
 					if let Err(error)
-						= io.parse_from_human_readable(String::from(file))
+						= io.parse_from_human_readable(String::from(todo_list), String::from(recipe_list))
 					{
 						eprintln!("{:?}", error);
 						continue;

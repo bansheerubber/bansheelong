@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{ Serialize, Deserialize };
 
-use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Item, MealsDatabase, Resource, Time, TodosDatabase, Weekday };
+use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Ingredient, Item, MealsDatabase, Recipe, Resource, Time, TodosDatabase, Weekday };
 
 use crate::get_todos_secret;
 
@@ -155,6 +155,12 @@ impl IO {
 		}
 	}
 
+	pub fn add_recipe(&mut self, recipe: Recipe) -> Result<&MealsDatabase, Error> {
+		self.dirty = Dirty::Write;
+		self.meals_database.recipes.push(recipe);
+		Ok(&self.meals_database)
+	}
+
 	pub fn add_to_todos_database(&mut self, item: Item, date: Option<Date>) -> Result<&TodosDatabase, Error> {
 		self.todos_write_log.push((item.clone(), date.clone()));
 		self.dirty = Dirty::Write;
@@ -218,54 +224,101 @@ impl IO {
 		Ok(())
 	}
 
-	pub fn parse_from_human_readable(&mut self, file: String) -> Result<(), Error> {
+	pub fn parse_from_human_readable(&mut self, todo_list: String, recipe_list: String) -> Result<(), Error> {
+		self.meals_database = MealsDatabase::default();
 		self.todos_database = TodosDatabase::default();
-		
-		let string = match std::fs::read_to_string(file) {
-			Ok(string) => string,
-			Err(error) => return Err(Error {
-				message: format!("{:?}", error),
-				..Error::default()
-			}),
-		};
+	
+		// read the todos
+		{
+			let string = match std::fs::read_to_string(todo_list) {
+				Ok(string) => string,
+				Err(error) => return Err(Error {
+					message: format!("{:?}", error),
+					..Error::default()
+				}),
+			};
 
-		lazy_static! {
-			static ref DATE_REGEX: Regex = Regex::new(r"([0-9]+)/([0-9]+)/([0-9]+)").unwrap();
-		}
-		
-		let lines: Vec<String> = string.split("\n").map(str::to_string).collect();
-		let mut date: Option<Date> = None;
-		for mut line in lines {
-			if let Some(captures) = DATE_REGEX.captures(&line) {
-				let month = String::from(captures.get(1).unwrap().as_str());
-				let day = String::from(captures.get(2).unwrap().as_str());
-				let year = String::from(captures.get(3).unwrap().as_str());
+			lazy_static! {
+				static ref DATE_REGEX: Regex = Regex::new(r"([0-9]+)/([0-9]+)/([0-9]+)").unwrap();
+			}
+			
+			let lines: Vec<String> = string.split("\n").map(str::to_string).collect();
+			let mut date: Option<Date> = None;
+			for mut line in lines {
+				if let Some(captures) = DATE_REGEX.captures(&line) {
+					let month = String::from(captures.get(1).unwrap().as_str());
+					let day = String::from(captures.get(2).unwrap().as_str());
+					let year = String::from(captures.get(3).unwrap().as_str());
 
-				date = Some(Date {
-					day: day.parse().unwrap(),
-					month: month.parse().unwrap(),
-					year: year.parse().unwrap(),
-				});
-			} else {
-				let time = get_time_from_line(line.clone());
-
-				let time = if let Err(error) = time {
-					eprintln!("Could not parse time for item: {:?}", error);
-					None
+					date = Some(Date {
+						day: day.parse().unwrap(),
+						month: month.parse().unwrap(),
+						year: year.parse().unwrap(),
+					});
 				} else {
-					time.unwrap()
-				};
+					let time = get_time_from_line(line.clone());
 
-				if line.len() > 0 && line.chars().nth(0).unwrap() == '@' {
-					line = line.split(" ").skip(1).collect::<Vec<&str>>().join(" ");
+					let time = if let Err(error) = time {
+						eprintln!("Could not parse time for item: {:?}", error);
+						None
+					} else {
+						time.unwrap()
+					};
+
+					if line.len() > 0 && line.chars().nth(0).unwrap() == '@' {
+						line = line.split(" ").skip(1).collect::<Vec<&str>>().join(" ");
+					}
+
+					let item = Item {
+						description: line,
+						time,
+					};
+
+					self.add_to_todos_database(item, date)?;
 				}
+			}
+		}
 
-				let item = Item {
-					description: line,
-					time,
-				};
+		// read the recipes
+		{
+			let string = match std::fs::read_to_string(recipe_list) {
+				Ok(string) => string,
+				Err(error) => return Err(Error {
+					message: format!("{:?}", error),
+					..Error::default()
+				}),
+			};
 
-				self.add_to_todos_database(item, date)?;
+			lazy_static! {
+				static ref NAME_REGEX: Regex = Regex::new(r"([a-zA-Z\s]+)?:").unwrap();
+			}
+
+			let lines: Vec<String> = string.split("\n").map(str::to_string).collect();
+			let mut name = None;
+			let mut ingredients: Vec<Ingredient> = Vec::new();
+			for line in lines {
+				if let Some(captures) = NAME_REGEX.captures(&line) {
+					if name != None {
+						self.add_recipe(Recipe {
+							ingredients: ingredients.clone(),
+							name: name.unwrap(),
+						})?;
+					}
+					
+					name = Some(String::from(captures.get(1).unwrap().as_str()));
+					ingredients.clear();
+				} else if line.trim().len() > 0 {
+					ingredients.push(Ingredient {
+						name: line.split("-").skip(1).next().unwrap().trim().to_string(),
+					});
+				}
+			}
+
+			if name != None {
+				self.add_recipe(Recipe {
+					ingredients,
+					name: name.unwrap(),
+				})?;
 			}
 		}
 
