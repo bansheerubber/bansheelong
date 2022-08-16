@@ -356,6 +356,7 @@ struct PlannedInfo {
 	meal_index: Option<Date>,
 	meals_position: f32,
 	meals_state: scrollable::State,
+	remove_meal_state: button::State,
 	switch_planner_state: button::State,
 }
 
@@ -372,6 +373,7 @@ pub struct View {
 #[derive(Debug, Clone)]
 pub enum Message {
 	APIAddPlannedMeal(PlannedMeal),
+	APIRemovePlannedMeal(Date),
 	MenuChange(Menu),
 	PlannedIngredientsScroll,
 	PlannedIngredientSelect(usize),
@@ -414,6 +416,7 @@ impl View {
 				meal_index: None,
 				meals_state,
 				meals_position: scroll_position,
+				remove_meal_state: button::State::new(),
 				switch_planner_state: button::State::new(),
 			},
 			planner: PlannerInfo {
@@ -787,6 +790,23 @@ impl View {
 							.padding(0)
 					)
 				});
+
+			information_column = information_column
+				.push(
+					Space::new(Length::Units(0), Length::Units(15))
+				)
+				.push(
+					Button::new(
+						&mut self.planned.remove_meal_state,
+						Text::new("Remove meal from schedule")
+							.width(Length::Fill)
+							.horizontal_alignment(alignment::Horizontal::Center)
+					)
+						.style(style::RemoveButton)
+						.width(Length::Fill)
+						.height(Length::Units(BUTTON_HEIGHT))
+						.on_press(Message::APIRemovePlannedMeal(self.planned.meal_index.unwrap()))
+				);
 		}
 
 		Row::new()
@@ -819,6 +839,10 @@ impl View {
 		match message {
 			Message::APIAddPlannedMeal(_) => {
 				self.transition_planner_state(PlannerState::DaySelect);
+				Command::none()
+			},
+			Message::APIRemovePlannedMeal(_) => {
+				self.planned.meal_index = None;
 				Command::none()
 			},
 			Message::MenuChange(_) => {

@@ -6,15 +6,15 @@ use warp::Filter;
 use crate::http::{ Response, failed_secret };
 use crate::types;
 
-use bansheelong_types::{ IO, PlannedMeal, get_todos_secret };
+use bansheelong_types::{ Date, IO, get_todos_secret };
 
-async fn add_planned_meals_endpoint(
+async fn remove_planned_meals_endpoint(
 	secret: bool,
 	tx: Arc<Mutex<mpsc::UnboundedSender<types::WSCommand>>>,
 	io: Arc<Mutex<IO>>,
-	planned_meals: Vec<PlannedMeal>
+	planned_meals: Vec<Date>
 ) -> Result<impl warp::Reply, Infallible> {
-	println!("POST /add-planned-meals/");
+	println!("POST /remove-planned-meals/");
 	
 	if !secret {
 		return Ok(failed_secret());
@@ -22,8 +22,8 @@ async fn add_planned_meals_endpoint(
 	
 	let mut guard = io.lock().await;
 
-	for meal in planned_meals {
-		if let Err(error) = guard.add_planned_meal(meal) { // add planned meal
+	for date in planned_meals {
+		if let Err(error) = guard.remove_planned_meal(date) { // add planned meal
 			eprintln!(" -> Error on request, {:?}", error);
 			return Ok(warp::reply::with_status(
 				warp::reply::json(&Response {
@@ -46,7 +46,7 @@ async fn add_planned_meals_endpoint(
 		));
 	}
 
-	println!(" -> Valid request, adding meals and syncing...");
+	println!(" -> Valid request, remove meals and syncing...");
 	if let Err(error) = tx.lock().await.send(types::WSCommand::Refresh) {
 		eprintln!("WS could not send refresh through http -> ws channel {:?}", error);
 	}
@@ -60,12 +60,12 @@ async fn add_planned_meals_endpoint(
 	))
 }
 
-pub(crate) fn build_add_planned_meals(
+pub(crate) fn build_remove_planned_meals(
 	tx: Arc<Mutex<mpsc::UnboundedSender<types::WSCommand>>>,
 	io: Arc<Mutex<IO>>
 ) -> impl warp::Filter<Extract = impl warp::Reply, Error = warp::Rejection> + Clone {
 	warp::post()
-		.and(warp::path("add-planned-meals"))
+		.and(warp::path("remove-planned-meals"))
 		.and(warp::body::content_length_limit(1024 * 100))
 		.and(
 			warp::header::<String>("secret")
@@ -76,5 +76,5 @@ pub(crate) fn build_add_planned_meals(
 		.and(warp::any().map(move || tx.clone()))
 		.and(warp::any().map(move || io.clone()))
 		.and(warp::body::json())
-		.and_then(add_planned_meals_endpoint)
+		.and_then(remove_planned_meals_endpoint)
 }

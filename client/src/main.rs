@@ -15,7 +15,7 @@ use iced::alignment;
 use iced::executor;
 use iced::{ Application, Column, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
-use bansheelong_types::{ Error, IO, MealsDatabase, PlannedMeal, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
+use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
 
 struct Window {
 	flavor: flavor::View,
@@ -35,6 +35,7 @@ enum Message {
 	Noop,
 	Refresh,
 	RefreshTodos,
+	RemovePlannedMeal(Date),
 	StorageMessage(storage::Message),
 	Tick,
 	WeatherMessage(weather::Message),
@@ -118,6 +119,7 @@ impl Application for Window {
 					Command::perform(async move {
 						if let Err(error) = write_database(
 							WriteDatabase::Partial {
+								planned_meals_remove_log: &Vec::new(),
 								planned_meals_write_log: &log,
 								todos_write_log: &Vec::new(),
 							},
@@ -196,6 +198,32 @@ impl Application for Window {
 			Self::Message::RefreshTodos => {
 				Command::perform(read_database(self.io.resource.clone()), Self::Message::FetchedTodos)
 			},
+			Self::Message::RemovePlannedMeal(date) => {
+				let log = self.io.as_ref().remove_planned_meal_log(date.clone());
+
+				let resource = self.io.resource.clone();
+				Command::batch([
+					self.menu.update(menu::Message::MealsMessage(
+						meals::Message::APIRemovePlannedMeal(date)
+					)).map(move |message| {
+						self::Message::MenuMessage(message)
+					}),
+					Command::perform(async move {
+						if let Err(error) = write_database(
+							WriteDatabase::Partial {
+								planned_meals_remove_log: &log,
+								planned_meals_write_log: &Vec::new(),
+								todos_write_log: &Vec::new(),
+							},
+							resource
+						).await {
+							eprintln!("{:?}", error);
+						}
+					}, move |()| {
+						Self::Message::Refresh
+					}),
+				])
+			},
 			Self::Message::StorageMessage(message) => {
 				self.storage.update(message).map(move |message| {
 					Self::Message::StorageMessage(message)
@@ -245,6 +273,8 @@ impl Application for Window {
 					self.menu.view().map(move |message| {
 						if let menu::Message::MealsMessage(meals::Message::APIAddPlannedMeal(meal)) = &message {
 							Self::Message::AddPlannedMeal(meal.clone())
+						} else if let menu::Message::MealsMessage(meals::Message::APIRemovePlannedMeal(date)) = &message {
+							Self::Message::RemovePlannedMeal(date.clone())
 						} else {
 							Self::Message::MenuMessage(message)
 						}

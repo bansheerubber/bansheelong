@@ -7,7 +7,7 @@ use lazy_static::lazy_static;
 use regex::Regex;
 use serde::{ Serialize, Deserialize };
 
-use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Ingredient, Item, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Recipe, Resource, Time, TodosDatabase, Weekday, WriteDatabase };
+use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Ingredient, Item, MealsDatabase, PlannedMeal, PlannedMealsRemoveLog, PlannedMealsWriteLog, Recipe, Resource, Time, TodosDatabase, Weekday, WriteDatabase };
 
 use crate::get_todos_secret;
 
@@ -100,11 +100,22 @@ pub async fn write_database<'a>(
 				)
 			},
     	WriteDatabase::Partial {
+				planned_meals_remove_log,
 				planned_meals_write_log,
 				todos_write_log
 			} => {
 				let mut result = None;
 				
+				if planned_meals_remove_log.len() > 0 {
+					result = Some(
+						client.post(format!("{}/remove-planned-meals/", resource.reference))
+							.header("Secret", get_todos_secret())
+							.body(serde_json::to_string(planned_meals_remove_log).unwrap())
+							.send()
+							.await
+					);
+				}
+
 				if planned_meals_write_log.len() > 0 {
 					result = Some(
 						client.post(format!("{}/add-planned-meals/", resource.reference))
@@ -161,12 +172,17 @@ pub async fn write_database<'a>(
 				(todos, meals)
 			},
     	WriteDatabase::Partial {
+				planned_meals_remove_log,
 				planned_meals_write_log,
 				todos_write_log
 			} => {
 				let databases = read_database(resource.clone()).await?;
 				read_databases = (Some(databases.0), Some(databases.1));
-				
+
+				for date in planned_meals_remove_log {
+					read_databases.1.as_mut().unwrap().planned_meal_mapping.remove(date);
+				}
+
 				for planned_meal in planned_meals_write_log {
 					read_databases.1.as_mut().unwrap().planned_meal_mapping.insert(
 						planned_meal.date,
@@ -241,6 +257,18 @@ impl IO {
 	pub fn add_planned_meal_log(&self, meal: PlannedMeal) -> PlannedMealsWriteLog {
 		let mut log = self.planned_meals_write_log.clone();
 		log.push(meal);
+		return log;
+	}
+
+	pub fn remove_planned_meal(&mut self, date: Date) -> Result<&MealsDatabase, Error> {
+		self.dirty = Dirty::Write;
+		self.meals_database.planned_meal_mapping.remove(&date);
+		Ok(&self.meals_database)
+	}
+
+	pub fn remove_planned_meal_log(&self, date: Date) -> PlannedMealsRemoveLog {
+		let mut log = self.planned_meals_remove_log.clone();
+		log.push(date);
 		return log;
 	}
 

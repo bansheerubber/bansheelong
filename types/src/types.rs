@@ -210,6 +210,7 @@ pub struct Resource {
 	pub reference: String,
 }
 
+pub type PlannedMealsRemoveLog = Vec<Date>;
 pub type PlannedMealsWriteLog = Vec<PlannedMeal>;
 pub type TodosWriteLog = Vec<(Item, Option<Date>)>;
 
@@ -221,6 +222,7 @@ pub struct IO {
 	pub resource: Resource,
 	pub todos_database: TodosDatabase,
 
+	pub planned_meals_remove_log: PlannedMealsRemoveLog,
 	pub planned_meals_write_log: PlannedMealsWriteLog,
 	pub todos_write_log: TodosWriteLog,
 }
@@ -231,6 +233,7 @@ impl Default for IO {
 			count: 0,
 			dirty: Dirty::Read,
 			meals_database: MealsDatabase::default(),
+			planned_meals_remove_log: Vec::new(),
 			planned_meals_write_log: Vec::new(),
 			resource: Resource {
 				reference: String::from("todos")
@@ -304,6 +307,7 @@ pub enum WriteDatabase<'a> {
 		todos: &'a TodosDatabase,
 	},
 	Partial {
+		planned_meals_remove_log: &'a PlannedMealsRemoveLog,
 		planned_meals_write_log: &'a PlannedMealsWriteLog,
 		todos_write_log: &'a TodosWriteLog,
 	},

@@ -54,6 +54,12 @@ pub const CYAN_COLOR: Color = Color::from_rgb(
 	0xCE as f32 / 255.0,
 );
 
+pub const RED_COLOR: Color = Color::from_rgb(
+	0xDD as f32 / 255.0,
+	0x44 as f32 / 255.0,
+	0x60 as f32 / 255.0,
+);
+
 pub const TODO_COLORS: [Color; 4] = [
 	BLUE_COLOR,
 	MAGENTA_COLOR,
@@ -389,6 +395,49 @@ impl button::StyleSheet for DarkButton {
 	fn disabled(&self) -> button::Style {
 		button::Style {
 			background: Some(Background::Color(BACKGROUND_DARK_PURPLE)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+}
+
+pub struct RemoveButton;
+impl button::StyleSheet for RemoveButton {
+	fn active(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(RED_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn hovered(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(RED_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn pressed(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(RED_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn disabled(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(RED_COLOR)),
 			border_radius: 0.0,
 			border_width: 0.0,
 			text_color: TEXT_COLOR,

@@ -15,6 +15,7 @@ pub use types::Item;
 pub use types::MealsDatabase;
 pub use types::PlannedIngredient;
 pub use types::PlannedMeal;
+pub use types::PlannedMealsRemoveLog;
 pub use types::PlannedMealsWriteLog;
 pub use types::Recipe;
 pub use types::Resource;
