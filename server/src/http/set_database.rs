@@ -24,7 +24,11 @@ async fn set_database_endpoint(
 	let old_planned_meals = guard.meals_database.planned_meal_mapping.clone();
 
 	guard.meals_database = databases.1;
-	guard.meals_database.planned_meal_mapping = old_planned_meals;
+
+	if guard.meals_database.planned_meal_mapping.len() == 0 {
+		guard.meals_database.planned_meal_mapping = old_planned_meals;
+	}
+
 	guard.todos_database = databases.0;
 	guard.dirty = Dirty::Write;
 	if let Err(error) = guard.sync().await {

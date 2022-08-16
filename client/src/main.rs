@@ -15,7 +15,7 @@ use iced::alignment;
 use iced::executor;
 use iced::{ Application, Column, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
-use bansheelong_types::{ Error, IO, MealsDatabase, Resource, TodosDatabase, get_todos_host, get_todos_port, read_database };
+use bansheelong_types::{ Date, Error, IO, MealsDatabase, Recipe, Resource, TodosDatabase, get_todos_host, get_todos_port, read_database, write_database };
 
 struct Window {
 	flavor: flavor::View,
@@ -28,6 +28,7 @@ struct Window {
 
 #[derive(Debug)]
 enum Message {
+	AddPlannedMeal(Recipe, Date),
 	FetchedTodos(Result<(TodosDatabase, MealsDatabase), Error>),
 	FlavorMessage(flavor::Message),
 	MenuMessage(menu::Message),
@@ -94,7 +95,7 @@ impl Application for Window {
 			storage::connect().map(|event| {
 				match event {
 					storage::tcp::Event::Error(_) => Self::Message::StorageMessage(storage::Message::Received(None)),
-					storage::tcp::Event::Ignore => { Self::Message::Noop },
+					storage::tcp::Event::Ignore => Self::Message::Noop,
 					storage::tcp::Event::InvalidateState => Self::Message::StorageMessage(storage::Message::Received(None)),
 					storage::tcp::Event::Message(data) => Self::Message::StorageMessage(storage::Message::Received(Some(data))),
 				}
@@ -104,9 +105,36 @@ impl Application for Window {
 
 	fn update(&mut self, _message: Message) -> Command<Self::Message> {
 		match _message {
+			Self::Message::AddPlannedMeal(recipe, date) => {
+				let mut io = self.io.as_ref().clone();
+				if let Err(error) = io.add_planned_meal(recipe.clone(), date) {
+					eprintln!("{:?}", error);
+				}
+
+				self.io = Arc::new(io);
+
+				let io = self.io.clone();
+				Command::batch([
+					self.menu.update(menu::Message::MealsMessage(
+						meals::Message::APIAddPlannedMeal(recipe, date)
+					)).map(move |message| {
+						self::Message::MenuMessage(message)
+					}),
+					Command::perform(async move {
+						let io = io.clone();
+						let todos_database = &io.todos_database;
+						let meals_database = &io.meals_database;
+						if let Err(error) = write_database((todos_database, meals_database), None, io.resource.clone()).await {
+							eprintln!("{:?}", error);
+						}
+					}, move |()| {
+						Self::Message::Refresh
+					}),
+				])
+			},
 			Self::Message::FetchedTodos(result) => {
 				if let Err(error) = result {
-					println!("{:?}", error);
+					eprintln!("{:?}", error);
 					
 					Command::batch([
 						self.menu.update(menu::Message::CalendarMessage(
@@ -217,7 +245,11 @@ impl Application for Window {
 				)
 				.push(
 					self.menu.view().map(move |message| {
-						Self::Message::MenuMessage(message)
+						if let menu::Message::MealsMessage(meals::Message::APIAddPlannedMeal(recipe, date)) = &message {
+							Self::Message::AddPlannedMeal(recipe.clone(), date.clone())
+						} else {
+							Self::Message::MenuMessage(message)
+						}
 					})
 				)
 				.push( // storage thing & neat picture

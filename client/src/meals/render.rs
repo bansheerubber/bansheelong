@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
-use bansheelong_types::{ Date, IO };
+use bansheelong_types::{ Date, IO, Recipe };
 use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
@@ -66,6 +66,7 @@ fn get_planner_right_panel<'a, I>(
 	meal_add_state: &'a mut button::State,
 	ingredients_state: &'a mut scrollable::State,
 	recipe_index: Option<usize>,
+	selected_date: Option<Date>,
 	database: Arc<IO>
 ) -> (Container<'a, Message>, u16)
 	where
@@ -202,7 +203,7 @@ fn get_planner_right_panel<'a, I>(
 						Space::new(Length::Units(0), Length::Units(constants::WINDOW_HEIGHT - 40 - 20))
 					);
 				} else {
-					let selected_meal = &database.meals_database.recipes[recipe_index.unwrap()];
+					let selected_recipe = &database.meals_database.recipes[recipe_index.unwrap()];
 
 					// construct information column that lets us select which ingredients we have
 					information_column = information_column
@@ -213,7 +214,7 @@ fn get_planner_right_panel<'a, I>(
 							Space::new(Length::Units(0), Length::Units(5))
 						)
 						.push(
-							Text::new(selected_meal.name.clone())
+							Text::new(selected_recipe.name.clone())
 								.width(Length::Fill)
 								.horizontal_alignment(alignment::Horizontal::Center)
 						)
@@ -235,7 +236,7 @@ fn get_planner_right_panel<'a, I>(
 						);
 					
 					// put the ingredients into the information column
-					information_column = selected_meal.ingredients.iter()
+					information_column = selected_recipe.ingredients.iter()
 						.fold(information_column, |prev, x| {
 							prev.push(
 								Row::new()
@@ -266,7 +267,7 @@ fn get_planner_right_panel<'a, I>(
 								.style(style::TodoMenuButton)
 								.width(Length::Fill)
 								.height(Length::Units(BUTTON_HEIGHT))
-								.on_press(Message::PlannerMealAdd(recipe_index.unwrap()))
+								.on_press(Message::APIAddPlannedMeal(selected_recipe.clone(), selected_date.unwrap()))
 						);
 				}
 
@@ -338,13 +339,13 @@ pub struct View {
 
 #[derive(Debug, Clone)]
 pub enum Message {
+	APIAddPlannedMeal(Recipe, Date),
 	MenuChange(Menu),
 	PlannedIngredientsScroll,
 	PlannedIngredientSelect(usize),
 	PlannedMealsScroll(f32),
 	PlannedMealSelect(Date),
 	PlannerDaySelect(u8),
-	PlannerMealAdd(usize),
 	PlannerRecipeScroll,
 	PlannerRecipeSelect(usize),
 	PlannerWeekSelect(i8),
@@ -377,7 +378,7 @@ impl View {
 				image_state: image::viewer::State::new(),
 				ingredient_button_states: Vec::new(),
 				ingredients_state: scrollable::State::new(),
-				meal_button_states: vec![button::State::new(); 3],
+				meal_button_states: Vec::new(),
 				meal_index: None,
 				meals_state,
 				meals_position: scroll_position,
@@ -412,6 +413,7 @@ impl View {
 				self.planner.day_index = None;
 				self.planner.week_start = None;
 				self.planner.recipe_index = None;
+				self.planned.meal_index = None;
 			},
 			PlannerState::DaySelect => {
 				self.planner.day_index = None;
@@ -464,6 +466,17 @@ impl View {
 	fn get_meal_planner(&mut self) -> Row<Message> {
 		let week_buttons = self.planner.week_button_states.iter_mut();
 		let day_buttons = self.planner.day_button_states.iter_mut();
+
+		let selected_date = if self.planner.week_start.is_some() && self.planner.day_index.is_some() {
+			Some(Date {
+				day: (self.planner.week_start.unwrap() + self.planner.day_index.unwrap() as i8) as u8,
+				month: self.planner.month_index as u8 + 1,
+				year: 22,
+			})
+		} else {
+			None
+		};
+
 		let (right_panel, remaining_width) = get_planner_right_panel(
 			self.planner.state,
 			week_buttons,
@@ -471,6 +484,7 @@ impl View {
 			&mut self.planner.meal_add_state,
 			&mut self.planner.ingredients_state,
 			self.planner.recipe_index,
+			selected_date,
 			self.database.as_ref().unwrap().clone()
 		);
 
@@ -763,6 +777,10 @@ impl View {
 
 	pub fn update(&mut self, message: Message) -> Command<Message> {
 		match message {
+			Message::APIAddPlannedMeal(_, _) => {
+				self.transition_planner_state(PlannerState::WeekSelect);
+				Command::none()
+			},
 			Message::MenuChange(_) => {
 				let size = (BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) as f32;
 				
@@ -801,11 +819,6 @@ impl View {
 			Message::PlannerDaySelect(index) => {
 				self.planner.day_index = Some(index);
 				self.transition_planner_state(PlannerState::MealSelect);
-				Command::none()
-			},
-			Message::PlannerMealAdd(index) => {
-				let day = self.planner.week_start.unwrap() + self.planner.day_index.unwrap() as i8;
-				println!("selected meal index {} for day {}/{}/22", index, self.planner.month_index, day);
 				Command::none()
 			},
 			Message::PlannerRecipeScroll => {
@@ -894,6 +907,11 @@ impl View {
 				self.planner.recipe_button_states.clear();
 				for _ in 0..self.database.as_ref().unwrap().meals_database.recipes.len() {
 					self.planner.recipe_button_states.push(button::State::new());
+				}
+
+				self.planned.meal_button_states.clear();
+				for _ in 0..self.database.as_ref().unwrap().meals_database.planned_meal_mapping.len() {
+					self.planned.meal_button_states.push(button::State::new());
 				}
 
 				Command::none()

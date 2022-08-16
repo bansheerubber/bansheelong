@@ -80,9 +80,9 @@ pub async fn read_database(resource: Resource) -> Result<(TodosDatabase, MealsDa
 	}
 }
 
-pub async fn write_database(
-	databases: (&TodosDatabase, &MealsDatabase),
-	write_log: Option<&Vec<(Item, Option<Date>)>>,
+pub async fn write_database<'a>(
+	databases: (&'a TodosDatabase, &'a MealsDatabase),
+	write_log: Option<&'a Vec<(Item, Option<Date>)>>,
 	resource: Resource
 ) -> Result<(), Error> {
 	if resource.reference.contains("http") {
