@@ -25,6 +25,8 @@ pub const ICONS: Font = Font::External {
 	bytes: include_bytes!("../data/fonts/MaterialIcons-Regular.ttf"),
 };
 
+pub const MENU_WIDTH: u16 = 740;
+
 pub fn get_directory() -> String {
 	match env::var("BANSHEELONG_DIR") {
 		Ok(path) => path,

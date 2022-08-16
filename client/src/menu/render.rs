@@ -1,6 +1,7 @@
 use iced::{ Command, Container, Element, Length, Row };
 
 use crate::calendar;
+use crate::constants;
 use crate::meals;
 use crate::menu::{ Menu };
 use crate::todos;
@@ -96,13 +97,13 @@ impl View {
 								Message::CalendarMessage(message)
 							})
 						)
-						.width(Length::Units(740))
+						.width(Length::Units(constants::MENU_WIDTH))
 				)
 			},
 		};
 
 		Container::new(menu)
-			.width(Length::Units(740))
+			.width(Length::Units(constants::MENU_WIDTH))
 			.into()
 	}
 }
