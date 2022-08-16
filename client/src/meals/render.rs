@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
-use bansheelong_types::{ Date, IO, Ingredient, PlannedMeal, Recipe };
+use bansheelong_types::{ Date, IO };
 use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
@@ -320,8 +320,7 @@ struct PlannedInfo {
 	ingredient_button_states: Vec<button::State>,
 	ingredients_state: scrollable::State,
 	meal_button_states: Vec<button::State>,
-	meal_index: Option<usize>,
-	meals: Vec<PlannedMeal>,
+	meal_index: Option<Date>,
 	meals_position: f32,
 	meals_state: scrollable::State,
 	switch_planner_state: button::State,
@@ -343,7 +342,7 @@ pub enum Message {
 	PlannedIngredientsScroll,
 	PlannedIngredientSelect(usize),
 	PlannedMealsScroll(f32),
-	PlannedMealSelect(usize),
+	PlannedMealSelect(Date),
 	PlannerDaySelect(u8),
 	PlannerMealAdd(usize),
 	PlannerRecipeScroll,
@@ -359,15 +358,6 @@ pub enum Message {
 impl View {
 	pub fn new() -> Self {
 		let scroll_position = (BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) as f32;
-
-		let recipe = Recipe {
-			ingredients: vec![
-				Ingredient::new(String::from("Box of orange chicken")),
-				Ingredient::new(String::from("Rice")),
-				Ingredient::new(String::from("Broccoli")),
-			],
-			name: String::from("Orange Chicken"),
-		};
 
 		let mut meals_state = scrollable::State::new();
 		meals_state.snap_to_absolute(scroll_position);
@@ -389,23 +379,6 @@ impl View {
 				ingredients_state: scrollable::State::new(),
 				meal_button_states: vec![button::State::new(); 3],
 				meal_index: None,
-				meals: vec![
-					PlannedMeal::new(Date {
-						day: 8,
-						month: 7,
-						year: 22,
-					}, recipe.clone()),
-					PlannedMeal::new(Date {
-						day: 8,
-						month: 8,
-						year: 22,
-					}, recipe.clone()),
-					PlannedMeal::new(Date {
-						day: 8,
-						month: 9,
-						year: 22,
-					}, recipe.clone()),
-				],
 				meals_state,
 				meals_position: scroll_position,
 				switch_planner_state: button::State::new(),
@@ -451,11 +424,14 @@ impl View {
 		self.planner.state = state;
 	}
 
-	fn select_planned_meal(&mut self, meal_index: usize) {
+	fn select_planned_meal(&mut self, meal_index: Date) {
 		self.planned.meal_index = Some(meal_index);
 
 		self.planned.ingredient_button_states.clear();
-		for _ in 0..self.planned.meals[self.planned.meal_index.unwrap()].ingredients.len() {
+
+		let selected_meal = &self.database.as_ref().unwrap().meals_database.planned_meal_mapping[&self.planned.meal_index.unwrap()];
+
+		for _ in 0..selected_meal.ingredients.len() {
 			self.planned.ingredient_button_states.push(button::State::new());
 		}
 	}
@@ -477,12 +453,12 @@ impl View {
 		}
 	}
 
-	fn toggle_ingredient_acquired(&mut self, ingredient_index: usize) {
-		if let Some(meal_index) = self.planned.meal_index {
-			if let Some(ingredient) = self.planned.meals[meal_index].ingredients.get_mut(ingredient_index) {
-				ingredient.acquired = !ingredient.acquired;
-			}
-		}
+	fn toggle_ingredient_acquired(&mut self, _ingredient_index: usize) {
+		// if let Some(meal_index) = self.planned.meal_index {
+		// 	if let Some(ingredient) = selected_meal.ingredients.get_mut(ingredient_index) {
+		// 		ingredient.acquired = !ingredient.acquired;
+		// 	}
+		// }
 	}
 
 	fn get_meal_planner(&mut self) -> Row<Message> {
@@ -645,10 +621,9 @@ impl View {
 			);
 
 		// construct planned meal list
-		scrollable = self.planned.meals.iter()
+		scrollable = self.database.as_ref().unwrap().meals_database.planned_meal_mapping.iter()
 			.zip(self.planned.meal_button_states.iter_mut())
-			.enumerate()
-			.fold(scrollable, |prev, (index, (x, state))| {
+			.fold(scrollable, |prev, ((date, meal), state)| {
 				prev.push(
 					Button::new(
 						state,
@@ -656,16 +631,16 @@ impl View {
 							Row::new()
 								.width(Length::Fill)
 								.push(
-									Text::new(format!("{}/{}/{}", x.date.day, x.date.month, x.date.year))
+									Text::new(format!("{}/{}/{}", date.month, date.day, date.year))
 										.width(Length::Units(60))
 								)
 								.push(
-									Text::new(x.recipe.name.clone())
+									Text::new(meal.recipe.name.clone())
 										.width(Length::Fill)
 								)
 								.push(
 									Text::new(
-										x.ingredients.iter().fold("\u{e2e6}", |prev, y| {
+										meal.ingredients.iter().fold("\u{e2e6}", |prev, y| {
 											if prev == "\u{e836}" || y.acquired {
 												prev
 											} else {
@@ -680,7 +655,7 @@ impl View {
 							.width(Length::Fill)
 							.padding(10)
 					)
-						.on_press(Message::PlannedMealSelect(index))
+						.on_press(Message::PlannedMealSelect(date.clone()))
 						.style(style::DarkButton)
 						.padding(0)
 				)
@@ -693,7 +668,7 @@ impl View {
 				Space::new(Length::Units(0), Length::Units(constants::WINDOW_HEIGHT - 40 - 20))
 			);
 		} else {
-			let selected_meal = &self.planned.meals[self.planned.meal_index.unwrap()];
+			let selected_meal = &self.database.as_ref().unwrap().meals_database.planned_meal_mapping[&self.planned.meal_index.unwrap()];
 
 			// construct information column that lets us select which ingredients we have
 			information_column = information_column
@@ -818,8 +793,8 @@ impl View {
 				self.planned.meals_state.set_force_disable(false);
 				Command::none()
 			},
-			Message::PlannedMealSelect(index) => {
-				self.select_planned_meal(index);
+			Message::PlannedMealSelect(date) => {
+				self.select_planned_meal(date);
 				self.planned.ingredients_state.snap_to_absolute(0.0);
 				Command::none()
 			},
