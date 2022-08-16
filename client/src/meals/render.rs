@@ -3,7 +3,7 @@ use std::time::{ Duration, Instant };
 
 use bansheelong_types::{ Date, IO, PlannedMeal };
 use chrono::{ Datelike, Local, NaiveDate };
-use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
+use iced::{ Alignment, Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
 use crate::constants;
 use crate::menu::{ Menu, BUTTONS, BUTTON_AREA_SIZE, BUTTON_COUNT, BUTTON_HEIGHT, BUTTON_SPACING };
@@ -44,14 +44,22 @@ const WEEK_SELECT_WIDTH: u16 = 7 * 35 + 6 * 4;
 const WEEK_SELECT_DAY_SIZE: Length = Length::Units(35);
 const WEEK_SELECT_DAY_SPACING: Length = Length::Units(4);
 
-fn get_current_month() -> usize {
-	Local::now().month() as usize - 1
+fn get_current_month() -> u32 {
+	Local::now().month() as u32 - 1
+}
+
+fn get_current_year() -> u8 {
+	(Local::now().year() - 2000) as u8
 }
 
 // returns right panel container and the remaining width for the left panel
 fn get_planner_right_panel<'a, I>(
 	state: PlannerState,
+	year_index: u8,
+	month_index: u32,
 	day_buttons: I,
+	previous_month_state: &'a mut button::State,
+	next_month_state: &'a mut button::State,
 	meal_add_state: &'a mut button::State,
 	ingredients_state: &'a mut scrollable::State,
 	recipe_index: Option<usize>,
@@ -61,22 +69,91 @@ fn get_planner_right_panel<'a, I>(
 	where
 		I: Iterator<Item = &'a mut button::State>
 	{
-		let time = Local::now();
-		let current_month = time.month();
-		let current_year = time.year();
+		let start_of_month = NaiveDate::from_ymd(2000 + year_index as i32, month_index + 1, 1);
+		let start_of_month = if start_of_month.weekday() == chrono::Weekday::Sun {
+			if month_index == 0 {
+				0
+			} else {
+				start_of_month.iso_week().week0() + 1
+			}
+		} else {
+			start_of_month.iso_week().week0()
+		};
+		let end_of_month = NaiveDate::from_ymd(2000 + year_index as i32, month_index + 1, DAY_COUNT[month_index as usize] as u32).iso_week().week0();
+		let weeks = end_of_month - start_of_month + 1;
 
-		let start_of_month = NaiveDate::from_ymd(current_year, current_month, 1);
-		let end_of_month = NaiveDate::from_ymd(current_year, current_month, DAY_COUNT[current_month as usize - 1] as u32);
-		let weeks = (end_of_month.iso_week().week0() - start_of_month.iso_week().week0() + 1) as usize;
+		// get previous indices
+		let previous_month_index = if month_index == 0 {
+			11
+		} else {
+			month_index - 1
+		};
+
+		let previous_year_index = if month_index == 0 {
+			year_index - 1
+		} else {
+			year_index
+		};
+
+		// get next indices
+		let next_month_index = if month_index == 11 {
+			0
+		} else {
+			month_index + 1
+		};
+
+		let next_year_index = if month_index == 11 {
+			year_index + 1
+		} else {
+			year_index
+		};
 		
 		match state {
 			PlannerState::DaySelect => {
 				let mut month = Column::new()
 					.push(
 						Container::new(
-							Underline::new(format!(" {} ", MONTH[current_month as usize - 1]))
-								.size(25)
-								.font(constants::NOTOSANS_BOLD)
+							Row::new()
+								.align_items(Alignment::Center)
+								.push(
+									Button::new(
+										previous_month_state,
+										Text::new(
+											if month_index > get_current_month() || year_index != get_current_year() {
+												"\u{e408}"
+											} else {
+												""
+											}
+										)
+											.width(Length::Units(20))
+											.horizontal_alignment(alignment::Horizontal::Center)
+											.vertical_alignment(alignment::Vertical::Center)
+											.size(25)
+											.font(constants::ICONS)
+									)
+										.padding([0, 10])
+										.style(style::DarkButton)
+										.on_press(Message::PlannerMonthSelect(previous_year_index, previous_month_index))
+								)
+								.push(
+									Underline::new(format!("{}", MONTH[month_index as usize]))
+										.size(25)
+										.font(constants::NOTOSANS_BOLD)
+								)
+								.push(
+									Button::new(
+										next_month_state,
+										Text::new("\u{e409}")
+											.width(Length::Units(20))
+											.horizontal_alignment(alignment::Horizontal::Center)
+											.vertical_alignment(alignment::Vertical::Center)
+											.size(25)
+											.font(constants::ICONS)
+									)
+										.padding([0, 10])
+										.style(style::DarkButton)
+										.on_press(Message::PlannerMonthSelect(next_year_index, next_month_index))
+								)
 						)
 							.width(Length::Fill)
 							.align_x(alignment::Horizontal::Center)
@@ -84,7 +161,7 @@ fn get_planner_right_panel<'a, I>(
 					.push(Space::new(Length::Units(0), Length::Units(if weeks < 6 { 10 } else { 5 })))
 					.width(Length::Units(WEEK_SELECT_WIDTH));
 
-				let mut day: i8 = match start_of_month.weekday() {
+				let mut day: i8 = match NaiveDate::from_ymd(2000 + year_index as i32, month_index + 1, 1).weekday() {
 					chrono::Weekday::Sun => 1,
 					chrono::Weekday::Mon => 0,
 					chrono::Weekday::Tue => -1,
@@ -98,11 +175,12 @@ fn get_planner_right_panel<'a, I>(
 				let mut week = Row::new();
 
 				for state in day_buttons {
-					if day_in_week % 7 == 0 && day_in_week != 0 {
+					if day_in_week == 7 {
 						month = month.push(week)
 							.push(Space::new(Length::Units(0), WEEK_SELECT_DAY_SPACING));
 
 						week = Row::new();
+						day_in_week = 0;
 					}
 
 					week = week
@@ -110,7 +188,7 @@ fn get_planner_right_panel<'a, I>(
 							Button::new(
 								state,
 								Container::new(
-									if day >= 1 && day <= DAY_COUNT[current_month as usize - 1] {
+									if day >= 1 && day <= DAY_COUNT[month_index as usize] {
 										Text::new(day.to_string())
 											.size(18)
 									} else {
@@ -257,12 +335,15 @@ struct PlannerInfo {
 	day_index: Option<i8>,
 	ingredients_state: scrollable::State,
 	meal_add_state: button::State,
-	month_index: usize,
+	month_index: u32, // starts from 0
+	next_month_state: button::State,
+	previous_month_state: button::State,
 	recipe_button_states: Vec<button::State>,
 	recipe_index: Option<usize>,
 	recipes_position: f32,
 	recipes_state: scrollable::State,
 	state: PlannerState,
+	year_index: u8, // starts at 0, 0 represents 2000
 }
 
 #[derive(Debug)]
@@ -297,6 +378,7 @@ pub enum Message {
 	PlannedMealsScroll(f32),
 	PlannedMealSelect(Date),
 	PlannerDaySelect(i8),
+	PlannerMonthSelect(u8, u32),
 	PlannerRecipeScroll,
 	PlannerRecipeSelect(usize),
 	RecipesScroll(f32),
@@ -340,17 +422,20 @@ impl View {
 				ingredients_state: scrollable::State::new(),
 				meal_add_state: button::State::new(),
 				month_index: 0,
+				next_month_state: button::State::new(),
+				previous_month_state: button::State::new(),
 				recipe_button_states: Vec::new(),
 				recipe_index: None,
 				recipes_position: scroll_position,
 				recipes_state,
 				state: PlannerState::DaySelect,
+				year_index: 0,
 			},
 			showing_planner: false,
 		};
 
 		view.transition_planner_state(PlannerState::DaySelect);
-		view.select_month(get_current_month());
+		view.select_month(get_current_year(), get_current_month());
 
 		return view;
 	}
@@ -382,16 +467,22 @@ impl View {
 		}
 	}
 
-	fn select_month(&mut self, month_index: usize) {
+	fn select_month(&mut self, year_index: u8, month_index: u32) {
+		self.planner.year_index = year_index;
 		self.planner.month_index = month_index;
 
-		let time = Local::now();
-		let current_month = time.month();
-		let current_year = time.year();
-
-		let start_of_month = NaiveDate::from_ymd(current_year, current_month, 1);
-		let end_of_month = NaiveDate::from_ymd(current_year, current_month, DAY_COUNT[current_month as usize - 1] as u32);
-		let weeks = end_of_month.iso_week().week0() - start_of_month.iso_week().week0() + 1;
+		let start_of_month = NaiveDate::from_ymd(2000 + year_index as i32, month_index + 1, 1);
+		let start_of_month = if start_of_month.weekday() == chrono::Weekday::Sun {
+			if month_index == 0 {
+				0
+			} else {
+				start_of_month.iso_week().week0() + 1
+			}
+		} else {
+			start_of_month.iso_week().week0()
+		};
+		let end_of_month = NaiveDate::from_ymd(2000 + year_index as i32, month_index + 1, DAY_COUNT[month_index as usize] as u32).iso_week().week0();
+		let weeks = end_of_month - start_of_month + 1;
 
 		self.planner.day_button_states.clear();
 		for _ in 0..weeks * 7 {
@@ -422,7 +513,11 @@ impl View {
 
 		let (right_panel, remaining_width) = get_planner_right_panel(
 			self.planner.state,
+			self.planner.year_index,
+			self.planner.month_index,
 			day_buttons,
+			&mut self.planner.previous_month_state,
+			&mut self.planner.next_month_state,
 			&mut self.planner.meal_add_state,
 			&mut self.planner.ingredients_state,
 			self.planner.recipe_index,
@@ -588,7 +683,7 @@ impl View {
 								.width(Length::Fill)
 								.push(
 									Text::new(format!("{}/{}/{}", date.month, date.day, date.year))
-										.width(Length::Units(60))
+										.width(Length::Units(70))
 								)
 								.push(
 									Text::new(meal.recipe.name.clone())
@@ -761,6 +856,10 @@ impl View {
 			Message::PlannerDaySelect(index) => {
 				self.planner.day_index = Some(index);
 				self.transition_planner_state(PlannerState::MealSelect);
+				Command::none()
+			},
+			Message::PlannerMonthSelect(year, month) => {
+				self.select_month(year, month);
 				Command::none()
 			},
 			Message::PlannerRecipeScroll => {
