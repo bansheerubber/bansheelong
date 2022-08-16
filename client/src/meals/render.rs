@@ -25,16 +25,6 @@ const MONTH: [&'static str; 12] = [
 	"December",
 ];
 
-const DAY: [&'static str; 7] = [
-	"Sunday",
-	"Monday",
-	"Tuesday",
-	"Wednesday",
-	"Thursday",
-	"Friday",
-	"Saturday",
-];
-
 static DAY_COUNT: [i8; 12] = [
 	31, // january
 	28, // february
@@ -61,7 +51,6 @@ fn get_current_month() -> usize {
 // returns right panel container and the remaining width for the left panel
 fn get_planner_right_panel<'a, I>(
 	state: PlannerState,
-	week_select_buttons: I,
 	day_buttons: I,
 	meal_add_state: &'a mut button::State,
 	ingredients_state: &'a mut scrollable::State,
@@ -81,7 +70,7 @@ fn get_planner_right_panel<'a, I>(
 		let weeks = (end_of_month.iso_week().week0() - start_of_month.iso_week().week0() + 1) as usize;
 		
 		match state {
-			PlannerState::WeekSelect => {
+			PlannerState::DaySelect => {
 				let mut month = Column::new()
 					.push(
 						Container::new(
@@ -105,45 +94,47 @@ fn get_planner_right_panel<'a, I>(
 					chrono::Weekday::Sat => -5,
 				};
 
-				month = week_select_buttons
-					.fold(
-						month,
-						|month, state| {
-							let mut week = Row::new();
-							for _ in 0..7 {
-								week = week.push(
-									Container::new(
-										if day >= 1 && day <= DAY_COUNT[current_month as usize - 1] {
-											Text::new(day.to_string())
-												.size(18)
-										} else {
-											Text::new("")
-										}
-									)
-										.padding([0, 0, 0, 3])
-										.width(WEEK_SELECT_DAY_SIZE)
-										.height(WEEK_SELECT_DAY_SIZE)
-										.style(style::MealsDayContainer)
+				let mut day_in_week = 0;
+				let mut week = Row::new();
+
+				for state in day_buttons {
+					if day_in_week % 7 == 0 && day_in_week != 0 {
+						month = month.push(week)
+							.push(Space::new(Length::Units(0), WEEK_SELECT_DAY_SPACING));
+
+						week = Row::new();
+					}
+
+					week = week
+						.push(
+							Button::new(
+								state,
+								Container::new(
+									if day >= 1 && day <= DAY_COUNT[current_month as usize - 1] {
+										Text::new(day.to_string())
+											.size(18)
+									} else {
+										Text::new("")
+									}
 								)
-								.push(Space::new(WEEK_SELECT_DAY_SPACING, Length::Units(0)));
+									.padding([0, 0, 0, 3])
+									.width(WEEK_SELECT_DAY_SIZE)
+									.height(WEEK_SELECT_DAY_SIZE)
+									.style(style::MealsDayContainer)
+							)
+								.on_press(Message::PlannerDaySelect(day))
+								.style(style::DarkButton)
+								.padding(0)
+						)
+						.push(Space::new(WEEK_SELECT_DAY_SPACING, Length::Units(0)));
 
-								day += 1;
-							}
+					day += 1;
+					day_in_week += 1;
+				}
 
-							month.push(
-									Button::new(
-										state,
-										week
-									)
-										.on_press(Message::PlannerWeekSelect(day - 7))
-										.style(style::DarkButton)
-										.padding(0)
-								)
-								.push(Space::new(Length::Units(0), WEEK_SELECT_DAY_SPACING))
-						}
-					);
-
-				month = month.push(Space::new(Length::Units(0), Length::Units(10)));
+				month = month.push(week)
+					.push(Space::new(Length::Units(0), WEEK_SELECT_DAY_SPACING))
+					.push(Space::new(Length::Units(0), Length::Units(10)));
 
 				let container = Container::new(
 					Container::new(month)
@@ -157,43 +148,6 @@ fn get_planner_right_panel<'a, I>(
 					.height(Length::Units(constants::WINDOW_HEIGHT))
 					.padding([20, 20, 20, 5]);
 
-				return (container, constants::MENU_WIDTH - (WEEK_SELECT_WIDTH + 40 + 25));
-			},
-			PlannerState::DaySelect => {
-				let days = DAY.iter()
-					.zip(day_buttons)
-					.enumerate()
-					.fold(
-						Column::new()
-							.spacing(BUTTON_SPACING / 2),
-						|week, (index, (day, state))| {
-							week.push(
-								Button::new(
-									state,
-									Text::new(day.clone())
-										.width(Length::Fill)
-										.horizontal_alignment(alignment::Horizontal::Center)
-								)
-									.style(style::TodoMenuButton)
-									.width(Length::Fill)
-									.height(Length::Units(BUTTON_HEIGHT))
-									.on_press(Message::PlannerDaySelect(index as u8))
-							)
-						}
-					);
-				
-				let container = Container::new(
-					Container::new(days)
-						.height(Length::Units(constants::WINDOW_HEIGHT - 40))
-						.width(Length::Units(WEEK_SELECT_WIDTH + 40))
-						.padding([0, 20])
-						.align_y(alignment::Vertical::Center)
-						.style(style::MealsCalendarContainer)
-				)
-					.width(Length::Units(WEEK_SELECT_WIDTH + 40 + 35))
-					.height(Length::Units(constants::WINDOW_HEIGHT))
-					.padding([20, 20, 20, 5]);
-				
 				return (container, constants::MENU_WIDTH - (WEEK_SELECT_WIDTH + 40 + 25));
 			},
 			PlannerState::MealSelect => {
@@ -293,15 +247,14 @@ fn get_planner_right_panel<'a, I>(
 
 #[derive(Clone, Copy, Debug)]
 enum PlannerState {
-	WeekSelect,
 	DaySelect,
 	MealSelect,
 }
 
 #[derive(Debug)]
 struct PlannerInfo {
-	day_button_states: [button::State; 7],
-	day_index: Option<u8>,
+	day_button_states: Vec<button::State>,
+	day_index: Option<i8>,
 	ingredients_state: scrollable::State,
 	meal_add_state: button::State,
 	month_index: usize,
@@ -310,8 +263,6 @@ struct PlannerInfo {
 	recipes_position: f32,
 	recipes_state: scrollable::State,
 	state: PlannerState,
-	week_button_states: Vec<button::State>,
-	week_start: Option<i8>,
 }
 
 #[derive(Debug)]
@@ -345,10 +296,9 @@ pub enum Message {
 	PlannedIngredientSelect(usize),
 	PlannedMealsScroll(f32),
 	PlannedMealSelect(Date),
-	PlannerDaySelect(u8),
+	PlannerDaySelect(i8),
 	PlannerRecipeScroll,
 	PlannerRecipeSelect(usize),
-	PlannerWeekSelect(i8),
 	RecipesScroll(f32),
 	SwitchToPlanned,
 	SwitchToPlanner,
@@ -386,7 +336,7 @@ impl View {
 			},
 			planner: PlannerInfo {
 				day_index: None,
-				day_button_states: [button::State::new(); 7],
+				day_button_states: Vec::new(),
 				ingredients_state: scrollable::State::new(),
 				meal_add_state: button::State::new(),
 				month_index: 0,
@@ -394,14 +344,12 @@ impl View {
 				recipe_index: None,
 				recipes_position: scroll_position,
 				recipes_state,
-				state: PlannerState::WeekSelect,
-				week_button_states: Vec::new(),
-				week_start: None,
+				state: PlannerState::DaySelect,
 			},
 			showing_planner: false,
 		};
 
-		view.transition_planner_state(PlannerState::WeekSelect);
+		view.transition_planner_state(PlannerState::DaySelect);
 		view.select_month(get_current_month());
 
 		return view;
@@ -409,14 +357,10 @@ impl View {
 
 	fn transition_planner_state(&mut self, state: PlannerState) {
 		match state {
-			PlannerState::WeekSelect => {
-				self.planner.day_index = None;
-				self.planner.week_start = None;
-				self.planner.recipe_index = None;
-				self.planned.meal_index = None;
-			},
 			PlannerState::DaySelect => {
 				self.planner.day_index = None;
+				self.planner.recipe_index = None;
+				self.planned.meal_index = None;
 			},
 			PlannerState::MealSelect => {
 				self.planner.recipe_index = None;
@@ -449,9 +393,9 @@ impl View {
 		let end_of_month = NaiveDate::from_ymd(current_year, current_month, DAY_COUNT[current_month as usize - 1] as u32);
 		let weeks = end_of_month.iso_week().week0() - start_of_month.iso_week().week0() + 1;
 
-		self.planner.week_button_states.clear();
-		for _ in 0..weeks {
-			self.planner.week_button_states.push(button::State::new());
+		self.planner.day_button_states.clear();
+		for _ in 0..weeks * 7 {
+			self.planner.day_button_states.push(button::State::new());
 		}
 	}
 
@@ -464,12 +408,11 @@ impl View {
 	}
 
 	fn get_meal_planner(&mut self) -> Row<Message> {
-		let week_buttons = self.planner.week_button_states.iter_mut();
 		let day_buttons = self.planner.day_button_states.iter_mut();
 
-		let selected_date = if self.planner.week_start.is_some() && self.planner.day_index.is_some() {
+		let selected_date = if let Some(day) = self.planner.day_index {
 			Some(Date {
-				day: (self.planner.week_start.unwrap() + self.planner.day_index.unwrap() as i8) as u8,
+				day: day as u8,
 				month: self.planner.month_index as u8 + 1,
 				year: 22,
 			})
@@ -479,7 +422,6 @@ impl View {
 
 		let (right_panel, remaining_width) = get_planner_right_panel(
 			self.planner.state,
-			week_buttons,
 			day_buttons,
 			&mut self.planner.meal_add_state,
 			&mut self.planner.ingredients_state,
@@ -778,7 +720,7 @@ impl View {
 	pub fn update(&mut self, message: Message) -> Command<Message> {
 		match message {
 			Message::APIAddPlannedMeal(_) => {
-				self.transition_planner_state(PlannerState::WeekSelect);
+				self.transition_planner_state(PlannerState::DaySelect);
 				Command::none()
 			},
 			Message::MenuChange(_) => {
@@ -792,7 +734,7 @@ impl View {
 
 				self.showing_planner = false;
 
-				self.transition_planner_state(PlannerState::WeekSelect);
+				self.transition_planner_state(PlannerState::DaySelect);
 
 				Command::none()
 			},
@@ -831,11 +773,6 @@ impl View {
 				self.planner.ingredients_state.snap_to_absolute(0.0);
 				Command::none()
 			},
-			Message::PlannerWeekSelect(week_start) => {
-				self.planner.week_start = Some(week_start);
-				self.transition_planner_state(PlannerState::DaySelect);
-				Command::none()
-			},
 			Message::RecipesScroll(scroll) => {
 				self.last_interaction = Some(Instant::now());
 				self.planner.recipes_position = scroll;
@@ -853,7 +790,7 @@ impl View {
 
 				self.showing_planner = false;
 
-				self.transition_planner_state(PlannerState::WeekSelect);
+				self.transition_planner_state(PlannerState::DaySelect);
 
 				Command::none()
 			},
@@ -868,7 +805,7 @@ impl View {
 				
 				self.showing_planner = true;
 
-				self.transition_planner_state(PlannerState::WeekSelect);
+				self.transition_planner_state(PlannerState::DaySelect);
 
 				Command::none()
 			},
