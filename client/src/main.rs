@@ -10,12 +10,13 @@ mod todos;
 mod weather;
 
 use std::sync::Arc;
+use std::time::{ Duration, Instant };
 
 use iced::alignment;
 use iced::executor;
 use iced::{ Application, Column, Command, Container, Element, Length, Row, Settings, Subscription, Text };
 
-use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
+use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
 
 struct Window {
 	flavor: flavor::View,
@@ -23,7 +24,9 @@ struct Window {
 	storage: storage::View,
 	weather: weather::View,
 
+	last_update_to_log: Instant,
 	io: Arc<IO>,
+	update_log: PlannedMealsWriteLog,
 }
 
 #[derive(Debug)]
@@ -38,6 +41,7 @@ enum Message {
 	RemovePlannedMeal(Date),
 	StorageMessage(storage::Message),
 	Tick,
+	UpdatePlannedMeal(PlannedMeal),
 	WeatherMessage(weather::Message),
 }
 
@@ -58,10 +62,12 @@ impl Application for Window {
 				storage: storage::View::new(),
 				weather: weather::View::new(),
 
+				last_update_to_log: Instant::now(),
 				io: Arc::new(IO {
 					resource: resource.clone(),
 					..IO::default()
 				}),
+				update_log: Vec::new(),
 			},
 			Command::batch([
 				Command::perform(weather::api::dial(), move |result| {
@@ -230,7 +236,7 @@ impl Application for Window {
 				})
 			},
 			Self::Message::Tick => {
-				Command::batch([
+				let mut commands = vec![
 					self.menu.update(menu::Message::Tick).map(move |message| {
 						Self::Message::MenuMessage(message)
 					}),
@@ -239,6 +245,44 @@ impl Application for Window {
 					}),
 					self.weather.update(weather::Message::Tick).map(move |message| {
 						Self::Message::WeatherMessage(message)
+					}),
+				];
+
+				if Instant::now() - self.last_update_to_log > Duration::from_secs(5) && self.update_log.len() > 0 {
+					let resource = self.io.resource.clone();
+					let log = self.update_log.clone();
+					commands.push(
+						Command::perform(async move {
+							if let Err(error) = write_database(
+								WriteDatabase::Partial {
+									planned_meals_remove_log: &Vec::new(),
+									planned_meals_write_log: &log,
+									todos_write_log: &Vec::new(),
+								},
+								resource
+							).await {
+								eprintln!("{:?}", error);
+							}
+						}, move |()| {
+							Self::Message::Refresh
+						})
+					);
+					self.update_log.clear();
+
+					Command::batch(commands)
+				} else {
+					Command::batch(commands)
+				}
+			},
+			Self::Message::UpdatePlannedMeal(meal) => {
+				self.update_log = self.io.as_ref().add_planned_meal_log(meal.clone());
+				self.last_update_to_log = Instant::now();
+
+				Command::batch([
+					self.menu.update(menu::Message::MealsMessage(
+						meals::Message::APIUpdatePlannedMeal(meal)
+					)).map(move |message| {
+						self::Message::MenuMessage(message)
 					}),
 				])
 			},
@@ -275,6 +319,8 @@ impl Application for Window {
 							Self::Message::AddPlannedMeal(meal.clone())
 						} else if let menu::Message::MealsMessage(meals::Message::APIRemovePlannedMeal(date)) = &message {
 							Self::Message::RemovePlannedMeal(date.clone())
+						} else if let menu::Message::MealsMessage(meals::Message::APIUpdatePlannedMeal(date)) = &message {
+							Self::Message::UpdatePlannedMeal(date.clone())
 						} else {
 							Self::Message::MenuMessage(message)
 						}
