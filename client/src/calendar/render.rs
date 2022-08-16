@@ -14,9 +14,9 @@ use super::calendar;
 
 #[derive(Debug)]
 pub struct View {
+	database: Option<Arc<IO>>,
 	last_interaction: Option<Instant>,
 	scrollable_state: scrollable::State,
-	todos: Option<Arc<IO>>,
 }
 
 #[derive(Debug, Clone)]
@@ -29,9 +29,9 @@ pub enum Message {
 impl View {
 	pub fn new() -> Self {
 		View {
+			database: None,
 			last_interaction: None,
 			scrollable_state: scrollable::State::new(),
-			todos: None,
 		}
 	}
 
@@ -61,8 +61,8 @@ impl View {
 				
 			},
 			Message::Update(io) => {
-				self.todos = io;
-			}
+				self.database = io;
+			},
 		}
 		
 		Command::none()
@@ -75,7 +75,7 @@ impl View {
 			.padding([20, 15, 20, 5])
 			.style(style::TodoScrollable)
 			.push(
-				calendar::Calendar::new(self.todos.clone())
+				calendar::Calendar::new(self.database.clone())
 					.width(Length::Fill)
 			)
 			.on_scroll(move |offset| Message::Scroll(offset))

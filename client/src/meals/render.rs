@@ -1,10 +1,11 @@
+use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
 use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
 use chrono::{ Datelike, Local, NaiveDate };
 
-use bansheelong_types::{ Date, Ingredient, PlannedMeal, Recipe };
+use bansheelong_types::{ Date, IO, Ingredient, PlannedMeal, Recipe };
 
 use crate::constants;
 use crate::menu::{ Menu, BUTTONS, BUTTON_AREA_SIZE, BUTTON_COUNT, BUTTON_HEIGHT, BUTTON_SPACING };
@@ -43,7 +44,9 @@ static DAY_COUNT: [i8; 12] = [
 
 #[derive(Debug)]
 struct PlannerInfo {
-	meal_list_state: scrollable::State,
+	recipe_button_states: Vec<button::State>,
+	recipes_position: f32,
+	recipes_state: scrollable::State,
 }
 
 #[derive(Debug)]
@@ -55,14 +58,15 @@ struct PlannedInfo {
 	meal_button_states: Vec<button::State>,
 	meal_index: Option<usize>,
 	meals: Vec<PlannedMeal>,
-	meals_state: scrollable::State,
 	meals_position: f32,
+	meals_state: scrollable::State,
 	switch_planner_state: button::State,
 }
 
 #[derive(Debug)]
 pub struct View {
 	button_states: [button::State; BUTTON_COUNT as usize],
+	database: Option<Arc<IO>>,
 	last_interaction: Option<Instant>,
 	planned: PlannedInfo,
 	planner: PlannerInfo,
@@ -76,8 +80,10 @@ pub enum Message {
 	PlannedIngredientSelect(usize),
 	PlannedMealsScroll(f32),
 	PlannedMealSelect(usize),
+	RecipesScroll(f32),
 	SwitchToPlanner,
 	Tick,
+	Update(Option<Arc<IO>>),
 }
 
 impl View {
@@ -92,11 +98,16 @@ impl View {
 			],
 			name: String::from("Orange Chicken"),
 		};
-		
-		let mut scrollable_state = scrollable::State::new();
-		scrollable_state.snap_to_absolute(scroll_position);
+
+		let mut meals_state = scrollable::State::new();
+		meals_state.snap_to_absolute(scroll_position);
+
+		let mut recipes_state = scrollable::State::new();
+		recipes_state.snap_to_absolute(scroll_position);
+
 		View {
 			button_states: [button::State::new(); BUTTON_COUNT as usize],
+			database: None,
 			last_interaction: None,
 			planned: PlannedInfo {
 				image: image::Handle::from_path(format!(
@@ -124,13 +135,15 @@ impl View {
 						year: 22,
 					}, recipe.clone()),
 				],
-				meals_state: scrollable_state,
+				meals_state,
 				meals_position: scroll_position,
 				ingredients_state: scrollable::State::new(),
 				switch_planner_state: button::State::new(),
 			},
 			planner: PlannerInfo {
-				meal_list_state: scrollable::State::new(),
+				recipe_button_states: Vec::new(),
+				recipes_position: scroll_position,
+				recipes_state
 			},
 			showing_planner: false,
 		}
@@ -222,119 +235,73 @@ impl View {
 
 		month = month.push(Space::new(Length::Units(0), Length::Units(10)));
 
-		let get_meal_entry = || {
-			Container::new(
-				Text::new("orange chicken")
-					.size(30)
-			)
-				.padding([5, 0])
-		};
+		let remaining_width = 740 - (width + 40 + 25);
 
 		// meal list
-		let meal_list = Column::new()
-			.push(
-				Underline::new("Meal list")
+		let mut scrollable = Scrollable::new(&mut self.planner.recipes_state)
+		.width(Length::Units(remaining_width))
+		.height(Length::Fill)
+		.padding([20, 15, 20, 0])
+		.style(style::TodoScrollable)
+		.on_scroll_absolute(move |offset| Message::RecipesScroll(offset))
+		.min_height((BUTTON_AREA_SIZE + constants::WINDOW_HEIGHT) as u32)
+		.push( // add menu navigation
+			self.button_states
+			.iter_mut()
+			.zip(BUTTONS.iter())
+			.fold(
+				Column::new()
+					.spacing(BUTTON_SPACING)
+					.padding([0, 0, 20, 0]),
+				|button_column, (state, (name, menu_type))| {
+					if menu_type != &Menu::Meals {
+						button_column.push(
+							Button::new(
+								state,
+								Text::new(name.clone())
+									.width(Length::Fill)
+									.horizontal_alignment(alignment::Horizontal::Center)
+							)
+								.style(style::TodoMenuButton)
+								.width(Length::Fill)
+								.height(Length::Units(BUTTON_HEIGHT))
+								.on_press(Message::MenuChange(menu_type.clone()))
+						)
+					} else {
+						button_column
+					}
+				}
 			)
-			.push(Space::new(Length::Units(0), Length::Units(5)))
-			.push(
-				Scrollable::new(&mut self.planner.meal_list_state)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.push(
-						get_meal_entry()
-					)
-					.width(Length::Fill)
-					.style(style::TodoScrollable)
-			);
+		);
 
-		let remaining_width = 740 - (width + 40 + 35);
+		// construct recipes list
+		scrollable = self.database.as_ref().unwrap().meals_database.recipes.iter()
+			.zip(self.planner.recipe_button_states.iter_mut())
+			.enumerate()
+			.fold(scrollable, |prev, (index, (x, state))| {
+				prev.push(
+					Button::new(
+						state,
+						Container::new(
+							Row::new()
+								.width(Length::Fill)
+								.push(
+									Text::new(x.name.clone())
+										.width(Length::Fill)
+								)
+						)
+							.width(Length::Fill)
+							.padding(10)
+					)
+						.on_press(Message::PlannedMealSelect(index))
+						.style(style::DarkButton)
+						.padding(0)
+				)
+				.push(Space::new(Length::Units(0), Length::Units(10)))
+			});
 
 		Row::new()
-			.push(
-				Container::new(
-					Container::new(meal_list)
-						.height(Length::Units(constants::WINDOW_HEIGHT - 40))
-						.width(Length::Units(remaining_width))
-						.padding([15, 10, 10, 20])
-						.style(style::MealsCalendarContainer)
-				)
-					.width(Length::Units(remaining_width))
-					.height(Length::Units(constants::WINDOW_HEIGHT))
-					.padding([20, 0])
-			)
+			.push(scrollable)
 			.push(
 				Container::new(
 					Container::new(month)
@@ -346,7 +313,7 @@ impl View {
 				)
 					.width(Length::Units(width + 40 + 35))
 					.height(Length::Units(constants::WINDOW_HEIGHT))
-					.padding([20, 15, 20, 20])
+					.padding([20, 20, 20, 5])
 			)
 	}
 
@@ -551,6 +518,12 @@ impl View {
 			Message::MenuChange(_) => {
 				self.planned.meals_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
 				self.planned.meals_position = BUTTON_AREA_SIZE as f32;
+
+				self.planner.recipes_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
+				self.planner.recipes_position = BUTTON_AREA_SIZE as f32;
+
+				self.showing_planner = false;
+
 				Command::none()
 			},
 			Message::PlannedIngredientsScroll => {
@@ -570,6 +543,13 @@ impl View {
 			},
 			Message::PlannedMealSelect(index) => {
 				self.select_planned_meal(index);
+				self.planned.ingredients_state.snap_to_absolute(0.0);
+				Command::none()
+			},
+			Message::RecipesScroll(scroll) => {
+				self.last_interaction = Some(Instant::now());
+				self.planner.recipes_position = scroll;
+				self.planner.recipes_state.set_force_disable(false);
 				Command::none()
 			},
 			Message::SwitchToPlanner => {
@@ -585,10 +565,29 @@ impl View {
 						self.planned.meals_position = BUTTON_AREA_SIZE as f32;
 					}
 
+					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
+						&& self.planner.recipes_position < BUTTON_AREA_SIZE as f32
+					{
+						self.planner.recipes_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
+						self.planner.recipes_position = BUTTON_AREA_SIZE as f32;
+					}
+
 					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(4) {
 						self.planned.meals_state.set_force_disable(true);
 						self.planned.ingredients_state.set_force_disable(true);
+
+						self.planner.recipes_state.set_force_disable(true);
 					}
+				}
+
+				Command::none()
+			},
+			Message::Update(io) => {
+				self.database = io;
+
+				self.planner.recipe_button_states.clear();
+				for _ in 0..self.database.as_ref().unwrap().meals_database.recipes.len() {
+					self.planner.recipe_button_states.push(button::State::new());
 				}
 
 				Command::none()

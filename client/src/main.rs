@@ -140,6 +140,11 @@ impl Application for Window {
 						)).map(move |message| {
 							self::Message::MenuMessage(message)
 						}),
+						self.menu.update(menu::Message::MealsMessage(
+							meals::Message::Update(Some(self.io.clone()))
+						)).map(move |message| {
+							self::Message::MenuMessage(message)
+						}),
 					])
 				}
 			},

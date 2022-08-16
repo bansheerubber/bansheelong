@@ -15,10 +15,10 @@ use crate::style;
 #[derive(Debug)]
 pub struct View {
 	button_states: [button::State; BUTTON_COUNT as usize],
+	database: Option<Arc<IO>>,
 	last_interaction: Option<Instant>,
 	scrollable_state: scrollable::State,
 	scroll_position: f32,
-	todos: Option<Arc<IO>>,
 }
 
 #[derive(Debug, Clone)]
@@ -37,10 +37,10 @@ impl View {
 		scrollable_state.snap_to_absolute(scroll_position);
 		View {
 			button_states: [button::State::new(); BUTTON_COUNT as usize],
+			database: None,
 			last_interaction: None,
 			scrollable_state,
 			scroll_position,
-			todos: None,
 		}
 	}
 
@@ -74,9 +74,9 @@ impl View {
 				Command::none()
 			},
 			Message::Update(io) => {
-				self.todos = io;
+				self.database = io;
 				Command::none()
-			}
+			},
 		}
 	}
 
@@ -100,7 +100,7 @@ impl View {
 		});
 		
 		let width = 385;
-		if let None = self.todos {
+		if let None = self.database {
 			return Container::new(
 				Container::new(Text::new(""))
 					.width(Length::Units(width - 15))
@@ -177,7 +177,7 @@ impl View {
 			item.time.is_some() && item.time.unwrap().day.is_some()
 		};
 
-		for (_, day) in self.todos.as_ref().unwrap().todos_database.mapping.iter() {
+		for (_, day) in self.database.as_ref().unwrap().todos_database.mapping.iter() {
 			// find the last valid index in the list
 			let mut last_index = -1;
 			let mut index = 0;
