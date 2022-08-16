@@ -446,6 +446,9 @@ impl View {
 				self.planner.day_index = None;
 				self.planner.recipe_index = None;
 				self.planned.meal_index = None;
+
+				self.planner.month_index = get_current_month();
+				self.planner.year_index = get_current_year();
 			},
 			PlannerState::MealSelect => {
 				self.planner.recipe_index = None;
