@@ -88,6 +88,7 @@ pub enum Message {
 	PlannedMealSelect(usize),
 	PlannerWeekSelect(usize),
 	RecipesScroll(f32),
+	SwitchToPlanned,
 	SwitchToPlanner,
 	Tick,
 	Update(Option<Arc<IO>>),
@@ -95,7 +96,7 @@ pub enum Message {
 
 impl View {
 	pub fn new() -> Self {
-		let scroll_position = BUTTON_AREA_SIZE as f32;
+		let scroll_position = (BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) as f32;
 
 		let recipe = Recipe {
 			ingredients: vec![
@@ -286,7 +287,7 @@ impl View {
 		.padding([20, 15, 20, 0])
 		.style(style::TodoScrollable)
 		.on_scroll_absolute(move |offset| Message::RecipesScroll(offset))
-		.min_height((BUTTON_AREA_SIZE + constants::WINDOW_HEIGHT) as u32)
+		.min_height(((BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) + constants::WINDOW_HEIGHT) as u32)
 		.push( // add menu navigation
 			self.button_states
 			.iter_mut()
@@ -313,6 +314,18 @@ impl View {
 						button_column
 					}
 				}
+			)
+			.push(
+				Button::new(
+					&mut self.planned.switch_planner_state,
+					Text::new("Planned meals")
+						.width(Length::Fill)
+						.horizontal_alignment(alignment::Horizontal::Center)
+				)
+					.style(style::SpecialMenuButton)
+					.width(Length::Fill)
+					.height(Length::Units(BUTTON_HEIGHT))
+					.on_press(Message::SwitchToPlanned)
 			)
 		);
 
@@ -378,7 +391,7 @@ impl View {
 			.padding([20, 15, 20, 0])
 			.style(style::TodoScrollable)
 			.on_scroll_absolute(move |offset| Message::PlannedMealsScroll(offset))
-			.min_height((BUTTON_AREA_SIZE + constants::WINDOW_HEIGHT) as u32)
+			.min_height(((BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) + constants::WINDOW_HEIGHT) as u32)
 			.push( // add menu navigation
 				self.button_states
 				.iter_mut()
@@ -405,6 +418,18 @@ impl View {
 							button_column
 						}
 					}
+				)
+				.push(
+					Button::new(
+						&mut self.planned.switch_planner_state,
+						Text::new("Add meal")
+							.width(Length::Fill)
+							.horizontal_alignment(alignment::Horizontal::Center)
+					)
+						.style(style::SpecialMenuButton)
+						.width(Length::Fill)
+						.height(Length::Units(BUTTON_HEIGHT))
+						.on_press(Message::SwitchToPlanner)
 				)
 			);
 
@@ -450,22 +475,6 @@ impl View {
 				)
 				.push(Space::new(Length::Units(0), Length::Units(10)))
 			});
-		
-		scrollable = scrollable.push(
-			Button::new(
-				&mut self.planned.switch_planner_state,
-				Container::new(
-					Text::new("Add meal")
-				)
-					.width(Length::Fill)
-					.align_x(alignment::Horizontal::Center)
-					.padding(5)
-			)
-				.width(Length::Fill)	
-				.on_press(Message::SwitchToPlanner)
-				.style(style::TodoMenuButton)
-				.padding(0)
-		);
 
 		let mut information_column = Column::new();
 		if self.planned.meal_index.is_none() {
@@ -569,11 +578,13 @@ impl View {
 	pub fn update(&mut self, message: Message) -> Command<Message> {
 		match message {
 			Message::MenuChange(_) => {
-				self.planned.meals_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
-				self.planned.meals_position = BUTTON_AREA_SIZE as f32;
+				let size = (BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) as f32;
+				
+				self.planned.meals_state.snap_to_absolute(size);
+				self.planned.meals_position = size;
 
-				self.planner.recipes_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
-				self.planner.recipes_position = BUTTON_AREA_SIZE as f32;
+				self.planner.recipes_state.snap_to_absolute(size);
+				self.planner.recipes_position = size;
 
 				self.showing_planner = false;
 
@@ -610,24 +621,48 @@ impl View {
 				self.planner.recipes_state.set_force_disable(false);
 				Command::none()
 			},
+			Message::SwitchToPlanned => {
+				let size = (BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) as f32;
+				
+				self.planned.meals_state.snap_to_absolute(size);
+				self.planned.meals_position = size;
+
+				self.planner.recipes_state.snap_to_absolute(size);
+				self.planner.recipes_position = size;
+
+				self.showing_planner = false;
+
+				Command::none()
+			},
 			Message::SwitchToPlanner => {
+				let size = (BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) as f32;
+				
+				self.planned.meals_state.snap_to_absolute(size);
+				self.planned.meals_position = size;
+
+				self.planner.recipes_state.snap_to_absolute(size);
+				self.planner.recipes_position = size;
+				
 				self.showing_planner = true;
+
 				Command::none()
 			},
 			Message::Tick => {
+				let size = (BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) as f32;
+				
 				if self.last_interaction.is_some() {
 					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
-						&& self.planned.meals_position < BUTTON_AREA_SIZE as f32
+						&& self.planned.meals_position < size
 					{
-						self.planned.meals_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
-						self.planned.meals_position = BUTTON_AREA_SIZE as f32;
+						self.planned.meals_state.snap_to_absolute(size);
+						self.planned.meals_position = size;
 					}
 
 					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
-						&& self.planner.recipes_position < BUTTON_AREA_SIZE as f32
+						&& self.planner.recipes_position < size
 					{
-						self.planner.recipes_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
-						self.planner.recipes_position = BUTTON_AREA_SIZE as f32;
+						self.planner.recipes_state.snap_to_absolute(size);
+						self.planner.recipes_position = size;
 					}
 
 					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(4) {

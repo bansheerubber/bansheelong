@@ -311,6 +311,49 @@ impl button::StyleSheet for TodoMenuButton {
 	}
 }
 
+pub struct SpecialMenuButton;
+impl button::StyleSheet for SpecialMenuButton {
+	fn active(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(GREEN_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn hovered(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(GREEN_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn pressed(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(GREEN_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+
+	fn disabled(&self) -> button::Style {
+		button::Style {
+			background: Some(Background::Color(GREEN_COLOR)),
+			border_radius: 0.0,
+			border_width: 0.0,
+			text_color: TEXT_COLOR,
+			..button::Style::default()
+		}
+	}
+}
+
 pub struct DarkButton;
 impl button::StyleSheet for DarkButton {
 	fn active(&self) -> button::Style {
