@@ -270,8 +270,8 @@ fn get_planner_right_panel<'a, I>(
 					
 					// put the ingredients into the information column
 					information_column = selected_recipe.ingredients.iter()
-						.fold(information_column, |prev, x| {
-							prev.push(
+						.fold(information_column, |information_column, ingredient| {
+							information_column.push(
 								Row::new()
 									.push(
 										Text::new("-")
@@ -651,27 +651,27 @@ impl View {
 		scrollable = self.database.as_ref().unwrap().meals_database.recipes.iter()
 			.zip(self.planner.recipe_button_states.iter_mut())
 			.enumerate()
-			.fold(scrollable, |prev, (index, (x, state))| {
-				prev.push(
+			.fold(scrollable, |scrollable, (index, (recipe, button_state))| {
+				scrollable.push(
 					Button::new(
-						state,
+						button_state,
 						Container::new(
 							Row::new()
 								.width(Length::Fill)
 								.push(
-									Text::new(x.name.clone())
+									Text::new(recipe.name.clone())
 										.width(Length::Fill)
 								)
 								.push(
 									Text::new(format!(
 										"{} {}{}",
-										x.ingredients.len(),
+										recipe.ingredients.len(),
 										if let PlannerState::MealSelect = self.planner.state {
 											"ingr"
 										} else {
 											"ingredient"
 										},
-										if x.ingredients.len() != 1 {
+										if recipe.ingredients.len() != 1 {
 											"s"
 										} else {
 											""
@@ -747,7 +747,7 @@ impl View {
 		// construct planned meal list
 		scrollable = self.database.as_ref().unwrap().meals_database.planned_meal_mapping.iter()
 			.zip(self.planned.meal_button_states.iter_mut())
-			.fold(scrollable, |prev, ((date, meal), state)| {
+			.fold(scrollable, |scrollable, ((date, meal), button_state)| {
 				let selected_meal = if self.planned.mapping.contains_key(date) {
 					&self.planned.mapping[date]
 				} else {
@@ -755,17 +755,17 @@ impl View {
 				};
 
 				let selected_ingredient_count = selected_meal.ingredients.iter()
-					.fold(0, |prev, x| {
-						if x.acquired {
+					.fold(0, |prev, planned_ingredient| {
+						if planned_ingredient.acquired {
 							prev + 1
 						} else {
 							prev
 						}
 					});
 				
-				prev.push(
+				scrollable.push(
 					Button::new(
-						state,
+						button_state,
 						Container::new(
 							Row::new()
 								.width(Length::Fill)
@@ -840,28 +840,25 @@ impl View {
 				)
 				.push(
 					Text::new("Ingredients")
-				)
-				.push(
-					Space::new(Length::Units(0), Length::Units(0))
 				);
 			
 			// put the ingredients into the information column
 			information_column = selected_meal.ingredients.iter()
 				.zip(self.planned.ingredient_button_states.iter_mut())
 				.enumerate()
-				.fold(information_column, |prev, (index, (x, state))| {
+				.fold(information_column, |information_column, (index, (planned_ingredient, button_state))| {
 					let mut meal = selected_meal.clone();
 					if let Some(ingredient) = meal.ingredients.get_mut(index) {
 						ingredient.acquired = !ingredient.acquired;
 					}
 
-					prev.push(
+					information_column.push(
 						Button::new(
-							state,
+							button_state,
 							Row::new()
 								.push(
 									Text::new(
-										if x.acquired {
+										if planned_ingredient.acquired {
 											"\u{e2e6}"
 										} else {
 											"\u{e836}"
@@ -873,7 +870,7 @@ impl View {
 									Space::new(Length::Units(6), Length::Units(0))
 								)
 								.push(
-									Text::new(x.ingredient.name.clone())
+									Text::new(planned_ingredient.ingredient.name.clone())
 								)
 								.padding([10, 0, 0, 0])
 						)
