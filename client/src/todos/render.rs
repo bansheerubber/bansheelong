@@ -263,11 +263,26 @@ impl View {
 			}
 
 			if let Some(meal) = meal {
+				let acquired_ingredient_count = meal.ingredients.iter()
+					.fold(0, |prev, planned_ingredient| {
+						if planned_ingredient.acquired {
+							prev + 1
+						} else {
+							prev
+						}
+					});
+
+				let character = if acquired_ingredient_count == meal.ingredients.len() {
+					"#"
+				} else {
+					"!"
+				};
+
 				// add meal if there is one
 				column = column.push(
 					Row::new()
 						.push(
-							Container::new(Text::new("#"))
+							Container::new(Text::new(character))
 								.width(Length::Units(14))
 								.align_x(alignment::Horizontal::Center)
 								.padding([0, 4, 0, 0])
