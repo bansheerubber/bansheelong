@@ -275,7 +275,7 @@ impl Application for Window {
 				}
 			},
 			Self::Message::UpdatePlannedMeal(meal) => {
-				self.update_log = self.io.as_ref().add_planned_meal_log(meal.clone());
+				self.update_log.append(&mut self.io.as_ref().add_planned_meal_log(meal.clone()));
 				self.last_update_to_log = Instant::now();
 
 				Command::batch([
