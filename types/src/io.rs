@@ -402,9 +402,10 @@ impl IO {
 					
 					name = Some(String::from(captures.get(1).unwrap().as_str()));
 					ingredients.clear();
-				} else if line.trim().len() > 0 {
+				} else if line.trim().len() > 0 && line.split("-").map(str::to_string).collect::<Vec<String>>().len() > 1 {
+					let line = line.split("-").skip(1).map(str::to_string).collect::<Vec<String>>().join("-");
 					ingredients.push(Ingredient {
-						name: line.split("-").skip(1).next().unwrap().trim().to_string(),
+						name: line.trim().to_string(),
 					});
 				}
 			}
