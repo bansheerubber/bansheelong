@@ -1,6 +1,6 @@
 use std::env;
 
-use iced::{ Font };
+use iced::Font;
 
 pub static WINDOW_WIDTH: u16 = 1480;
 pub static WINDOW_HEIGHT: u16 = 320;
