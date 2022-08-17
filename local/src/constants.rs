@@ -17,6 +17,7 @@ pub(crate) const TIMESHEET_HEIGHT: u32 = 1008;
 pub(crate) const TIMESHEET_HOUR_HEIGHT: u32 = TIMESHEET_HEIGHT / 24;
 pub(crate) const TIMESHEET_HEIGHT_PADDING: u32 = 4;
 pub(crate) const TIMESHEET_TEXT_COLOR: Rgba<u8> = Rgba([233, 217, 233, 255]);
+pub(crate) const TIMESHEET_TIME_LINE: Rgba<u8> = Rgba([88, 60, 99, 255]);
 pub(crate) const TIMESHEET_WIDTH_PADDING: u32 = FONT_WIDTH * 3;
 
 pub(crate) const TIMESHEET_BLUE: Rgba<u8> = Rgba([138, 118, 224, 255]);

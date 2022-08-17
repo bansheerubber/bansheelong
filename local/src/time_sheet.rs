@@ -1,5 +1,5 @@
 use bansheelong_types::{ Date, IO, Item, Weekday };
-use chrono::{ Datelike, Local };
+use chrono::{ Datelike, Local, Timelike };
 use image::RgbaImage;
 use imageproc::drawing::{ draw_filled_rect_mut, draw_text_mut };
 use imageproc::rect::Rect;
@@ -15,6 +15,7 @@ use crate::constants:: {
 	TIMESHEET_HEIGHT,
 	TIMESHEET_HEIGHT_PADDING,
 	TIMESHEET_HOUR_HEIGHT,
+	TIMESHEET_TIME_LINE,
 	TIMESHEET_WIDTH_PADDING
 };
 
@@ -68,19 +69,6 @@ pub fn draw_time_sheet(database: &IO, file_name: String) {
 
 	draw_filled_rect_mut(&mut image, Rect::at(0, 0).of_size(width, height), BACKGROUND_COLOR);
 
-	// plot time
-	for i in START_TIME..=END_TIME {
-		draw_text_mut(
-			&mut image,
-			TODO_LIST_TEXT_COLOR,
-			(FONT_WIDTH / 2) as i32,
-			((i - START_TIME) as f32 / 24.0 * TIMESHEET_HEIGHT as f32 + 0.5) as i32 + TIMESHEET_HEIGHT_PADDING as i32,
-			FONT_SCALE,
-			&FONT,
-			time_index_to_hour(i).as_str()
-		);
-	}
-
 	let mut color_index = 0;
 	let time = Local::now();
 
@@ -126,6 +114,27 @@ pub fn draw_time_sheet(database: &IO, file_name: String) {
 				draw_item(&mut image, item, &mut color_index);
 			}
 		}
+	}
+
+	// draw time line
+	draw_filled_rect_mut(
+		&mut image,
+		Rect::at(0, time_to_position(time.hour() as u8, time.minute() as u8))
+			.of_size(width, 1),
+		TIMESHEET_TIME_LINE
+	);
+
+	// plot time
+	for i in START_TIME..=END_TIME {
+		draw_text_mut(
+			&mut image,
+			TODO_LIST_TEXT_COLOR,
+			(FONT_WIDTH / 2) as i32,
+			((i - START_TIME) as f32 / 24.0 * TIMESHEET_HEIGHT as f32 + 0.5) as i32 + TIMESHEET_HEIGHT_PADDING as i32,
+			FONT_SCALE,
+			&FONT,
+			time_index_to_hour(i).as_str()
+		);
 	}
 
 	if let Err(error) = image.save(file_name) {
