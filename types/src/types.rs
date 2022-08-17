@@ -269,6 +269,7 @@ impl Ingredient {
 pub struct Recipe {
 	pub cooking_steps: Vec<String>,
 	pub ingredients: Vec<Ingredient>,
+	pub image_url: Option<String>,
 	pub minutes: Option<u32>,
 	pub name: String,
 	pub preparation_steps: Vec<String>,

@@ -409,6 +409,7 @@ impl IO {
 
 			// cleared whenever we get a new name
 			let mut cooking_steps = Vec::new();
+			let mut image_url = None;
 			let mut ingredients = Vec::new();
 			let mut minutes = None;
 			let mut preparation_steps = Vec::new();
@@ -418,6 +419,7 @@ impl IO {
 					if name != None {
 						self.add_recipe(Recipe {
 							cooking_steps: cooking_steps.clone(),
+							image_url,
 							ingredients: ingredients.clone(),
 							minutes,
 							name: name.unwrap(),
@@ -431,6 +433,12 @@ impl IO {
 					
 					name = Some(String::from(captures.get(1).unwrap().as_str()));
 					
+					image_url = if let Some(capture) = captures.get(2) {
+						Some(capture.as_str().to_string())
+					} else {
+						None
+					};
+
 					minutes = if let Some(capture) = captures.get(3) {
 						match capture.as_str().parse::<u32>() {
 							Ok(minutes) => Some(minutes),
@@ -463,6 +471,7 @@ impl IO {
 			if name != None {
 				self.add_recipe(Recipe {
 					cooking_steps,
+					image_url,
 					ingredients,
 					minutes,
 					name: name.unwrap(),
