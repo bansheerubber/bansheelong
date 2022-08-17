@@ -681,6 +681,15 @@ impl View {
 				} else {
 					meal
 				};
+
+				let selected_ingredient_count = selected_meal.ingredients.iter()
+					.fold(0, |prev, x| {
+						if x.acquired {
+							prev + 1
+						} else {
+							prev
+						}
+					});
 				
 				prev.push(
 					Button::new(
@@ -698,13 +707,13 @@ impl View {
 								)
 								.push(
 									Text::new(
-										selected_meal.ingredients.iter().fold("\u{e2e6}", |prev, y| {
-											if prev == "\u{e836}" || y.acquired {
-												prev
-											} else {
-												"\u{e836}"
-											}
-										})
+										if selected_ingredient_count == selected_meal.ingredients.len() {
+											"\u{e2e6}"
+										} else if selected_ingredient_count != 0 {
+											"\u{e837}"
+										} else {
+											"\u{e836}"
+										}
 									)
 										.width(Length::Shrink)
 										.font(constants::ICONS)
