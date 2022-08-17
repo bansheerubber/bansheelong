@@ -428,14 +428,41 @@ enum TimeError {
 	BadStartHours,
 	BadEndMinutes,
 	BadStartMinutes,
+	InvalidEndAmPm,
+	InvalidTimeRange,
+	NeededEndHours,
+	NeededEndTime,
 }
 
 fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 	lazy_static! {
-		static ref TIME_REGEX: Regex = Regex::new(r"(m|t|w|th|f|s|su)?(\d{1,2})(:\d{2})?(am|pm)?(-|\+)(\d{0,2})(:\d{2})?(am|pm)?").unwrap();
+		// group 1: day (used for recurring events)
+		// group 2: start hours
+		// group 3: start minutes (optional)
+		// group 4: start time am/pm (optional, inferred if not specified)
+		// group 5: either a - for specifying a time range, or a + for a calculated time range
+		// group 6: end hours (optional, required for time range)
+		// group 7: end minutes (optional)
+		// group 8: end time am/pm (optional, only for time range)
+		static ref TIME_REGEX: Regex = Regex::new(
+			r"(m|t|w|th|f|s|su)?(\d{1,2})(:\d{2})?(am|pm)?(-|\+)(\d{0,2})(:\d{2})?(am|pm)?"
+		).unwrap();
 	}
 	
 	if let Some(captures) = TIME_REGEX.captures(&line.as_str().to_lowercase()) {
+		// get operator
+		let operator = String::from(captures.get(5).unwrap().as_str());
+
+		if operator == "-" { // time range error checking
+			if captures.get(6).unwrap().as_str() == "" {
+				return Err(TimeError::NeededEndHours);
+			}
+		} else if captures.get(8).is_some() { // calculated time range error checking
+			return Err(TimeError::InvalidEndAmPm);
+		} else if captures.get(6).unwrap().as_str() == "" && captures.get(7).is_none() {
+			return Err(TimeError::NeededEndTime);
+		}
+		
 		// decode day
 		let day = if let None = captures.get(1) {
 			None
@@ -482,7 +509,7 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 		};
 
 		// decode end hours
-		let mut end_hour = if let None = captures.get(6) {
+		let mut end_hour = if captures.get(6).unwrap().as_str() == "" {
 			0
 		} else {
 			match String::from(captures.get(6).unwrap().as_str()).parse::<u8>() {
@@ -542,7 +569,6 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 		}
 
 		// handle operators
-		let operator = String::from(captures.get(5).unwrap().as_str());
 		if end_ampm == "pm" && end_hour != 12 && operator != "+" {
 			end_hour += 12;
 		}
@@ -555,6 +581,12 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 				end_hour += 1;
 				end_minute = end_minute % 60;
 			}
+		}
+
+		if start_hour > end_hour {
+			return Err(TimeError::InvalidTimeRange);
+		} else if start_hour == end_hour && start_minute >= end_minute {
+			return Err(TimeError::InvalidTimeRange);
 		}
 
 		Ok(Some(Time {
