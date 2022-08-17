@@ -187,27 +187,30 @@ fn get_planner_right_panel<'a, I>(
 					day_in_week = 0;
 				}
 
-				week = week
-					.push(
-						Button::new(
-							state,
-							Container::new(
-								if day >= 1 && day <= DAY_COUNT[month_index as usize] {
-									Text::new(day.to_string())
-										.size(18)
-								} else {
-									Text::new("")
-								}
-							)
-								.padding([0, 0, 0, 3])
-								.width(WEEK_SELECT_DAY_SIZE)
-								.height(WEEK_SELECT_DAY_SIZE)
-								.style(style::MealsDayContainer)
-						)
-							.on_press(Message::PlannerDaySelect(day))
-							.style(style::DarkButton)
-							.padding(0)
+				let mut button = Button::new(
+					state,
+					Container::new(
+						if day >= 1 && day <= DAY_COUNT[month_index as usize] {
+							Text::new(day.to_string())
+								.size(18)
+						} else {
+							Text::new("")
+						}
 					)
+						.padding([0, 0, 0, 3])
+						.width(WEEK_SELECT_DAY_SIZE)
+						.height(WEEK_SELECT_DAY_SIZE)
+						.style(style::MealsDayContainer)
+				)
+					.style(style::DarkButton)
+					.padding(0);
+				
+				if day >= 1 && day <= DAY_COUNT[month_index as usize] {
+					button = button.on_press(Message::PlannerDaySelect(day));
+				}
+
+				week = week
+					.push(button)
 					.push(Space::new(WEEK_SELECT_DAY_SPACING, Length::Units(0)));
 
 				day += 1;
