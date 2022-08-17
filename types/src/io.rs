@@ -334,6 +334,9 @@ impl IO {
 			};
 
 			lazy_static! {
+				// group 1: month
+				// group 2: day
+				// group 3: year
 				static ref DATE_REGEX: Regex = Regex::new(r"([0-9]+)/([0-9]+)/([0-9]+)").unwrap();
 			}
 			
@@ -385,35 +388,72 @@ impl IO {
 			};
 
 			lazy_static! {
-				static ref NAME_REGEX: Regex = Regex::new(r"([a-zA-Z\s]+)?:").unwrap();
+				// group 1: recipe name
+
+				// group 2 & 3 are optional and dependent on each other
+				// group 2: url of picture
+				// group 3: minutes it takes to complete meal
+				static ref NAME_REGEX: Regex = Regex::new(
+					r"^([a-zA-Z\s\-0-9]+)(?:\s+?\(([a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=]+),\s*?([0-9]+)\))?:$"
+				).unwrap();
+
+				// group 1: markup character delineating ingredient/steps/etc
+				// group 2: text description of ingredient/step/etc
+				static ref INFO_REGEX: Regex = Regex::new(r"([$#-]) (.+)").unwrap();
 			}
 
 			let lines: Vec<String> = string.split("\n").map(str::to_string).collect();
+
 			let mut name = None;
+
+			// cleared whenever we get a new name
+			let mut cooking_steps: Vec<String> = Vec::new();
 			let mut ingredients: Vec<Ingredient> = Vec::new();
+			let mut preparation_steps: Vec<String> = Vec::new();
+
 			for line in lines {
 				if let Some(captures) = NAME_REGEX.captures(&line) {
 					if name != None {
 						self.add_recipe(Recipe {
+							cooking_steps: cooking_steps.clone(),
 							ingredients: ingredients.clone(),
 							name: name.unwrap(),
+							preparation_steps: preparation_steps.clone(),
 						})?;
 					}
+
+					cooking_steps.clear();
+					ingredients.clear();
+					preparation_steps.clear();
 					
 					name = Some(String::from(captures.get(1).unwrap().as_str()));
-					ingredients.clear();
-				} else if line.trim().len() > 0 && line.split("-").map(str::to_string).collect::<Vec<String>>().len() > 1 {
-					let line = line.split("-").skip(1).map(str::to_string).collect::<Vec<String>>().join("-");
-					ingredients.push(Ingredient {
-						name: line.trim().to_string(),
-					});
+				} else if let Some(captures) = INFO_REGEX.captures(&line) {
+					let first_character = captures.get(1).unwrap().as_str();
+					let rest = String::from(captures.get(2).unwrap().as_str());
+
+					match first_character {
+						"-" => { // ingredient markup
+							ingredients.push(Ingredient {
+								name: rest,
+							});
+						},
+						"#" => { // preparation markup
+							preparation_steps.push(rest);
+						},
+						"$" => { // cooking markup
+							cooking_steps.push(rest);
+						},
+						_ => {},
+					}
 				}
 			}
 
 			if name != None {
 				self.add_recipe(Recipe {
+					cooking_steps,
 					ingredients,
 					name: name.unwrap(),
+					preparation_steps,
 				})?;
 			}
 		}

@@ -267,8 +267,10 @@ impl Ingredient {
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Recipe {
+	pub cooking_steps: Vec<String>,
 	pub ingredients: Vec<Ingredient>,
 	pub name: String,
+	pub preparation_steps: Vec<String>,
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
