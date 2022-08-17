@@ -280,7 +280,79 @@ fn get_planner_right_panel<'a, I>(
 										Space::new(Length::Units(6), Length::Units(0))
 									)
 									.push(
-										Text::new(x.name.clone())
+										Text::new(ingredient.name.clone())
+									)
+									.padding([10, 0, 0, 0])
+							)
+						});
+					
+					// horizontal line & title
+					information_column = information_column
+						.push(
+							Container::new(
+								Container::new(Text::new(""))
+									.style(style::VerticalRule)
+									.width(Length::Fill)
+									.height(Length::Units(2))
+							)
+								.width(Length::Fill)
+								.padding([8, 0])
+						)
+						.push(
+							Text::new("Ingredient Prep")
+						);
+					
+					// show preparation steps
+					information_column = selected_recipe.preparation_steps.iter()
+						.enumerate()
+						.fold(information_column, |information_column, (index, step)| {
+							information_column.push(
+								Row::new()
+									.push(
+										Text::new(format!("{}.", index + 1))
+											.width(Length::Units(20))
+									)
+									.push(
+										Space::new(Length::Units(6), Length::Units(0))
+									)
+									.push(
+										Text::new(step)
+									)
+									.padding([10, 0, 0, 0])
+							)
+						});
+					
+					// horizontal line & title
+					information_column = information_column
+						.push(
+							Container::new(
+								Container::new(Text::new(""))
+									.style(style::VerticalRule)
+									.width(Length::Fill)
+									.height(Length::Units(2))
+							)
+								.width(Length::Fill)
+								.padding([8, 0])
+						)
+						.push(
+							Text::new("Cooking")
+						);
+					
+					// show cooking steps
+					information_column = selected_recipe.cooking_steps.iter()
+						.enumerate()
+						.fold(information_column, |information_column, (index, step)| {
+							information_column.push(
+								Row::new()
+									.push(
+										Text::new(format!("{}.", index + 1))
+											.width(Length::Units(20))
+									)
+									.push(
+										Space::new(Length::Units(6), Length::Units(0))
+									)
+									.push(
+										Text::new(step)
 									)
 									.padding([10, 0, 0, 0])
 							)
@@ -811,6 +883,79 @@ impl View {
 					)
 				});
 
+			// horizontal line & title
+			information_column = information_column
+				.push(
+					Container::new(
+						Container::new(Text::new(""))
+							.style(style::VerticalRule)
+							.width(Length::Fill)
+							.height(Length::Units(2))
+					)
+						.width(Length::Fill)
+						.padding([8, 0])
+				)
+				.push(
+					Text::new("Ingredient Prep")
+				);
+			
+			// show preparation steps
+			information_column = selected_meal.recipe.preparation_steps.iter()
+				.enumerate()
+				.fold(information_column, |information_column, (index, step)| {
+					information_column.push(
+						Row::new()
+							.push(
+								Text::new(format!("{}.", index + 1))
+									.width(Length::Units(20))
+							)
+							.push(
+								Space::new(Length::Units(6), Length::Units(0))
+							)
+							.push(
+								Text::new(step)
+							)
+							.padding([10, 0, 0, 0])
+					)
+				});
+			
+			// horizontal line & title
+			information_column = information_column
+				.push(
+					Container::new(
+						Container::new(Text::new(""))
+							.style(style::VerticalRule)
+							.width(Length::Fill)
+							.height(Length::Units(2))
+					)
+						.width(Length::Fill)
+						.padding([8, 0])
+				)
+				.push(
+					Text::new("Cooking")
+				);
+			
+			// show cooking steps
+			information_column = selected_meal.recipe.cooking_steps.iter()
+				.enumerate()
+				.fold(information_column, |information_column, (index, step)| {
+					information_column.push(
+						Row::new()
+							.push(
+								Text::new(format!("{}.", index + 1))
+									.width(Length::Units(20))
+							)
+							.push(
+								Space::new(Length::Units(6), Length::Units(0))
+							)
+							.push(
+								Text::new(step)
+							)
+							.padding([10, 0, 0, 0])
+					)
+				});
+
+			// add remove meal button
 			information_column = information_column
 				.push(
 					Space::new(Length::Units(0), Length::Units(15))
