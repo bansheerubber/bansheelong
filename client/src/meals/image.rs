@@ -4,7 +4,7 @@ use std::path::Path;
 use crate::constants::get_directory;
 
 pub fn download_image(url: &String, file_name: &String) {
-	let file_path = format!("{}/data/meals-images/{}", get_directory(), file_name);
+	let file_path = format!("{}/data/meals-images/{}.png", get_directory(), file_name);
 	
 	let request = reqwest::blocking::get(url);
 	if let Err(error) = request {
@@ -23,11 +23,11 @@ pub fn download_image(url: &String, file_name: &String) {
 }
 
 pub fn has_image(file_name: &String) -> bool {
-	Path::new(&format!("{}/data/meals-images/{}", get_directory(), file_name)).exists()
+	Path::new(&format!("{}/data/meals-images/{}.png", get_directory(), file_name)).exists()
 }
 
 pub fn is_valid_image_url(url: &String) -> bool {
-	if &url[0..4] == "http" {
+	if url.contains("https://bansheerubber.com") {
 		return true;
 	} else {
 		return false;

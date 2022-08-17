@@ -7,6 +7,7 @@ use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Alignment, Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
 use crate::constants;
+use crate::meals::has_image;
 use crate::menu::{ Menu, BUTTONS, BUTTON_AREA_SIZE, BUTTON_COUNT, BUTTON_HEIGHT, BUTTON_SPACING };
 use crate::shared::Underline;
 use crate::style;
@@ -65,6 +66,8 @@ fn get_planner_right_panel<'a, I>(
 	ingredients_state: &'a mut scrollable::State,
 	recipe_index: Option<usize>,
 	selected_date: Option<Date>,
+	image: &'a image::Handle,
+	image_state: &'a mut image::viewer::State,
 	database: Arc<IO>
 ) -> (Container<'a, Message>, u16)
 	where
@@ -240,8 +243,9 @@ fn get_planner_right_panel<'a, I>(
 
 				// construct information column that lets us select which ingredients we have
 				information_column = information_column
-					.push( // TODO put image here
-						Space::new(Length::Units(415), Length::Units(300))
+					.push(
+						image::Viewer::new(image_state, image.clone())
+							.width(Length::Units(415))
 					)
 					.push(
 						Space::new(Length::Units(0), Length::Units(5))
@@ -410,6 +414,8 @@ enum PlannerState {
 struct PlannerInfo {
 	day_button_states: Vec<button::State>,
 	day_index: Option<i8>,
+	image: image::Handle,
+	image_state: image::viewer::State,
 	ingredients_state: scrollable::State,
 	meal_add_state: button::State,
 	month_index: u32, // starts from 0
@@ -484,7 +490,7 @@ impl View {
 			last_interaction: None,
 			planned: PlannedInfo {
 				image: image::Handle::from_path(format!(
-					"{}/data/meals/orange chicken.jpg",
+					"{}/data/meals-images/placeholder.png",
 					constants::get_directory()
 				)),
 				image_state: image::viewer::State::new(),
@@ -501,6 +507,11 @@ impl View {
 			planner: PlannerInfo {
 				day_index: None,
 				day_button_states: Vec::new(),
+				image: image::Handle::from_path(format!(
+					"{}/data/meals-images/placeholder.png",
+					constants::get_directory()
+				)),
+				image_state: image::viewer::State::new(),
 				ingredients_state: scrollable::State::new(),
 				meal_add_state: button::State::new(),
 				month_index: 0,
@@ -599,6 +610,8 @@ impl View {
 			&mut self.planner.ingredients_state,
 			self.planner.recipe_index,
 			selected_date,
+			&self.planner.image,
+			&mut self.planner.image_state,
 			self.database.as_ref().unwrap().clone()
 		);
 
@@ -1067,6 +1080,18 @@ impl View {
 			Message::PlannedMealSelect(date) => {
 				self.select_planned_meal(date);
 				self.planned.ingredients_state.snap_to_absolute(0.0);
+
+				let recipe = &self.database.as_ref().unwrap().meals_database.planned_meal_mapping[&date].recipe;
+				if has_image(&recipe.name) {
+					self.planned.image = image::Handle::from_path(
+						format!("{}/data/meals-images/{}.png", constants::get_directory(), recipe.name)
+					);
+				} else {
+					self.planned.image = image::Handle::from_path(
+						format!("{}/data/meals-images/placeholder.png", constants::get_directory())
+					);
+				}
+
 				Command::none()
 			},
 			Message::PlannerDaySelect(index) => {
@@ -1086,6 +1111,18 @@ impl View {
 			Message::PlannerRecipeSelect(index) => {
 				self.planner.recipe_index = Some(index);
 				self.planner.ingredients_state.snap_to_absolute(0.0);
+
+				let recipe = &self.database.as_ref().unwrap().meals_database.recipes[index];
+				if has_image(&recipe.name) {
+					self.planner.image = image::Handle::from_path(
+						format!("{}/data/meals-images/{}.png", constants::get_directory(), recipe.name)
+					);
+				} else {
+					self.planner.image = image::Handle::from_path(
+						format!("{}/data/meals-images/placeholder.png", constants::get_directory())
+					);
+				}
+
 				Command::none()
 			},
 			Message::RecipesScroll(scroll) => {
