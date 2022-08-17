@@ -316,7 +316,7 @@ fn get_planner_right_panel<'a, I>(
 					.on_scroll_absolute(move |_| Message::PlannerRecipeScroll)
 					.width(Length::Units(435))
 					.height(Length::Fill)
-					.padding([20, 15, 20, 0])
+					.padding([20, 15, 20, 5])
 					.style(style::TodoScrollable);
 
 				(Container::new(scrollable), constants::MENU_WIDTH - 435)
