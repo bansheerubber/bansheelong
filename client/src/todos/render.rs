@@ -1,3 +1,4 @@
+use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
@@ -5,7 +6,7 @@ use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable
 
 use chrono::{ Datelike, Local, TimeZone, Utc, Weekday };
 
-use bansheelong_types::IO;
+use bansheelong_types::{ Date, Day, IO, PlannedMeal };
 
 use crate::constants;
 use crate::menu::{ Menu, BUTTONS, BUTTON_AREA_SIZE, BUTTON_COUNT, BUTTON_HEIGHT, BUTTON_SPACING };
@@ -177,75 +178,111 @@ impl View {
 			item.time.is_some() && item.time.unwrap().day.is_some()
 		};
 
-		for (_, day) in self.database.as_ref().unwrap().todos_database.mapping.iter() {
-			// find the last valid index in the list
-			let mut last_index = -1;
-			let mut index = 0;
-			for item in day.items.iter() {
-				if item.description != "" && !has_time_day(&item) {
-					last_index = index;
+		let mut new_mapping: BTreeMap<Option<Date>, (Option<&Day>, Option<&PlannedMeal>)> = BTreeMap::new();
+		for (date, day) in self.database.as_ref().unwrap().todos_database.mapping.iter() {
+			new_mapping.insert(date.clone(), (Some(day), None));
+		}
+
+		for (date, meal) in self.database.as_ref().unwrap().meals_database.planned_meal_mapping.iter() {
+			if let Some(entry) = new_mapping.get_mut(&Some(date.clone())) {
+				entry.1 = Some(meal);
+			} else {
+				new_mapping.insert(Some(date.clone()), (None, Some(meal)));
+			}
+		}
+
+		for (date, (day, meal)) in new_mapping.iter() {
+			let mut column = Column::new()
+				.push(
+					date_to_ui(*date)
+				)
+				.push(
+					Space::new(Length::Units(0), Length::Units(5))
+				)
+				.width(Length::Fill);
+			
+			if let Some(day) = day {
+				// find the last valid index in the list
+				let mut last_index = -1;
+				let mut index = 0;
+				for item in day.items.iter() {
+					if item.description != "" && !has_time_day(&item) {
+						last_index = index;
+					}
+					index += 1;
 				}
-				index += 1;
+
+				if last_index == -1 && meal.is_none() {
+					continue;
+				}
+
+				index = 0;
+				let mut color_index = 0;
+
+				column = day.items.iter().fold(
+					column,
+					|acc, item| {
+						index += 1;
+						if index - 1 > last_index || has_time_day(&item) {
+							acc
+						} else {
+							let circle_or_dash = if item.time.is_some() && day.date == current_date {
+								color_index += 1;
+								Container::new(
+									Container::new(Space::new(Length::Units(0), Length::Units(0)))
+										.style(get_todo_circle((color_index - 1) % color_amount))
+										.width(Length::Units(7))
+										.height(Length::Units(7))
+								)
+									.width(Length::Units(10))
+									.align_x(alignment::Horizontal::Center)
+									.padding([7, 4, 0, 0])
+							} else if item.description != "" {
+								Container::new(Text::new("-"))
+									.width(Length::Units(10))
+									.align_x(alignment::Horizontal::Center)
+									.padding([0, 4, 0, 0])
+							} else {
+								Container::new(Space::new(Length::Units(0), Length::Units(0)))
+							};
+
+							acc.push(
+								Row::new()
+									.push(
+										circle_or_dash
+									)
+									.push(
+										Text::new(format!("{} ", item.description.clone().replace("- ", "")))
+											.font(constants::NOTOSANS_THIN)
+											.width(Length::Fill)
+									)
+							)
+						}
+					}
+				);
 			}
 
-			if last_index == -1 {
-				continue;
+			if let Some(meal) = meal {
+				// add meal if there is one
+				column = column.push(
+					Row::new()
+						.push(
+							Container::new(Text::new("#"))
+								.width(Length::Units(14))
+								.align_x(alignment::Horizontal::Center)
+								.padding([0, 4, 0, 0])
+						)
+						.push(
+							Text::new(format!("{} ", meal.recipe.name.clone()))
+								.font(constants::NOTOSANS_THIN)
+								.width(Length::Fill)
+						)
+				)
 			}
-			
-			index = 0;
-			let mut color_index = 0;
+
 			scrollable = scrollable.push(
 				Container::new(
-					Container::new(
-							day.items.iter().fold(
-								Column::new()
-									.push(
-										date_to_ui(day.date)
-									)
-									.push(
-										Space::new(Length::Units(0), Length::Units(5))
-									)
-									.width(Length::Fill),
-								|acc, item| {
-									index += 1;
-									if index - 1 > last_index || has_time_day(&item) {
-										acc
-									} else {
-										let circle_or_dash = if item.time.is_some() && day.date == current_date {
-											color_index += 1;
-											Container::new(
-												Container::new(Space::new(Length::Units(0), Length::Units(0)))
-													.style(get_todo_circle((color_index - 1) % color_amount))
-													.width(Length::Units(7))
-													.height(Length::Units(7))
-											)
-												.width(Length::Units(10))
-												.align_x(alignment::Horizontal::Center)
-												.padding([7, 4, 0, 0])
-										} else if item.description != "" {
-											Container::new(Text::new("-"))
-												.width(Length::Units(10))
-												.align_x(alignment::Horizontal::Center)
-												.padding([0, 4, 0, 0])
-										} else {
-											Container::new(Space::new(Length::Units(0), Length::Units(0)))
-										};
-
-										acc.push(
-											Row::new()
-												.push(
-													circle_or_dash
-												)
-												.push(
-													Text::new(format!("{} ", item.description.clone().replace("- ", "")))
-														.font(constants::NOTOSANS_THIN)
-														.width(Length::Fill)
-												)
-										)
-									}
-								}
-							)
-					)
+					Container::new(column)
 						.width(Length::Fill)
 						.style(style::TodoItem)
 						.padding(10)
