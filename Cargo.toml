@@ -2,6 +2,7 @@
 resolver = "2"
 members = [
 	"client",
+	"local",
 	"server",
 	"storage_server",
 	"types",

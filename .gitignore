@@ -3,3 +3,5 @@ data
 index.html
 target
 /todos
+local/fonts
+*.png

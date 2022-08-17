@@ -1,6 +1,7 @@
 use notify::{ Op, RawEvent, RecursiveMode, Watcher, raw_watcher };
 use std::sync::mpsc::channel;
 
+use bansheelong_local::draw_todo_list;
 use bansheelong_types::{ IO, Resource, WriteDatabase, get_todos_host, get_todos_port, write_database };
 
 #[tokio::main]
@@ -29,6 +30,8 @@ async fn main() {
 						eprintln!("{:?}", error);
 						continue;
 					}
+
+					draw_todo_list(&io, String::from("/home/me/Projects/bansheelong/todo-list.png"));
 
 					if let Err(error) = write_database(
 						WriteDatabase::Full {
