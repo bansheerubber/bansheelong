@@ -663,20 +663,24 @@ impl View {
 										.width(Length::Fill)
 								)
 								.push(
-									Text::new(format!(
-										"{} {}{}",
-										recipe.ingredients.len(),
-										if let PlannerState::MealSelect = self.planner.state {
-											"ingr"
-										} else {
-											"ingredient"
-										},
-										if recipe.ingredients.len() != 1 {
-											"s"
-										} else {
-											""
-										}
-									))
+									if let Some(minutes) = recipe.minutes {
+										Text::new(format!(
+											"{} {}{}",
+											minutes,
+											if let PlannerState::MealSelect = self.planner.state {
+												"min"
+											} else {
+												"minute"
+											},
+											if minutes != 1 {
+												"s"
+											} else {
+												""
+											}
+										))
+									} else {
+										Text::new("")
+									}
 								)
 						)
 							.width(Length::Fill)
@@ -824,7 +828,22 @@ impl View {
 					Space::new(Length::Units(0), Length::Units(5))
 				)
 				.push(
-					Text::new(selected_meal.recipe.name.clone())
+					Text::new(
+						if let Some(minutes) = selected_meal.recipe.minutes {
+							format!(
+								"{} ({} minute{})",
+								selected_meal.recipe.name.clone(),
+								minutes,
+								if minutes != 1 {
+									"s"
+								} else {
+									""
+								}
+							)
+						} else {
+							selected_meal.recipe.name.clone()
+						}
+					)
 						.width(Length::Fill)
 						.horizontal_alignment(alignment::Horizontal::Center)
 				)
