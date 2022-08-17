@@ -3,10 +3,10 @@ use std::path::Path;
 
 use crate::constants::get_directory;
 
-pub fn download_image(url: String, file_name: String) {
-	let file_path = format!("{}/meals-images/{}", get_directory(), file_name);
+pub fn download_image(url: &String, file_name: &String) {
+	let file_path = format!("{}/data/meals-images/{}", get_directory(), file_name);
 	
-	let request = reqwest::blocking::get(&url);
+	let request = reqwest::blocking::get(url);
 	if let Err(error) = request {
 		eprintln!("Could not create request for '{}' with error {:?}", url, error);
 		return;
@@ -22,6 +22,14 @@ pub fn download_image(url: String, file_name: String) {
 	}
 }
 
-pub fn has_image(file_name: String) -> bool {
-	Path::new(&format!("{}/meals-images/{}", get_directory(), file_name)).exists()
+pub fn has_image(file_name: &String) -> bool {
+	Path::new(&format!("{}/data/meals-images/{}", get_directory(), file_name)).exists()
+}
+
+pub fn is_valid_image_url(url: &String) -> bool {
+	if &url[0..4] == "http" {
+		return true;
+	} else {
+		return false;
+	}
 }

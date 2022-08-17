@@ -163,6 +163,19 @@ impl Application for Window {
 						..IO::default()
 					});
 
+					for recipe in self.io.meals_database.recipes.iter() {
+						if let None = recipe.image_url {
+							continue;
+						}
+
+						let image_url = recipe.image_url.as_ref().unwrap();
+						if !meals::is_valid_image_url(image_url) || meals::has_image(&recipe.name) {
+							continue;
+						}
+
+						meals::download_image(image_url, &recipe.name);
+					}
+
 					Command::batch([
 						self.menu.update(menu::Message::CalendarMessage(
 							calendar::Message::Update(Some(self.io.clone()))
