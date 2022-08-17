@@ -5,7 +5,7 @@ use image::imageops::crop;
 use imageproc::drawing::draw_filled_rect_mut;
 use imageproc::rect::Rect;
 
-use crate::constants:: { BACKGROUND_COLOR, CHARACTERS_PER_ROW, FONT_HEIGHT, FONT_WIDTH, TEXT_COLOR, };
+use crate::constants:: { BACKGROUND_COLOR, CHARACTERS_PER_ROW, FONT_HEIGHT, FONT_WIDTH, TODO_LIST_TEXT_COLOR, };
 use crate::util::draw_todo_line;
 
 pub fn draw_todo_list(database: &IO, file_name: String) {
@@ -34,7 +34,7 @@ pub fn draw_todo_list(database: &IO, file_name: String) {
 				&mut image,
 				Rect::at(FONT_WIDTH as i32, (FONT_HEIGHT as f32 * (row + 1.0)) as i32)
 					.of_size(FONT_WIDTH * date_string.len() as u32, 1),
-				*TEXT_COLOR
+				*TODO_LIST_TEXT_COLOR
 			);
 
 			row = draw_todo_line(&mut image, date_string.clone(), row);

@@ -1,7 +1,7 @@
 use notify::{ Op, RawEvent, RecursiveMode, Watcher, raw_watcher };
 use std::sync::mpsc::channel;
 
-use bansheelong_local::draw_todo_list;
+use bansheelong_local::{ draw_time_sheet, draw_todo_list };
 use bansheelong_types::{ IO, Resource, WriteDatabase, get_todos_host, get_todos_port, write_database };
 
 #[tokio::main]
@@ -20,6 +20,15 @@ async fn main() {
 		..IO::default()
 	};
 
+	if let Err(error)
+		= io.parse_from_human_readable(String::from(todo_list), String::from(recipe_list))
+	{
+		eprintln!("{:?}", error);
+	}
+
+	draw_todo_list(&io, String::from("/home/me/Projects/bansheelong/todo-list.png"));
+	draw_time_sheet(&io, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
+
 	loop {
 		match rx.recv() {
 			Ok(RawEvent{ path: Some(path), op: Ok(op), cookie: _ }) => {
@@ -32,6 +41,7 @@ async fn main() {
 					}
 
 					draw_todo_list(&io, String::from("/home/me/Projects/bansheelong/todo-list.png"));
+					draw_time_sheet(&io, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
 
 					if let Err(error) = write_database(
 						WriteDatabase::Full {
