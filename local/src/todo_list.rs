@@ -10,7 +10,7 @@ use crate::util::draw_todo_line;
 
 pub fn draw_todo_list(database: &IO, file_name: String) {
 	let mut image = RgbaImage::new(FONT_WIDTH * CHARACTERS_PER_ROW, 1000);
-	draw_filled_rect_mut(&mut image, Rect::at(0, 0).of_size(FONT_WIDTH * CHARACTERS_PER_ROW, 1000), *BACKGROUND_COLOR);
+	draw_filled_rect_mut(&mut image, Rect::at(0, 0).of_size(FONT_WIDTH * CHARACTERS_PER_ROW, 1000), BACKGROUND_COLOR);
 
 	let mut row = 0.5; // keep track of where we're drawing text
 
@@ -34,7 +34,7 @@ pub fn draw_todo_list(database: &IO, file_name: String) {
 				&mut image,
 				Rect::at(FONT_WIDTH as i32, (FONT_HEIGHT as f32 * (row + 1.0)) as i32)
 					.of_size(FONT_WIDTH * date_string.len() as u32, 1),
-				*TODO_LIST_TEXT_COLOR
+				TODO_LIST_TEXT_COLOR
 			);
 
 			row = draw_todo_line(&mut image, date_string.clone(), row);

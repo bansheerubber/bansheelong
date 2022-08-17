@@ -20,7 +20,7 @@ pub(crate) fn draw_todo_line(image: &mut RgbaImage, text: String, mut row: f32) 
 	for word in split {
 		if buffer_character_count + word.trim().len() + buffer.len() >= (CHARACTERS_PER_ROW - 2) as usize {
 			let joined = format!(" {} ", buffer.join(" "));
-			draw_text_mut(image, *TODO_LIST_TEXT_COLOR, 0, (row * FONT_HEIGHT as f32) as i32, *FONT_SCALE, &FONT, joined.as_str());
+			draw_text_mut(image, TODO_LIST_TEXT_COLOR, 0, (row * FONT_HEIGHT as f32) as i32, FONT_SCALE, &FONT, joined.as_str());
 			row += 1.0;
 
 			buffer.clear();
@@ -33,7 +33,7 @@ pub(crate) fn draw_todo_line(image: &mut RgbaImage, text: String, mut row: f32) 
 
 	if buffer.len() > 0 {
 		let joined = format!(" {} ", buffer.join(" "));
-		draw_text_mut(image, *TODO_LIST_TEXT_COLOR, 0, (row * FONT_HEIGHT as f32) as i32, *FONT_SCALE, &FONT, joined.as_str());
+		draw_text_mut(image, TODO_LIST_TEXT_COLOR, 0, (row * FONT_HEIGHT as f32) as i32, FONT_SCALE, &FONT, joined.as_str());
 		row += 1.0;
 	}
 
@@ -55,7 +55,7 @@ pub(crate) fn draw_timesheet_line(image: &mut RgbaImage, text: String, mut y_off
 	for word in split {
 		if buffer_character_count + word.trim().len() + buffer.len() >= (CHARACTERS_PER_ROW - 2) as usize {
 			let joined = format!("{}", buffer.join(" "));
-			draw_text_mut(image, TIMESHEET_TEXT_COLOR, TIMESHEET_WIDTH_PADDING as i32 + 4, y_offset + 3, *FONT_SCALE, &FONT, joined.as_str());
+			draw_text_mut(image, TIMESHEET_TEXT_COLOR, TIMESHEET_WIDTH_PADDING as i32 + 4, y_offset + 3, FONT_SCALE, &FONT, joined.as_str());
 			y_offset += FONT_HEIGHT as i32;
 
 			buffer.clear();
@@ -68,6 +68,6 @@ pub(crate) fn draw_timesheet_line(image: &mut RgbaImage, text: String, mut y_off
 
 	if buffer.len() > 0 {
 		let joined = format!("{}", buffer.join(" "));
-		draw_text_mut(image, TIMESHEET_TEXT_COLOR, TIMESHEET_WIDTH_PADDING as i32 + 4, y_offset + 3, *FONT_SCALE, &FONT, joined.as_str());
+		draw_text_mut(image, TIMESHEET_TEXT_COLOR, TIMESHEET_WIDTH_PADDING as i32 + 4, y_offset + 3, FONT_SCALE, &FONT, joined.as_str());
 	}
 }

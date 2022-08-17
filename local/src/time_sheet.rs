@@ -66,16 +66,16 @@ pub fn draw_time_sheet(database: &IO, file_name: String) {
 	let height = TIMESHEET_HEIGHT + TIMESHEET_HEIGHT_PADDING - TIMESHEET_HOUR_HEIGHT * (23 - (END_TIME - START_TIME));
 	let mut image = RgbaImage::new(width, height);
 
-	draw_filled_rect_mut(&mut image, Rect::at(0, 0).of_size(width, height), *BACKGROUND_COLOR);
+	draw_filled_rect_mut(&mut image, Rect::at(0, 0).of_size(width, height), BACKGROUND_COLOR);
 
 	// plot time
 	for i in START_TIME..=END_TIME {
 		draw_text_mut(
 			&mut image,
-			*TODO_LIST_TEXT_COLOR,
+			TODO_LIST_TEXT_COLOR,
 			(FONT_WIDTH / 2) as i32,
 			((i - START_TIME) as f32 / 24.0 * TIMESHEET_HEIGHT as f32 + 0.5) as i32 + TIMESHEET_HEIGHT_PADDING as i32,
-			*FONT_SCALE,
+			FONT_SCALE,
 			&FONT,
 			time_index_to_hour(i).as_str()
 		);
