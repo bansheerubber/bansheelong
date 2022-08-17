@@ -1,8 +1,29 @@
+use std::process::{ Command, Stdio };
+
 use notify::{ Op, RawEvent, RecursiveMode, Watcher, raw_watcher };
 use std::sync::mpsc::channel;
 
-use bansheelong_local::{ draw_time_sheet, draw_todo_list };
+use bansheelong_local::{ combine, draw_time_sheet, draw_todo_list };
 use bansheelong_types::{ IO, Resource, WriteDatabase, get_todos_host, get_todos_port, write_database };
+
+fn reload_feh() {
+	let child = Command::new("feh")
+		.env("DISPLAY", ":0.0")
+		.arg("--bg-fill")
+		.arg("/home/me/.config/real-background.png")
+		.stdout(Stdio::piped())
+		.spawn();
+	
+	if let Err(_) = child {
+		eprintln!("Could not run command");
+		return;
+	}
+
+	if let Err(_) = child.unwrap().wait_with_output() {
+		eprintln!("Could not wait for command to finish");
+		return;
+	}
+}
 
 #[tokio::main]
 async fn main() {
@@ -28,6 +49,13 @@ async fn main() {
 
 	draw_todo_list(&io, String::from("/home/me/Projects/bansheelong/todo-list.png"));
 	draw_time_sheet(&io, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
+	combine(
+		String::from("/home/me/.config/background2.png"),
+		String::from("/home/me/Projects/bansheelong/todo-list.png"),
+		String::from("/home/me/Projects/bansheelong/time-sheet.png"),
+		String::from("/home/me/.config/real-background.png"),
+	);
+	reload_feh();
 
 	loop {
 		match rx.recv() {
@@ -42,6 +70,13 @@ async fn main() {
 
 					draw_todo_list(&io, String::from("/home/me/Projects/bansheelong/todo-list.png"));
 					draw_time_sheet(&io, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
+					combine(
+						String::from("/home/me/.config/background2.png"),
+						String::from("/home/me/Projects/bansheelong/todo-list.png"),
+						String::from("/home/me/Projects/bansheelong/time-sheet.png"),
+						String::from("/home/me/.config/real-background.png"),
+					);
+					reload_feh();
 
 					if let Err(error) = write_database(
 						WriteDatabase::Full {
