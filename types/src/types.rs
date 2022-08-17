@@ -265,12 +265,30 @@ impl Ingredient {
 	}
 }
 
-#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+#[derive(Clone, Debug, Deserialize, Eq, Serialize)]
 pub struct Recipe {
 	pub cooking_steps: Vec<String>,
 	pub ingredients: Vec<Ingredient>,
 	pub name: String,
 	pub preparation_steps: Vec<String>,
+}
+
+impl PartialEq for Recipe {
+	fn eq(&self, other: &Self) -> bool {
+		self.name.to_lowercase() == other.name.to_lowercase()
+	}
+}
+
+impl Ord for Recipe {
+	fn cmp(&self, other: &Self) -> Ordering {
+		self.name.to_lowercase().cmp(&other.name.to_lowercase())
+	}
+}
+
+impl PartialOrd for Recipe {
+	fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+		Some(self.cmp(other))
+	}
 }
 
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]

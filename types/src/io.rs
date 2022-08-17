@@ -245,6 +245,7 @@ impl IO {
 	pub fn add_recipe(&mut self, recipe: Recipe) -> Result<&MealsDatabase, Error> {
 		self.dirty = Dirty::Write;
 		self.meals_database.recipes.push(recipe);
+		self.meals_database.recipes.sort();
 		Ok(&self.meals_database)
 	}
 
