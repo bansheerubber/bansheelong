@@ -1,9 +1,9 @@
 use std::process::{ Command, Stdio };
-use std::sync::{ Arc, Mutex };
+use std::sync::{ Arc, mpsc::channel };
 
 use futures::future;
 use notify::{ Op, RawEvent, RecursiveMode, Watcher, raw_watcher };
-use std::sync::mpsc::channel;
+use tokio::sync::Mutex;
 
 use bansheelong_local::{ combine, draw_time_sheet, draw_todo_list };
 use bansheelong_types::{ IO, Resource, WriteDatabase, get_todos_host, get_todos_port, write_database };
@@ -49,14 +49,7 @@ async fn main() {
 			loop {
 				tokio::time::sleep(tokio::time::Duration::from_secs(300)).await;
 
-				let locked = match io.lock() {
-					Ok(locked) => locked,
-					Err(error) => {
-						eprintln!("Could not acquire refresh lock {:?}", error);
-						continue;
-					},
-				};
-
+				let locked = io.lock().await;
 				draw_time_sheet(&locked, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
 				combine(
 					String::from("/home/me/.config/background2.png"),
@@ -73,14 +66,8 @@ async fn main() {
 				match rx.recv() {
 					Ok(RawEvent{ path: Some(path), op: Ok(op), cookie: _ }) => {
 						if (path.to_str() == Some(todo_list) || path.to_str() == Some(recipe_list)) && op == Op::CLOSE_WRITE {
-							let mut locked = match io.lock() {
-								Ok(locked) => locked,
-								Err(error) => {
-									eprintln!("Could not acquire update lock {:?}", error);
-									continue;
-								},
-							};
-							
+							let mut locked = io.lock().await;
+
 							if let Err(error)
 								= locked.parse_from_human_readable(String::from(todo_list), String::from(recipe_list))
 							{
