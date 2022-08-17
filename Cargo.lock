@@ -219,6 +219,7 @@ version = "0.1.0"
 dependencies = [
  "bansheelong_local",
  "bansheelong_types",
+ "futures",
  "notify",
  "tokio",
 ]

@@ -1,5 +1,7 @@
 use std::process::{ Command, Stdio };
+use std::sync::{ Arc, Mutex };
 
+use futures::future;
 use notify::{ Op, RawEvent, RecursiveMode, Watcher, raw_watcher };
 use std::sync::mpsc::channel;
 
@@ -34,63 +36,83 @@ async fn main() {
 	let mut watcher = raw_watcher(tx).unwrap();
 	watcher.watch("/home/me/Projects/bansheetodo", RecursiveMode::Recursive).unwrap();
 
-	let mut io = IO {
+	let io = Arc::new(Mutex::new(IO {
 		resource: Resource {
 			reference: format!("http://{}:{}", get_todos_host(), get_todos_port()),
 		},
 		..IO::default()
-	};
+	}));
 
-	if let Err(error)
-		= io.parse_from_human_readable(String::from(todo_list), String::from(recipe_list))
-	{
-		eprintln!("{:?}", error);
-	}
+	future::join(
+		async {
+			let io = io.clone();
+			loop {
+				tokio::time::sleep(tokio::time::Duration::from_secs(300)).await;
 
-	draw_todo_list(&io, String::from("/home/me/Projects/bansheelong/todo-list.png"));
-	draw_time_sheet(&io, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
-	combine(
-		String::from("/home/me/.config/background2.png"),
-		String::from("/home/me/Projects/bansheelong/todo-list.png"),
-		String::from("/home/me/Projects/bansheelong/time-sheet.png"),
-		String::from("/home/me/.config/real-background.png"),
-	);
-	reload_feh();
-
-	loop {
-		match rx.recv() {
-			Ok(RawEvent{ path: Some(path), op: Ok(op), cookie: _ }) => {
-				if (path.to_str() == Some(todo_list) || path.to_str() == Some(recipe_list)) && op == Op::CLOSE_WRITE {
-					if let Err(error)
-						= io.parse_from_human_readable(String::from(todo_list), String::from(recipe_list))
-					{
-						eprintln!("{:?}", error);
+				let locked = match io.lock() {
+					Ok(locked) => locked,
+					Err(error) => {
+						eprintln!("Could not acquire refresh lock {:?}", error);
 						continue;
-					}
+					},
+				};
 
-					draw_todo_list(&io, String::from("/home/me/Projects/bansheelong/todo-list.png"));
-					draw_time_sheet(&io, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
-					combine(
-						String::from("/home/me/.config/background2.png"),
-						String::from("/home/me/Projects/bansheelong/todo-list.png"),
-						String::from("/home/me/Projects/bansheelong/time-sheet.png"),
-						String::from("/home/me/.config/real-background.png"),
-					);
-					reload_feh();
+				draw_time_sheet(&locked, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
+				combine(
+					String::from("/home/me/.config/background2.png"),
+					String::from("/home/me/Projects/bansheelong/todo-list.png"),
+					String::from("/home/me/Projects/bansheelong/time-sheet.png"),
+					String::from("/home/me/.config/real-background.png"),
+				);
+				reload_feh();
+			}
+		},
+		async {
+			let io = io.clone();
+			loop {
+				match rx.recv() {
+					Ok(RawEvent{ path: Some(path), op: Ok(op), cookie: _ }) => {
+						if (path.to_str() == Some(todo_list) || path.to_str() == Some(recipe_list)) && op == Op::CLOSE_WRITE {
+							let mut locked = match io.lock() {
+								Ok(locked) => locked,
+								Err(error) => {
+									eprintln!("Could not acquire update lock {:?}", error);
+									continue;
+								},
+							};
+							
+							if let Err(error)
+								= locked.parse_from_human_readable(String::from(todo_list), String::from(recipe_list))
+							{
+								eprintln!("{:?}", error);
+								continue;
+							}
 
-					if let Err(error) = write_database(
-						WriteDatabase::Full {
-							meals: &io.meals_database,
-							todos: &io.todos_database,
-						},
-						io.resource.clone()
-					).await {
-						eprintln!("{:?}", error);
-					}
-				}
-			},
-			Ok(event) => println!("broken event: {:?}", event),
-			Err(e) => println!("watch error: {:?}", e),
-		};
-	}
+							draw_todo_list(&locked, String::from("/home/me/Projects/bansheelong/todo-list.png"));
+							draw_time_sheet(&locked, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
+							combine(
+								String::from("/home/me/.config/background2.png"),
+								String::from("/home/me/Projects/bansheelong/todo-list.png"),
+								String::from("/home/me/Projects/bansheelong/time-sheet.png"),
+								String::from("/home/me/.config/real-background.png"),
+							);
+							reload_feh();
+
+							if let Err(error) = write_database(
+								WriteDatabase::Full {
+									meals: &locked.meals_database,
+									todos: &locked.todos_database,
+								},
+								locked.resource.clone()
+							).await {
+								eprintln!("{:?}", error);
+							}
+						}
+					},
+					Ok(event) => println!("broken event: {:?}", event),
+					Err(e) => println!("watch error: {:?}", e),
+				};
+			}
+		}
+	).await;
 }
