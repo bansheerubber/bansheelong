@@ -309,41 +309,48 @@ impl View {
 			Column::new()
 				.push( // weather icon & temperature & day & back/next buttons
 					Row::new()
-						.padding(0)
-						.align_items(Alignment::Center)
 						.push( // chevron left
 							previous_day
 						)
-						.push( // weather icon
-							Svg::from_path(
-								format!(
-									"{}/data/{}.svg",
-									get_directory(),
-									self.statuses[self.current_status as usize].icon
-								)
-							)
-								.width(Length::Units(180))
-						)
-						.push( // temperature & day
-							Column::new()
-								.padding(0)
-								.align_items(Alignment::Start)
-								.push(
-									Text::new(self.statuses[self.current_status as usize].current.get_temperature())
-										.size(70)
-										.font(NOTOSANS_BOLD)
-								)
-								.push(
-									Container::new(
-										Text::new(self.statuses[self.current_status as usize].day.to_string())
-											.size(25)
+						.push(
+							Row::new()
+								.push( // weather icon
+									Svg::from_path(
+										format!(
+											"{}/data/{}.svg",
+											get_directory(),
+											self.statuses[self.current_status as usize].icon
+										)
 									)
-										.padding([0, 7])
+										.width(Length::Units(180))
 								)
+								.push( // temperature & day
+									Column::new()
+										.padding(0)
+										.align_items(Alignment::Start)
+										.push(
+											Text::new(self.statuses[self.current_status as usize].current.get_temperature())
+												.size(70)
+												.font(NOTOSANS_BOLD)
+										)
+										.push(
+											Container::new(
+												Text::new(self.statuses[self.current_status as usize].day.to_string())
+													.size(25)
+											)
+												.padding([0, 7])
+										)
+								)
+								.padding(0)
+								.align_items(Alignment::Center)
+								.width(Length::Units(300))
+								.height(Length::Units(180))
 						)
 						.push( // chevron right
 							next_day
 						)
+						.padding(0)
+						.align_items(Alignment::Center)
 						.height(Length::Units(180))
 				)
 				.push( // temperatures at times
