@@ -8,6 +8,7 @@ use iced::{ Alignment, Button, Column, Container, Length, Row, Scrollable, Space
 use crate::meals::{ Message, PlannerState };
 use crate::menu::MENU_STATE;
 use crate::shared::Underline;
+use crate::state::WINDOW_STATE;
 
 const MONTH: [&'static str; 12] = [
 	"January",
@@ -220,14 +221,14 @@ pub(crate) fn get_planner_right_panel<'a, I>(
 
 			let container = Container::new(
 				Container::new(month)
-					.height(Length::Units(constants::WINDOW_HEIGHT - 40))
+					.height(Length::Units(WINDOW_STATE.height - 40))
 					.width(Length::Units(WEEK_SELECT_WIDTH + 40))
 					.padding([0, 20])
 					.align_y(alignment::Vertical::Center)
 					.style(style::MealsCalendarContainer)
 			)
 				.width(Length::Units(WEEK_SELECT_WIDTH + 40 + 35))
-				.height(Length::Units(constants::WINDOW_HEIGHT))
+				.height(Length::Units(WINDOW_STATE.height))
 				.padding([20, 20, 20, 5]);
 
 			return (container, MENU_STATE.width - (WEEK_SELECT_WIDTH + 40 + 25));
@@ -236,7 +237,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(
 			let mut information_column = Column::new();
 			if recipe_index.is_none() {
 				information_column = information_column.push(
-					Space::new(Length::Units(0), Length::Units(constants::WINDOW_HEIGHT - 40 - 20))
+					Space::new(Length::Units(0), Length::Units(WINDOW_STATE.height - 40 - 20))
 				);
 			} else {
 				let selected_recipe = &database.meals_database.recipes[recipe_index.unwrap()];

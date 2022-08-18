@@ -1,11 +1,11 @@
 use std::collections::HashMap;
 use std::time::{ Duration, Instant };
 
+use bansheelong_shared_ui::constants;
 use bansheelong_types::Date;
 use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Command, Element, button, image, scrollable };
 
-use crate::constants;
 use crate::meals::{ Message, PlannedInfo, PlannerInfo, PlannerState, View, has_image };
 use crate::menu::MENU_STATE;
 

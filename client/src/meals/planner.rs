@@ -1,10 +1,10 @@
+use bansheelong_shared_ui::style;
 use bansheelong_types::Date;
 use iced::{ Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment };
 
-use crate::constants;
 use crate::meals::{ Message, PlannerState, View, right_panel };
 use crate::menu::{ Menu, BUTTONS, MENU_STATE };
-use crate::style;
+use crate::state::WINDOW_STATE;
 
 impl View {
 	pub(crate) fn get_meal_planner(&mut self) -> Row<Message> {
@@ -43,7 +43,7 @@ impl View {
 		.padding([20, 15, 20, 0])
 		.style(style::TodoScrollable)
 		.on_scroll_absolute(move |offset| Message::RecipesScroll(offset))
-		.min_height(((MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) + constants::WINDOW_HEIGHT) as u32)
+		.min_height(((MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) + WINDOW_STATE.height) as u32)
 		.push( // add menu navigation
 			self.button_states
 			.iter_mut()

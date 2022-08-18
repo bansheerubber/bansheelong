@@ -1,16 +1,13 @@
 use std::sync::Arc;
 
+use bansheelong_shared_ui::style;
+use bansheelong_types::{ Date, IO, Weekday };
 use chrono::{ Datelike, Local, Timelike };
-
 use iced_native::alignment;
 use iced_native::layout;
 use iced_native::renderer;
 use iced_native::text;
 use iced_native::{ Background, Color, Element, Layout, Length, Point, Rectangle, Size, Vector, Widget };
-
-use bansheelong_types::{ Date, IO, Weekday };
-
-use crate::style::{ BACKGROUND_DARK_PURPLE, BACKGROUND_LIGHT_PURPLE, TODO_COLORS };
 
 type HourMinute = i32;
 
@@ -132,7 +129,7 @@ where
 				border_width: 0.0,
 				border_color: Color::TRANSPARENT,
 			},
-			Background::Color(BACKGROUND_DARK_PURPLE)
+			Background::Color(style::BACKGROUND_DARK_PURPLE)
 		);
 
 		// draw text
@@ -213,7 +210,7 @@ where
 						border_width: 0.0,
 						border_color: Color::TRANSPARENT,
 					},
-					Background::Color(TODO_COLORS[color_index % TODO_COLORS.len()])
+					Background::Color(style::TODO_COLORS[color_index % style::TODO_COLORS.len()])
 				);
 				color_index += 1;
 
@@ -287,7 +284,7 @@ where
 				border_width: 0.0,
 				border_color: Color::TRANSPARENT,
 			},
-			Background::Color(BACKGROUND_LIGHT_PURPLE)
+			Background::Color(style::BACKGROUND_LIGHT_PURPLE)
 		);
 	}
 }

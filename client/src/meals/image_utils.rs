@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::Path;
 
-use crate::constants::get_directory;
+use bansheelong_shared_ui::constants::get_directory;
 
 pub fn download_image(url: &String, file_name: &String) {
 	let file_path = format!("{}/data/meals-images/{}.png", get_directory(), file_name);

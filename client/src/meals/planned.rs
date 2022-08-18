@@ -1,9 +1,9 @@
+use bansheelong_shared_ui::{ constants, style };
 use iced::{ Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment, image };
 
-use crate::constants;
 use crate::meals::{ Message, View };
 use crate::menu::{ Menu, BUTTONS, MENU_STATE };
-use crate::style;
+use crate::state::WINDOW_STATE;
 
 impl View {
 	pub(crate) fn get_meal_planned(&mut self) -> Row<Message> {
@@ -14,7 +14,7 @@ impl View {
 			.padding([20, 15, 20, 0])
 			.style(style::TodoScrollable)
 			.on_scroll_absolute(move |offset| Message::PlannedMealsScroll(offset))
-			.min_height(((MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) + constants::WINDOW_HEIGHT) as u32)
+			.min_height(((MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) + WINDOW_STATE.height) as u32)
 			.push( // add menu navigation
 				self.button_states
 				.iter_mut()
@@ -116,7 +116,7 @@ impl View {
 		let mut information_column = Column::new();
 		if self.planned.meal_index.is_none() {
 			information_column = information_column.push(
-				Space::new(Length::Units(0), Length::Units(constants::WINDOW_HEIGHT - 40 - 20))
+				Space::new(Length::Units(0), Length::Units(WINDOW_STATE.height - 40 - 20))
 			);
 		} else {
 			let date = &self.planned.meal_index.unwrap();
@@ -325,6 +325,6 @@ impl View {
 					.padding([20, 15, 20, 0])
 					.style(style::TodoScrollable)
 			)
-			.height(Length::Units(constants::WINDOW_HEIGHT))
+			.height(Length::Units(WINDOW_STATE.height))
 	}
 }

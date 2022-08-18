@@ -1,15 +1,14 @@
 use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
+use bansheelong_shared_ui::style;
+use bansheelong_types::IO;
 use chrono::{ Local, Timelike };
-
 use iced::scrollable;
 use iced::{ Command, Element, Length, Scrollable };
 
-use bansheelong_types::{ IO };
+use crate::state::WINDOW_STATE;
 
-use crate::constants;
-use crate::style;
 use super::calendar;
 
 #[derive(Debug)]
@@ -48,9 +47,9 @@ impl View {
 					let current_minute = time.minute() as i32;
 					let current_seconds = time.second() as i32;
 
-					let height = (calendar::END_TIME - calendar::START_TIME + 1) as f32 * calendar::TEXT_SPACING.y + calendar::Y_OFFSET + 20.0 - constants::WINDOW_HEIGHT as f32;
+					let height = (calendar::END_TIME - calendar::START_TIME + 1) as f32 * calendar::TEXT_SPACING.y + calendar::Y_OFFSET + 20.0 - WINDOW_STATE.height as f32;
 					let time_height
-						= calendar::TEXT_SPACING.y * (current_hour - calendar::START_TIME) as f32 + calendar::TEXT_SPACING.y * (current_minute as f32 / 60.0)  + calendar::TEXT_SPACING.y * (current_seconds as f32 / 60.0 / 60.0) + calendar::Y_OFFSET + 20.0 - (constants::WINDOW_HEIGHT / 2) as f32;
+						= calendar::TEXT_SPACING.y * (current_hour - calendar::START_TIME) as f32 + calendar::TEXT_SPACING.y * (current_minute as f32 / 60.0)  + calendar::TEXT_SPACING.y * (current_seconds as f32 / 60.0 / 60.0) + calendar::Y_OFFSET + 20.0 - (WINDOW_STATE.height / 2) as f32;
 
 					self.scrollable_state.snap_to(time_height / height);
 				} else if self.last_interaction.is_some()

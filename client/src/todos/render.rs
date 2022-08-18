@@ -9,6 +9,7 @@ use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable
 
 use crate::menu::{ Menu, BUTTONS, MENU_STATE };
 use crate::shared::Underline;
+use crate::state::WINDOW_STATE;
 
 #[derive(Debug)]
 pub struct View {
@@ -106,7 +107,7 @@ impl View {
 					.style(style::BlankWeatherContainer)
 			)
 				.width(Length::Units(width))
-				.height(Length::Units(constants::WINDOW_HEIGHT))
+				.height(Length::Units(WINDOW_STATE.height))
 				.style(style::WeatherContainer)
 				.align_y(alignment::Vertical::Center)
 				.into()
@@ -118,7 +119,7 @@ impl View {
 			.padding([20, 15, 20, 0])
 			.style(style::TodoScrollable)
 			.on_scroll_absolute(move |offset| Message::Scroll(offset))
-			.min_height((MENU_STATE.get_area_size() + constants::WINDOW_HEIGHT) as u32);
+			.min_height((MENU_STATE.get_area_size() + WINDOW_STATE.height) as u32);
 
 		// add buttons to top button menu thing
 		scrollable = scrollable.push(

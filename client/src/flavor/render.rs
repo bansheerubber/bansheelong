@@ -1,7 +1,6 @@
 use iced::{ Button, Command, Element, Length, button, image };
 
-use crate::constants::get_directory;
-use crate::style;
+use bansheelong_shared_ui::{ constants, style };
 
 #[derive(Debug)]
 pub struct View {
@@ -23,7 +22,7 @@ impl View {
 			button_state: button::State::new(),
 			image: image::Handle::from_path(format!(
 				"{}/data/pictures/gerbil.png",
-				get_directory()
+				constants::get_directory()
 			)),
 			image_state: image::viewer::State::new(),
 			paths: Vec::new(),
@@ -36,7 +35,7 @@ impl View {
 	}
 
 	fn read_images(&mut self) {
-		let paths = std::fs::read_dir(format!("{}/data/pictures", get_directory()));
+		let paths = std::fs::read_dir(format!("{}/data/pictures", constants::get_directory()));
 		if let Ok(paths) = paths {
 			self.paths = paths.map(|x| x.unwrap().path().display().to_string()).collect();
 			self.paths_index = 0;

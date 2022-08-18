@@ -3,6 +3,7 @@ mod flavor;
 mod meals;
 mod menu;
 mod shared;
+mod state;
 mod storage;
 mod todos;
 mod weather;
@@ -318,7 +319,7 @@ impl Application for Window {
 						Container::new(Text::new(""))
 							.style(style::VerticalRule)
 							.width(Length::Units(2))
-							.height(Length::Units(constants::WINDOW_HEIGHT - 50))
+							.height(Length::Units(state::WINDOW_STATE.height - 50))
 					)
 						.height(Length::Fill)
 						.padding([0, 25])
@@ -364,7 +365,7 @@ async fn main() -> iced::Result {
 		default_font: Some(include_bytes!("../../shared_ui/data/fonts/NotoSans-Medium.ttf")),
 		text_multithreading: true,
 		window: iced::window::Settings {
-			size: (constants::WINDOW_WIDTH as u32, constants::WINDOW_HEIGHT as u32),
+			size: (state::WINDOW_STATE.width as u32, state::WINDOW_STATE.height as u32),
 			resizable: false,
 			decorations: false,
 			..iced::window::Settings::default()

@@ -7,6 +7,7 @@ use iced::alignment;
 use iced::button;
 use iced::{ Alignment, Button, Column, Command, Container, Element, Length, Row, Svg, Text };
 
+use crate::state::WINDOW_STATE;
 use crate::weather::api;
 use crate::weather::types::{ DailyStatus, OneAPIError, OneAPIResponse, TemperatureDatum };
 
@@ -162,7 +163,7 @@ impl View {
 					.style(style::BlankWeatherContainer)
 			)
 				.width(Length::Units(width))
-				.height(Length::Units(constants::WINDOW_HEIGHT))
+				.height(Length::Units(WINDOW_STATE.height))
 				.padding([0, 0, 0, 40])
 				.style(style::WeatherContainer)
 				.align_y(alignment::Vertical::Center)
@@ -356,7 +357,7 @@ impl View {
 				)
 		)
 			.width(Length::Units(width))
-			.height(Length::Units(constants::WINDOW_HEIGHT))
+			.height(Length::Units(WINDOW_STATE.height))
 			.padding([8, 0, 0, 20])
 			.style(style::WeatherContainer)
 			.into()
