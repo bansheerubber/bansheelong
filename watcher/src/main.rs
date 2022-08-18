@@ -1,5 +1,5 @@
 use std::process::{ Command, Stdio };
-use std::sync::{ Arc, mpsc::channel };
+use std::sync::{ Arc, mpsc::TryRecvError, mpsc::channel };
 
 use futures::future;
 use notify::{ Op, RawEvent, RecursiveMode, Watcher, raw_watcher };
@@ -63,7 +63,7 @@ async fn main() {
 		async {
 			let io = io.clone();
 			loop {
-				match rx.recv() {
+				match rx.try_recv() {
 					Ok(RawEvent{ path: Some(path), op: Ok(op), cookie: _ }) => {
 						if (path.to_str() == Some(todo_list) || path.to_str() == Some(recipe_list)) && op == Op::CLOSE_WRITE {
 							let mut locked = io.lock().await;
@@ -97,8 +97,11 @@ async fn main() {
 						}
 					},
 					Ok(event) => println!("broken event: {:?}", event),
+					Err(TryRecvError::Empty) => {},
 					Err(e) => println!("watch error: {:?}", e),
 				};
+
+				tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 			}
 		}
 	).await;
