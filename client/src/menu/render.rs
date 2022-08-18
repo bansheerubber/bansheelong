@@ -1,8 +1,9 @@
+use bansheelong_shared_ui::constants;
 use iced::{ Command, Container, Element, Length, Row };
 
 use crate::calendar;
 use crate::meals;
-use crate::menu::{ Menu, MENU_STATE };
+use crate::menu::MENU_STATE;
 use crate::todos;
 
 #[derive(Debug)]
@@ -11,7 +12,7 @@ pub struct View {
 	meals: meals::View,
 	todos: todos::View,
 	
-	menu: Menu,
+	menu: constants::Menu,
 }
 
 #[derive(Debug, Clone)]
@@ -29,7 +30,7 @@ impl View {
 			meals: meals::View::new(),
 			todos: todos::View::new(),
 			
-			menu: Menu::Todos,
+			menu: constants::Menu::Todos,
 		}
 	}
 
@@ -76,14 +77,14 @@ impl View {
 
 	pub fn view(&mut self) -> Element<Message> {
 		let menu = match self.menu {
-			Menu::Meals => {
+			constants::Menu::Meals => {
 				Container::new(
 					self.meals.view().map(move |message| {
 						Message::MealsMessage(message)
 					})
 				)
 			},
-			Menu::Todos => {
+			constants::Menu::Todos => {
 				Container::new(
 					Row::new()
 						.push( // todo list

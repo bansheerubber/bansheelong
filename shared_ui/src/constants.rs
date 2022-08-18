@@ -2,6 +2,7 @@ use std::env;
 
 use iced::Font;
 
+#[derive(Debug)]
 pub struct WindowState {
 	pub width: u16,
 	pub height: u16,
@@ -27,7 +28,15 @@ pub const ICONS: Font = Font::External {
 	bytes: include_bytes!("../data/fonts/MaterialIcons-Regular.ttf"),
 };
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum Menu {
+	Meals,
+	Todos,
+}
+
+#[derive(Debug)]
 pub struct MenuState {
+	pub buttons: Vec<(String, Menu)>,
 	pub button_count: u16,
 	pub button_height: u16,
 	pub button_spacing: u16,

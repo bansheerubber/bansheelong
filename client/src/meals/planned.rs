@@ -2,7 +2,7 @@ use bansheelong_shared_ui::{ constants, style };
 use iced::{ Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment, image };
 
 use crate::meals::{ Message, View };
-use crate::menu::{ Menu, BUTTONS, MENU_STATE };
+use crate::menu::MENU_STATE;
 use crate::state::WINDOW_STATE;
 
 impl View {
@@ -18,13 +18,13 @@ impl View {
 			.push( // add menu navigation
 				self.button_states
 				.iter_mut()
-				.zip(BUTTONS.iter())
+				.zip(MENU_STATE.buttons.iter())
 				.fold(
 					Column::new()
 						.spacing(MENU_STATE.button_spacing)
 						.padding([0, 0, 20, 0]),
 					|button_column, (state, (name, menu_type))| {
-						if menu_type != &Menu::Meals {
+						if menu_type != &constants::Menu::Meals {
 							button_column.push(
 								Button::new(
 									state,

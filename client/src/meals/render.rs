@@ -43,7 +43,7 @@ impl View {
 		recipes_state.snap_to_absolute(scroll_position);
 
 		let mut view = View {
-			button_states: [button::State::new(); MENU_STATE.button_count as usize],
+			button_states: vec![button::State::new(); MENU_STATE.button_count as usize],
 			database: None,
 			last_interaction: None,
 			planned: PlannedInfo {

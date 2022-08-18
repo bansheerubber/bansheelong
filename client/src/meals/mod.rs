@@ -8,10 +8,9 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
+use bansheelong_shared_ui::constants;
 use bansheelong_types::{ Date, IO, PlannedMeal };
 use iced::{ button, image, scrollable };
-
-use crate::menu::{ Menu, MENU_STATE };
 
 pub(crate) use image_utils::download_image;
 pub(crate) use image_utils::has_image;
@@ -22,7 +21,7 @@ pub enum Message {
 	APIAddPlannedMeal(PlannedMeal),
 	APIRemovePlannedMeal(Date),
 	APIUpdatePlannedMeal(PlannedMeal),
-	MenuChange(Menu),
+	MenuChange(constants::Menu),
 	PlannedIngredientsScroll,
 	PlannedMealsScroll(f32),
 	PlannedMealSelect(Date),
@@ -79,7 +78,7 @@ pub(crate) enum PlannerState {
 
 #[derive(Debug)]
 pub(crate) struct View {
-	button_states: [button::State; MENU_STATE.button_count as usize],
+	button_states: Vec<button::State>,
 	database: Option<Arc<IO>>,
 	last_interaction: Option<Instant>,
 	planned: PlannedInfo,

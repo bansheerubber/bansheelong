@@ -7,13 +7,13 @@ use bansheelong_types::{ Date, Day, IO, PlannedMeal };
 use chrono::{ Datelike, Local, TimeZone, Utc, Weekday };
 use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, scrollable };
 
-use crate::menu::{ Menu, BUTTONS, MENU_STATE };
+use crate::menu::MENU_STATE;
 use crate::shared::Underline;
 use crate::state::WINDOW_STATE;
 
 #[derive(Debug)]
 pub struct View {
-	button_states: [button::State; MENU_STATE.button_count as usize],
+	button_states: Vec<button::State>,
 	database: Option<Arc<IO>>,
 	last_interaction: Option<Instant>,
 	scrollable_state: scrollable::State,
@@ -22,7 +22,7 @@ pub struct View {
 
 #[derive(Debug, Clone)]
 pub enum Message {
-	MenuChange(Menu),
+	MenuChange(constants::Menu),
 	Scroll(f32),
 	Tick,
 	Update(Option<Arc<IO>>),
@@ -35,7 +35,7 @@ impl View {
 		let mut scrollable_state = scrollable::State::new();
 		scrollable_state.snap_to_absolute(scroll_position);
 		View {
-			button_states: [button::State::new(); MENU_STATE.button_count as usize],
+			button_states: vec![button::State::new(); MENU_STATE.button_count as usize],
 			database: None,
 			last_interaction: None,
 			scrollable_state,
@@ -125,13 +125,13 @@ impl View {
 		scrollable = scrollable.push(
 			self.button_states
 			.iter_mut()
-			.zip(BUTTONS.iter())
+			.zip(MENU_STATE.buttons.iter())
 			.fold(
 				Column::new()
 					.spacing(MENU_STATE.button_spacing)
 					.padding([0, 0, 20, 0]),
 				|button_column, (state, (name, menu_type))| {
-					if menu_type != &Menu::Todos {
+					if menu_type != &constants::Menu::Todos {
 						button_column.push(
 							Button::new(
 								state,
