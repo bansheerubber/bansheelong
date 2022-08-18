@@ -9,6 +9,7 @@ use std::sync::Arc;
 use std::time::Instant;
 
 use bansheelong_types::{ Date, IO, PlannedMeal };
+use chrono::{ Datelike, Local };
 use iced::{ button, image, scrollable };
 
 use crate::constants;
@@ -98,4 +99,12 @@ pub fn get_scroll_position(menu_state: &constants::MenuState) -> f32 {
 	} else {
 		position as f32
 	}
+}
+
+pub fn get_current_month() -> u32 {
+	Local::now().month() as u32 - 1
+}
+
+pub fn get_current_year() -> u8 {
+	(Local::now().year() - 2000) as u8
 }

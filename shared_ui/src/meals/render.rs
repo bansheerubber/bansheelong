@@ -2,11 +2,21 @@ use std::collections::HashMap;
 use std::time::{ Duration, Instant };
 
 use bansheelong_types::Date;
-use chrono::{ Datelike, Local, NaiveDate };
+use chrono::{ Datelike, NaiveDate };
 use iced::{ Command, Container, Element, Length, Padding, Space, button, image, scrollable };
 
 use crate::constants;
-use crate::meals::{ Message, PlannedInfo, PlannerInfo, PlannerState, View, get_scroll_position, has_image };
+use crate::meals::{
+	Message,
+	PlannedInfo,
+	PlannerInfo,
+	PlannerState,
+	View,
+	get_current_month,
+	get_current_year,
+	get_scroll_position,
+	has_image
+};
 use crate::style;
 
 static DAY_COUNT: [i8; 12] = [
@@ -23,14 +33,6 @@ static DAY_COUNT: [i8; 12] = [
 	30, // november
 	31, // december
 ];
-
-fn get_current_month() -> u32 {
-	Local::now().month() as u32 - 1
-}
-
-fn get_current_year() -> u8 {
-	(Local::now().year() - 2000) as u8
-}
 
 impl View {
 	pub fn new<P: Into<Padding>>(

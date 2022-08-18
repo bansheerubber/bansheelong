@@ -1,11 +1,11 @@
 use std::sync::Arc;
 
 use bansheelong_types::{ Date, IO, PlannedMeal };
-use chrono::{ Datelike, Local, NaiveDate };
+use chrono::{ Datelike, NaiveDate };
 use iced::{ Alignment, Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
 use crate::constants;
-use crate::meals::{ Message, PlannerState };
+use crate::meals::{ Message, PlannerState, get_current_month, get_current_year };
 use crate::Underline;
 use crate::style;
 
@@ -42,14 +42,6 @@ static DAY_COUNT: [i8; 12] = [
 const WEEK_SELECT_WIDTH: u16 = 7 * 35 + 6 * 4;
 const WEEK_SELECT_DAY_SIZE: Length = Length::Units(35);
 const WEEK_SELECT_DAY_SPACING: Length = Length::Units(4);
-
-fn get_current_month() -> u32 {
-	Local::now().month() as u32 - 1
-}
-
-fn get_current_year() -> u8 {
-	(Local::now().year() - 2000) as u8
-}
 
 pub struct PlannerRightPanelArguments<'a, I>
 	where
