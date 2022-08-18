@@ -269,8 +269,12 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 				// construct information column that lets us select which ingredients we have
 				information_column = information_column
 					.push(
-						image::Viewer::new(image_state, image.clone())
-							.width(Length::Units(415))
+						Container::new(
+							image::Viewer::new(image_state, image.clone())
+								.width(Length::Units(415))
+						)
+							.width(Length::Fill)
+							.align_x(alignment::Horizontal::Center)
 					)
 					.push(
 						Space::new(Length::Units(0), Length::Units(5))
