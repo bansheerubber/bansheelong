@@ -63,6 +63,7 @@ async fn main() {
 		async {
 			let io = io.clone();
 			loop {
+				let mut found = false;
 				match rx.try_recv() {
 					Ok(RawEvent{ path: Some(path), op: Ok(op), cookie: _ }) => {
 						if (path.to_str() == Some(todo_list) || path.to_str() == Some(recipe_list)) && op == Op::CLOSE_WRITE {
@@ -95,13 +96,17 @@ async fn main() {
 								eprintln!("{:?}", error);
 							}
 						}
+
+						found = true;
 					},
 					Ok(event) => println!("broken event: {:?}", event),
 					Err(TryRecvError::Empty) => {},
 					Err(e) => println!("watch error: {:?}", e),
 				};
 
-				tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+				if !found {
+					tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+				}
 			}
 		}
 	).await;
