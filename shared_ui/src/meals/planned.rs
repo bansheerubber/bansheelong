@@ -319,7 +319,7 @@ impl View {
 							.style(style::TodoItem)
 					)
 					.on_scroll_absolute(move |_| Message::PlannedIngredientsScroll)
-					.width(Length::Units(435))
+					.width(Length::Fill)
 					.height(Length::Fill)
 					.padding([20, 15, 20, 0])
 					.style(style::TodoScrollable)
