@@ -38,56 +38,56 @@ impl View {
 			window_state: &self.window_state,
 		};
 
-		let (right_panel, remaining_width) = right_panel::get_planner_right_panel(args);
+		let right_panel = right_panel::get_planner_right_panel(args);
 
 		// meal list
 		let mut scrollable = Scrollable::new(&mut self.planner.recipes_state)
-		.width(Length::Units(remaining_width))
-		.height(Length::Fill)
-		.padding([20, 15, 20, 0])
-		.style(style::TodoScrollable)
-		.on_scroll_absolute(move |offset| Message::RecipesScroll(offset))
-		.min_height((get_scroll_position(&self.menu_state) as u16 + self.window_state.height) as u32)
-		.push( // add menu navigation
-			self.button_states
-			.iter_mut()
-			.zip(self.menu_state.buttons.iter())
-			.fold(
-				Column::new()
-					.spacing(self.menu_state.button_spacing)
-					.padding([0, 0, 20, 0]),
-				|button_column, (state, (name, menu_type))| {
-					if menu_type != &constants::Menu::Meals {
-						button_column.push(
-							Button::new(
-								state,
-								Text::new(name.clone())
+			.width(Length::Fill)
+			.height(Length::Fill)
+			.padding([20, 15, 20, 0])
+			.style(style::TodoScrollable)
+			.on_scroll_absolute(move |offset| Message::RecipesScroll(offset))
+			.min_height((get_scroll_position(&self.menu_state) as u16 + self.window_state.height) as u32)
+			.push( // add menu navigation
+				self.button_states
+				.iter_mut()
+				.zip(self.menu_state.buttons.iter())
+				.fold(
+					Column::new()
+						.spacing(self.menu_state.button_spacing)
+						.padding([0, 0, 20, 0]),
+					|button_column, (state, (name, menu_type))| {
+						if menu_type != &constants::Menu::Meals {
+							button_column.push(
+								Button::new(
+									state,
+									Text::new(name.clone())
+										.width(Length::Fill)
+										.horizontal_alignment(alignment::Horizontal::Center)
+								)
+									.style(style::TodoMenuButton)
 									.width(Length::Fill)
-									.horizontal_alignment(alignment::Horizontal::Center)
+									.height(Length::Units(self.menu_state.button_height))
+									.on_press(Message::MenuChange(menu_type.clone()))
 							)
-								.style(style::TodoMenuButton)
-								.width(Length::Fill)
-								.height(Length::Units(self.menu_state.button_height))
-								.on_press(Message::MenuChange(menu_type.clone()))
-						)
-					} else {
-						button_column
+						} else {
+							button_column
+						}
 					}
-				}
-			)
-			.push(
-				Button::new(
-					&mut self.planned.switch_planner_state,
-					Text::new("Planned meals")
-						.width(Length::Fill)
-						.horizontal_alignment(alignment::Horizontal::Center)
 				)
-					.style(style::SpecialMenuButton)
-					.width(Length::Fill)
-					.height(Length::Units(self.menu_state.button_height))
-					.on_press(Message::SwitchToPlanned)
-			)
-		);
+				.push(
+					Button::new(
+						&mut self.planned.switch_planner_state,
+						Text::new("Planned meals")
+							.width(Length::Fill)
+							.horizontal_alignment(alignment::Horizontal::Center)
+					)
+						.style(style::SpecialMenuButton)
+						.width(Length::Fill)
+						.height(Length::Units(self.menu_state.button_height))
+						.on_press(Message::SwitchToPlanned)
+				)
+			);
 
 		// construct recipes list
 		scrollable = self.database.as_ref().unwrap().meals_database.recipes.iter()

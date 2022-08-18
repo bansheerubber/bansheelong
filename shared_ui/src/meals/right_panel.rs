@@ -62,7 +62,7 @@ pub struct PlannerRightPanelArguments<'a, I>
 }
 
 // returns right panel container and the remaining width for the left panel
-pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a, I>) -> (Container<'a, Message>, u16)
+pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a, I>) -> Container<'a, Message>
 	where
 		I: Iterator<Item = &'a mut button::State>
 {
@@ -245,7 +245,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 				.height(Length::Units(window_state.height))
 				.padding([20, 20, 20, 5]);
 
-			return (container, menu_state.width - (calendar_state.get_width() + 40 + 25));
+			return container;
 		},
 		PlannerState::MealSelect => {
 			let mut information_column = Column::new();
@@ -413,12 +413,12 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 						.style(style::TodoItem)
 				)
 				.on_scroll_absolute(move |_| Message::PlannerRecipeScroll)
-				.width(Length::Units(435))
+				.width(Length::Units(menu_state.width - 300))
 				.height(Length::Fill)
 				.padding([20, 15, 20, 5])
 				.style(style::TodoScrollable);
 
-			(Container::new(scrollable), menu_state.width - 435)
+			Container::new(scrollable)
 		},
 	}
 }
