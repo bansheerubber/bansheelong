@@ -5,7 +5,7 @@ use futures::future;
 use notify::{ Op, RawEvent, RecursiveMode, Watcher, raw_watcher };
 use tokio::sync::Mutex;
 
-use bansheelong_local::{ combine, draw_time_sheet, draw_todo_list };
+use bansheelong_todo_renderer::{ combine, draw_time_sheet, draw_todo_list };
 use bansheelong_types::{ IO, Resource, WriteDatabase, get_todos_host, get_todos_port, write_database };
 
 fn reload_feh() {

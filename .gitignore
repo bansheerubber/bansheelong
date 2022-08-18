@@ -3,5 +3,5 @@ data
 index.html
 target
 /todos
-local/fonts
+todo_renderer/fonts
 *.png

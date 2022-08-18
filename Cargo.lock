@@ -161,18 +161,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "bansheelong_local"
-version = "0.1.0"
-dependencies = [
- "bansheelong_types",
- "chrono",
- "image 0.24.3",
- "imageproc",
- "lazy_static",
- "rusttype",
-]
-
-[[package]]
 name = "bansheelong_server"
 version = "0.1.0"
 dependencies = [
@@ -197,6 +185,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "bansheelong_todo_renderer"
+version = "0.1.0"
+dependencies = [
+ "bansheelong_types",
+ "chrono",
+ "image 0.24.3",
+ "imageproc",
+ "lazy_static",
+ "rusttype",
+]
+
+[[package]]
 name = "bansheelong_types"
 version = "0.1.0"
 dependencies = [
@@ -217,7 +217,7 @@ dependencies = [
 name = "bansheelong_watcher"
 version = "0.1.0"
 dependencies = [
- "bansheelong_local",
+ "bansheelong_todo_renderer",
  "bansheelong_types",
  "futures",
  "notify",
