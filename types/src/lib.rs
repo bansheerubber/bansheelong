@@ -2,6 +2,8 @@ use std::env;
 use bitflags::bitflags;
 
 pub(crate) mod io;
+pub(crate) mod read_write;
+pub(crate) mod tests;
 pub(crate) mod types;
 
 pub use types::Date;
@@ -24,8 +26,8 @@ pub use types::TodosDatabase;
 pub use types::Weekday;
 pub use types::WriteDatabase;
 
-pub use io::read_database;
-pub use io::write_database;
+pub use read_write::read_database;
+pub use read_write::write_database;
 
 pub fn get_todos_port() -> u16 {
 	match env::var("BANSHEELONG_TODOS_PORT") {

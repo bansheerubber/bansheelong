@@ -1,227 +1,27 @@
-use std::io::ErrorKind;
-use std::fs::File;
-use std::io::prelude::*;
-
 use lazy_static::lazy_static;
-
 use regex::Regex;
-use serde::{ Serialize, Deserialize };
 
-use crate::{ Date, Day, Dirty, Error, ErrorTag, IO, Ingredient, Item, MealsDatabase, PlannedMeal, PlannedMealsRemoveLog, PlannedMealsWriteLog, Recipe, Resource, Time, TodosDatabase, Weekday, WriteDatabase };
-
-use crate::get_todos_secret;
-
-pub async fn read_database(resource: Resource) -> Result<(TodosDatabase, MealsDatabase), Error> {
-	if resource.reference.contains("http") {
-		let client = reqwest::Client::new();
-		let response_result = client.get(format!("{}/get-database/", resource.reference))
-			.header(reqwest::header::CONTENT_TYPE, "application/json")
-			.header(reqwest::header::ACCEPT, "application/json")
-			.header("Secret", get_todos_secret())
-			.send()
-			.await;
-
-		if let Err(error) = response_result {
-			return Err(Error {
-				message: format!("{:?}", error),
-				..Error::default()
-			});
-		}
-		let response = response_result.unwrap();
-
-		match response.json::<(TodosDatabase, MealsDatabase)>().await {
-			Ok(result) => Ok(result),
-			Err(error) => Err(Error {
-				message: format!("Could not deserialize JSON: {:?}", error),
-				..Error::default()
-			}),
-		}
-	} else {
-		let mut file = match File::open(&resource.reference) {
-			Ok(file) => file,
-			Err(error) => {
-				if error.kind() == ErrorKind::NotFound {
-					return Err(Error {
-						message: String::from("Could not find file"),
-						tag: ErrorTag::CouldNotFindFile,
-					});
-				}
-				
-				return Err(Error {
-					message: format!("{:?}", error),
-					..Error::default()
-				});
-			}
-		};
-
-		let mut buffer = Vec::new();
-		if let Err(error) = file.read_to_end(&mut buffer) {
-			return Err(Error {
-				message: format!("{:?}", error),
-				..Error::default()
-			});
-		}
-
-		let root = match flexbuffers::Reader::get_root(buffer.as_slice()) {
-			Ok(root) => root,
-			Err(error) => return Err(Error {
-				message: format!("{:?}", error),
-				..Error::default()
-			}),
-		};
-
-		match <(TodosDatabase, MealsDatabase)>::deserialize(root) {
-			Ok(database) => Ok(database),
-			Err(error) => Err(Error {
-				message: format!("{:?}", error),
-				..Error::default()
-			}),
-		}
-	}
-}
-
-pub async fn write_database<'a>(
-	data: WriteDatabase<'a>,
-	resource: Resource
-) -> Result<(), Error> {
-	if resource.reference.contains("http") {
-		let client = reqwest::Client::new();
-		let response_result = match data {
-    	WriteDatabase::Full {
-				meals,
-				todos,
-			} => {
-				Some(
-					client.post(format!("{}/set-database/", resource.reference))
-						.header("Secret", get_todos_secret())
-						.body(serde_json::to_string(&(todos, meals)).unwrap())
-						.send()
-						.await
-				)
-			},
-    	WriteDatabase::Partial {
-				planned_meals_remove_log,
-				planned_meals_write_log,
-				todos_write_log
-			} => {
-				let mut result = None;
-				
-				if planned_meals_remove_log.len() > 0 {
-					result = Some(
-						client.post(format!("{}/remove-planned-meals/", resource.reference))
-							.header("Secret", get_todos_secret())
-							.body(serde_json::to_string(planned_meals_remove_log).unwrap())
-							.send()
-							.await
-					);
-				}
-
-				if planned_meals_write_log.len() > 0 {
-					result = Some(
-						client.post(format!("{}/add-planned-meals/", resource.reference))
-							.header("Secret", get_todos_secret())
-							.body(serde_json::to_string(planned_meals_write_log).unwrap())
-							.send()
-							.await
-					);
-				}
-				
-				if todos_write_log.len() > 0 {
-					result = Some(
-						client.post(format!("{}/add-todos/", resource.reference))
-							.header("Secret", get_todos_secret())
-							.body(serde_json::to_string(todos_write_log).unwrap())
-							.send()
-							.await
-					);
-				}
-
-				result
-			},
-		};
-
-		if let Some(response_result) = response_result.as_ref() {
-			if let Err(error) = response_result {
-				return Err(Error {
-					message: format!("{:?}", error),
-					..Error::default()
-				});
-			}
-		}
-
-		if let Some(response_result) = response_result {
-			if response_result.as_ref().unwrap().status() != reqwest::StatusCode::OK {
-				return Err(Error {
-					message: response_result.unwrap().text().await.unwrap().clone(),
-					..Error::default()
-				});
-			}
-		}
-
-		Ok(())
-	} else {
-		let mut serializer = flexbuffers::FlexbufferSerializer::new();
-
-		let mut read_databases: (Option<TodosDatabase>, Option<MealsDatabase>);
-
-		let databases = match data {
-    	WriteDatabase::Full {
-				meals,
-				todos,
-			} => {
-				(todos, meals)
-			},
-    	WriteDatabase::Partial {
-				planned_meals_remove_log,
-				planned_meals_write_log,
-				todos_write_log
-			} => {
-				let databases = read_database(resource.clone()).await?;
-				read_databases = (Some(databases.0), Some(databases.1));
-
-				for date in planned_meals_remove_log {
-					read_databases.1.as_mut().unwrap().planned_meal_mapping.remove(date);
-				}
-
-				for planned_meal in planned_meals_write_log {
-					read_databases.1.as_mut().unwrap().planned_meal_mapping.insert(
-						planned_meal.date,
-						planned_meal.clone()
-					);
-				}
-				
-				for (item, date) in todos_write_log {
-					if read_databases.0.as_mut().unwrap().mapping.contains_key(&date) {
-						read_databases.0.as_mut().unwrap().mapping.get_mut(&date).unwrap().items.push(item.clone());
-					} else {
-						read_databases.0.as_mut().unwrap().mapping.insert(date.clone(), Day {
-							items: vec![item.clone()],
-							date: date.clone(),
-						});
-					}
-				}
-
-				(read_databases.0.as_ref().unwrap(), read_databases.1.as_ref().unwrap())
-			},
-		};
-
-		if let Err(error) = databases.serialize(&mut serializer) {
-			return Err(Error {
-				message: format!("{:?}", error),
-				..Error::default()
-			});
-		}
-
-		if let Err(error) = std::fs::write(&resource.reference, serializer.view()) {
-			Err(Error {
-				message: format!("{:?}", error),
-				..Error::default()
-			})
-		} else {
-			Ok(())
-		}
-	}
-}
+use crate::{
+	Date,
+	Day,
+	Dirty,
+	Error,
+	ErrorTag,
+	IO,
+	Ingredient,
+	Item,
+	MealsDatabase,
+	PlannedMeal,
+	PlannedMealsRemoveLog,
+	PlannedMealsWriteLog,
+	Recipe,
+	Time,
+	TodosDatabase,
+	Weekday,
+	WriteDatabase,
+	read_database,
+	write_database
+};
 
 impl IO {
 	pub async fn read_database(&mut self) -> Result<(&TodosDatabase, &MealsDatabase), Error> {
@@ -660,84 +460,5 @@ fn get_time_from_line(line: String) -> Result<Option<Time>, TimeError> {
 		}))
 	} else {
 		Ok(None)
-	}
-}
-
-#[cfg(test)]
-mod tests {
-	use super::*;
-
-	use rand::{ Rng, SeedableRng };
-	use rand::rngs::StdRng;
-
-	use crate::{ Resource, Time };
-
-	fn setup() -> IO {
-		let mut io = IO {
-			resource: Resource {
-				reference: String::from("/tmp/todos"),
-			},
-			..IO::default()
-		};
-
-		if let Err(error) = tokio_test::block_on(io.write_database()) {
-			panic!("{:?}", error);
-		}
-
-		let mut generator = StdRng::seed_from_u64(1659117803);
-
-		let mut dates = Vec::new();
-		for _ in 0..100 {
-			dates.push(Some(Date {
-				day: generator.gen_range(0, 20),
-				month: generator.gen_range(0, 20),
-				year: generator.gen_range(0, 20),
-			}));
-		}
-		dates.push(None);
-
-		for date in dates {
-			for _ in 0..100 {
-				if let Err(error) = io.add_to_todos_database(
-					Item {
-						description: String::from(""),
-						time: Some(Time {
-							day: None,
-							start_hour: generator.gen_range(0, 20),
-							start_minute: generator.gen_range(0, 20),
-							end_hour: 0,
-							end_minute: 0,
-						}),
-					},
-					date
-				) {
-					panic!("{:?}", error);
-				}
-			}
-
-			if let Err(error) = io.add_to_todos_database(
-				Item {
-					description: String::from(""),
-					time: None,
-				},
-				date
-			) {
-				panic!("{:?}", error);
-			}
-		}
-
-		io
-	}
-
-	#[test]
-	fn monotonically_increasing() {
-		let io = setup();
-		
-		let mut last_date = None;
-		for (_, day) in io.todos_database.mapping.iter() {
-			println!("{:?} >= {:?}", day.date, last_date);
-			assert!(day.date >= last_date);
-			last_date = day.date;
-		}
 	}
 }
