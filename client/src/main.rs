@@ -2,7 +2,6 @@ mod calendar;
 mod flavor;
 mod meals;
 mod menu;
-mod shared;
 mod state;
 mod storage;
 mod todos;

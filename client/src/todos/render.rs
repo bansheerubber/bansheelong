@@ -2,13 +2,12 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
-use bansheelong_shared_ui::{ constants, style };
+use bansheelong_shared_ui::{ Underline, constants, style };
 use bansheelong_types::{ Date, Day, IO, PlannedMeal };
 use chrono::{ Datelike, Local, TimeZone, Utc, Weekday };
 use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, scrollable };
 
 use crate::menu::MENU_STATE;
-use crate::shared::Underline;
 use crate::state::WINDOW_STATE;
 
 #[derive(Debug)]

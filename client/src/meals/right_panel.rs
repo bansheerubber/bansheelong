@@ -1,13 +1,12 @@
 use std::sync::Arc;
 
 use bansheelong_types::{ Date, IO, PlannedMeal };
-use bansheelong_shared_ui::{ constants, style };
+use bansheelong_shared_ui::{ Underline, constants, style };
 use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Alignment, Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
 use crate::meals::{ Message, PlannerState };
 use crate::menu::MENU_STATE;
-use crate::shared::Underline;
 use crate::state::WINDOW_STATE;
 
 const MONTH: [&'static str; 12] = [
