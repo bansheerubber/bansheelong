@@ -20,6 +20,7 @@ impl View {
 		};
 
 		let args = right_panel::PlannerRightPanelArguments {
+			calendar_state: self.calendar_state,
 			database: self.database.as_ref().unwrap().clone(),
 			day_buttons,
 			image: &self.planner.image,

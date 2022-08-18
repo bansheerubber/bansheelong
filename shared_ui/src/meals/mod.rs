@@ -81,6 +81,7 @@ pub enum PlannerState {
 #[derive(Debug)]
 pub struct View {
 	button_states: Vec<button::State>,
+	calendar_state: CalendarState,
 	database: Option<Arc<IO>>,
 	empty_padding: iced::Padding,
 	last_interaction: Option<Instant>,
@@ -89,6 +90,18 @@ pub struct View {
 	planner: PlannerInfo,
 	showing_planner: bool,
 	window_state: constants::WindowState,
+}
+
+#[derive(Clone, Copy, Debug)]
+pub struct CalendarState {
+	pub day_size: u16,
+	pub day_spacing: u16,
+}
+
+impl CalendarState {
+	fn get_width(&self) -> u16 {
+		7 * self.day_size + 6 * self.day_spacing
+	}
 }
 
 pub fn get_scroll_position(menu_state: &constants::MenuState) -> f32 {

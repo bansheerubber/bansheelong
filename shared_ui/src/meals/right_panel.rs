@@ -5,7 +5,7 @@ use chrono::{ Datelike, NaiveDate };
 use iced::{ Alignment, Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
 use crate::constants;
-use crate::meals::{ Message, PlannerState, get_current_month, get_current_year };
+use crate::meals::{ CalendarState, Message, PlannerState, get_current_month, get_current_year };
 use crate::Underline;
 use crate::style;
 
@@ -39,14 +39,11 @@ static DAY_COUNT: [i8; 12] = [
 	31, // december
 ];
 
-const WEEK_SELECT_WIDTH: u16 = 7 * 35 + 6 * 4;
-const WEEK_SELECT_DAY_SIZE: Length = Length::Units(35);
-const WEEK_SELECT_DAY_SPACING: Length = Length::Units(4);
-
 pub struct PlannerRightPanelArguments<'a, I>
 	where
 		I: Iterator<Item = &'a mut button::State>
 {
+	pub calendar_state: CalendarState,
 	pub database: Arc<IO>,
 	pub day_buttons: I,
 	pub image: &'a image::Handle,
@@ -70,6 +67,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 		I: Iterator<Item = &'a mut button::State>
 {
 	let PlannerRightPanelArguments {
+		calendar_state,
 		database,
 		day_buttons,
 		image,
@@ -177,7 +175,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 						.align_x(alignment::Horizontal::Center)
 				)
 				.push(Space::new(Length::Units(0), Length::Units(if weeks < 6 { 10 } else { 5 })))
-				.width(Length::Units(WEEK_SELECT_WIDTH));
+				.width(Length::Units(calendar_state.get_width()));
 
 			let mut day: i8 = match NaiveDate::from_ymd(2000 + year_index as i32, month_index + 1, 1).weekday() {
 				chrono::Weekday::Sun => 1,
@@ -195,7 +193,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 			for state in day_buttons {
 				if day_in_week == 7 {
 					month = month.push(week)
-						.push(Space::new(Length::Units(0), WEEK_SELECT_DAY_SPACING));
+						.push(Space::new(Length::Units(0), Length::Units(calendar_state.day_spacing)));
 
 					week = Row::new();
 					day_in_week = 0;
@@ -212,8 +210,8 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 						}
 					)
 						.padding([0, 0, 0, 3])
-						.width(WEEK_SELECT_DAY_SIZE)
-						.height(WEEK_SELECT_DAY_SIZE)
+						.width(Length::Units(calendar_state.day_size))
+						.height(Length::Units(calendar_state.day_size))
 						.style(style::MealsDayContainer)
 				)
 					.style(style::DarkButton)
@@ -225,29 +223,29 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 
 				week = week
 					.push(button)
-					.push(Space::new(WEEK_SELECT_DAY_SPACING, Length::Units(0)));
+					.push(Space::new(Length::Units(calendar_state.day_spacing), Length::Units(0)));
 
 				day += 1;
 				day_in_week += 1;
 			}
 
 			month = month.push(week)
-				.push(Space::new(Length::Units(0), WEEK_SELECT_DAY_SPACING))
+				.push(Space::new(Length::Units(0), Length::Units(calendar_state.day_spacing)))
 				.push(Space::new(Length::Units(0), Length::Units(10)));
 
 			let container = Container::new(
 				Container::new(month)
 					.height(Length::Units(window_state.height - 40))
-					.width(Length::Units(WEEK_SELECT_WIDTH + 40))
+					.width(Length::Units(calendar_state.get_width() + 40))
 					.padding([0, 20])
 					.align_y(alignment::Vertical::Center)
 					.style(style::MealsCalendarContainer)
 			)
-				.width(Length::Units(WEEK_SELECT_WIDTH + 40 + 35))
+				.width(Length::Units(calendar_state.get_width() + 40 + 35))
 				.height(Length::Units(window_state.height))
 				.padding([20, 20, 20, 5]);
 
-			return (container, menu_state.width - (WEEK_SELECT_WIDTH + 40 + 25));
+			return (container, menu_state.width - (calendar_state.get_width() + 40 + 25));
 		},
 		PlannerState::MealSelect => {
 			let mut information_column = Column::new();
