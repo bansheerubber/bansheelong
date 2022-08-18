@@ -3,10 +3,11 @@ use std::time::{ Duration, Instant };
 
 use bansheelong_types::Date;
 use chrono::{ Datelike, Local, NaiveDate };
-use iced::{ Command, Element, button, image, scrollable };
+use iced::{ Command, Container, Element, Length, Padding, Space, button, image, scrollable };
 
 use crate::constants;
 use crate::meals::{ Message, PlannedInfo, PlannerInfo, PlannerState, View, has_image };
+use crate::style;
 
 static DAY_COUNT: [i8; 12] = [
 	31, // january
@@ -32,7 +33,11 @@ fn get_current_year() -> u8 {
 }
 
 impl View {
-	pub fn new(menu_state: constants::MenuState, window_state: constants::WindowState) -> Self {
+	pub fn new<P: Into<Padding>>(
+		menu_state: constants::MenuState,
+		window_state: constants::WindowState,
+		empty_padding: P
+	) -> Self {
 		let scroll_position = (menu_state.get_area_size() + menu_state.button_height + menu_state.button_spacing) as f32;
 
 		let mut meals_state = scrollable::State::new();
@@ -44,6 +49,7 @@ impl View {
 		let mut view = View {
 			button_states: vec![button::State::new(); menu_state.button_count as usize],
 			database: None,
+			empty_padding: empty_padding.into(),
 			last_interaction: None,
 			menu_state,
 			planned: PlannedInfo {
@@ -319,6 +325,21 @@ impl View {
 	}
 
 	pub fn view(&mut self) -> Element<Message> {
+		if let None = self.database {
+			return Container::new(
+				Container::new(
+					Space::new(Length::Units(0), Length::Units(0))
+				)
+					.width(Length::Fill)
+					.height(Length::Fill)
+					.style(style::TodoItem)
+			)
+				.width(Length::Units(self.menu_state.width))
+				.height(Length::Units(self.window_state.height))
+				.padding(self.empty_padding)
+				.into();
+		}
+		
 		if self.showing_planner {
 			self.get_meal_planner().into()
 		} else {

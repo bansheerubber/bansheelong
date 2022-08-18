@@ -27,7 +27,7 @@ impl View {
 	pub fn new() -> Self {
 		View {
 			calendar: calendar::View::new(),
-			meals: meals::View::new(MENU_STATE.clone(), WINDOW_STATE),
+			meals: meals::View::new(MENU_STATE.clone(), WINDOW_STATE, [20, 15, 20, 0]),
 			todos: todos::View::new(),
 			
 			menu: constants::Menu::Todos,

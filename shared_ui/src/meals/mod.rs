@@ -81,6 +81,7 @@ pub enum PlannerState {
 pub struct View {
 	button_states: Vec<button::State>,
 	database: Option<Arc<IO>>,
+	empty_padding: iced::Padding,
 	last_interaction: Option<Instant>,
 	menu_state: constants::MenuState,
 	planned: PlannedInfo,
