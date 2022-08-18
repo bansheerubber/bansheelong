@@ -1,6 +1,5 @@
 mod calendar;
 mod flavor;
-mod meals;
 mod menu;
 mod state;
 mod storage;
@@ -11,7 +10,7 @@ use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
 use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
-use bansheelong_shared_ui::style;
+use bansheelong_shared_ui::{ meals, style };
 use iced::alignment;
 use iced::executor;
 use iced::{ Application, Column, Command, Container, Element, Length, Row, Settings, Subscription, Text };

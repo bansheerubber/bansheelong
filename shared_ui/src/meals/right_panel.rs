@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use bansheelong_types::{ Date, IO, PlannedMeal };
-use bansheelong_shared_ui::{ Underline, constants, style };
 use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Alignment, Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
+use crate::constants;
 use crate::meals::{ Message, PlannerState };
-use crate::menu::MENU_STATE;
-use crate::state::WINDOW_STATE;
+use crate::Underline;
+use crate::style;
 
 const MONTH: [&'static str; 12] = [
 	"January",
@@ -51,25 +51,50 @@ fn get_current_year() -> u8 {
 	(Local::now().year() - 2000) as u8
 }
 
-// returns right panel container and the remaining width for the left panel
-pub(crate) fn get_planner_right_panel<'a, I>(
-	state: PlannerState,
-	year_index: u8,
-	month_index: u32,
-	day_buttons: I,
-	previous_month_state: &'a mut button::State,
-	next_month_state: &'a mut button::State,
-	meal_add_state: &'a mut button::State,
-	ingredients_state: &'a mut scrollable::State,
-	recipe_index: Option<usize>,
-	selected_date: Option<Date>,
-	image: &'a image::Handle,
-	image_state: &'a mut image::viewer::State,
-	database: Arc<IO>
-) -> (Container<'a, Message>, u16)
+pub struct PlannerRightPanelArguments<'a, I>
 	where
 		I: Iterator<Item = &'a mut button::State>
 {
+	pub database: Arc<IO>,
+	pub day_buttons: I,
+	pub image: &'a image::Handle,
+	pub image_state: &'a mut image::viewer::State,
+	pub ingredients_state: &'a mut scrollable::State,
+	pub meal_add_state: &'a mut button::State,
+	pub menu_state: &'a constants::MenuState,
+	pub month_index: u32,
+	pub next_month_state: &'a mut button::State,
+	pub previous_month_state: &'a mut button::State,
+	pub recipe_index: Option<usize>,
+	pub state: PlannerState,
+	pub selected_date: Option<Date>,
+	pub year_index: u8,
+	pub window_state: &'a constants::WindowState,
+}
+
+// returns right panel container and the remaining width for the left panel
+pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a, I>) -> (Container<'a, Message>, u16)
+	where
+		I: Iterator<Item = &'a mut button::State>
+{
+	let PlannerRightPanelArguments {
+		database,
+		day_buttons,
+		image,
+		image_state,
+		ingredients_state,
+		meal_add_state,
+		menu_state,
+		month_index,
+		next_month_state,
+		previous_month_state,
+		recipe_index,
+		state,
+		selected_date,
+		year_index,
+		window_state,
+	} = args;
+	
 	let start_of_month = NaiveDate::from_ymd(2000 + year_index as i32, month_index + 1, 1);
 	let start_of_month = if start_of_month.weekday() == chrono::Weekday::Sun {
 		if month_index == 0 {
@@ -220,23 +245,23 @@ pub(crate) fn get_planner_right_panel<'a, I>(
 
 			let container = Container::new(
 				Container::new(month)
-					.height(Length::Units(WINDOW_STATE.height - 40))
+					.height(Length::Units(window_state.height - 40))
 					.width(Length::Units(WEEK_SELECT_WIDTH + 40))
 					.padding([0, 20])
 					.align_y(alignment::Vertical::Center)
 					.style(style::MealsCalendarContainer)
 			)
 				.width(Length::Units(WEEK_SELECT_WIDTH + 40 + 35))
-				.height(Length::Units(WINDOW_STATE.height))
+				.height(Length::Units(window_state.height))
 				.padding([20, 20, 20, 5]);
 
-			return (container, MENU_STATE.width - (WEEK_SELECT_WIDTH + 40 + 25));
+			return (container, menu_state.width - (WEEK_SELECT_WIDTH + 40 + 25));
 		},
 		PlannerState::MealSelect => {
 			let mut information_column = Column::new();
 			if recipe_index.is_none() {
 				information_column = information_column.push(
-					Space::new(Length::Units(0), Length::Units(WINDOW_STATE.height - 40 - 20))
+					Space::new(Length::Units(0), Length::Units(window_state.height - 40 - 20))
 				);
 			} else {
 				let selected_recipe = &database.meals_database.recipes[recipe_index.unwrap()];
@@ -379,7 +404,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(
 						)
 							.style(style::TodoMenuButton)
 							.width(Length::Fill)
-							.height(Length::Units(MENU_STATE.button_height))
+							.height(Length::Units(menu_state.button_height))
 							.on_press(Message::APIAddPlannedMeal(PlannedMeal::new(selected_date.unwrap(), selected_recipe.clone())))
 					);
 			}
@@ -399,7 +424,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(
 				.padding([20, 15, 20, 5])
 				.style(style::TodoScrollable);
 
-			(Container::new(scrollable), MENU_STATE.width - 435)
+			(Container::new(scrollable), menu_state.width - 435)
 		},
 	}
 }

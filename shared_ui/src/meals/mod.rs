@@ -1,20 +1,21 @@
-pub(crate) mod image_utils;
-pub(crate) mod planned;
-pub(crate) mod planner;
-pub(crate) mod render;
-pub(crate) mod right_panel;
+pub mod image_utils;
+pub mod planned;
+pub mod planner;
+pub mod render;
+pub mod right_panel;
 
 use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 
-use bansheelong_shared_ui::constants;
 use bansheelong_types::{ Date, IO, PlannedMeal };
 use iced::{ button, image, scrollable };
 
-pub(crate) use image_utils::download_image;
-pub(crate) use image_utils::has_image;
-pub(crate) use image_utils::is_valid_image_url;
+use crate::constants;
+
+pub use image_utils::download_image;
+pub use image_utils::has_image;
+pub use image_utils::is_valid_image_url;
 
 #[derive(Debug, Clone)]
 pub enum Message {
@@ -37,7 +38,7 @@ pub enum Message {
 }
 
 #[derive(Debug)]
-struct PlannedInfo {
+pub struct PlannedInfo {
 	image: image::Handle,
 	image_state: image::viewer::State,
 	ingredient_button_states: Vec<button::State>,
@@ -52,7 +53,7 @@ struct PlannedInfo {
 }
 
 #[derive(Debug)]
-struct PlannerInfo {
+pub struct PlannerInfo {
 	day_button_states: Vec<button::State>,
 	day_index: Option<i8>,
 	image: image::Handle,
@@ -71,17 +72,19 @@ struct PlannerInfo {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub(crate) enum PlannerState {
+pub enum PlannerState {
 	DaySelect,
 	MealSelect,
 }
 
 #[derive(Debug)]
-pub(crate) struct View {
+pub struct View {
 	button_states: Vec<button::State>,
 	database: Option<Arc<IO>>,
 	last_interaction: Option<Instant>,
+	menu_state: constants::MenuState,
 	planned: PlannedInfo,
 	planner: PlannerInfo,
 	showing_planner: bool,
+	window_state: constants::WindowState,
 }

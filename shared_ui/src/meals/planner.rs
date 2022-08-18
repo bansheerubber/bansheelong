@@ -1,10 +1,9 @@
-use bansheelong_shared_ui::{ constants, style };
 use bansheelong_types::Date;
 use iced::{ Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment };
 
+use crate::constants;
 use crate::meals::{ Message, PlannerState, View, right_panel };
-use crate::menu::MENU_STATE;
-use crate::state::WINDOW_STATE;
+use crate::style;
 
 impl View {
 	pub(crate) fn get_meal_planner(&mut self) -> Row<Message> {
@@ -20,21 +19,25 @@ impl View {
 			None
 		};
 
-		let (right_panel, remaining_width) = right_panel::get_planner_right_panel(
-			self.planner.state,
-			self.planner.year_index,
-			self.planner.month_index,
+		let args = right_panel::PlannerRightPanelArguments {
+			database: self.database.as_ref().unwrap().clone(),
 			day_buttons,
-			&mut self.planner.previous_month_state,
-			&mut self.planner.next_month_state,
-			&mut self.planner.meal_add_state,
-			&mut self.planner.ingredients_state,
-			self.planner.recipe_index,
+			image: &self.planner.image,
+			image_state: &mut self.planner.image_state,
+			ingredients_state: &mut self.planner.ingredients_state,
+			meal_add_state: &mut self.planner.meal_add_state,
+			menu_state: &self.menu_state,
+			month_index: self.planner.month_index,
+			next_month_state: &mut self.planner.next_month_state,
+			previous_month_state: &mut self.planner.previous_month_state,
+			recipe_index: self.planner.recipe_index,
 			selected_date,
-			&self.planner.image,
-			&mut self.planner.image_state,
-			self.database.as_ref().unwrap().clone()
-		);
+			state: self.planner.state,
+			year_index: self.planner.year_index,
+			window_state: &self.window_state,
+		};
+
+		let (right_panel, remaining_width) = right_panel::get_planner_right_panel(args);
 
 		// meal list
 		let mut scrollable = Scrollable::new(&mut self.planner.recipes_state)
@@ -43,14 +46,14 @@ impl View {
 		.padding([20, 15, 20, 0])
 		.style(style::TodoScrollable)
 		.on_scroll_absolute(move |offset| Message::RecipesScroll(offset))
-		.min_height(((MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) + WINDOW_STATE.height) as u32)
+		.min_height(((self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) + self.window_state.height) as u32)
 		.push( // add menu navigation
 			self.button_states
 			.iter_mut()
-			.zip(MENU_STATE.buttons.iter())
+			.zip(self.menu_state.buttons.iter())
 			.fold(
 				Column::new()
-					.spacing(MENU_STATE.button_spacing)
+					.spacing(self.menu_state.button_spacing)
 					.padding([0, 0, 20, 0]),
 				|button_column, (state, (name, menu_type))| {
 					if menu_type != &constants::Menu::Meals {
@@ -63,7 +66,7 @@ impl View {
 							)
 								.style(style::TodoMenuButton)
 								.width(Length::Fill)
-								.height(Length::Units(MENU_STATE.button_height))
+								.height(Length::Units(self.menu_state.button_height))
 								.on_press(Message::MenuChange(menu_type.clone()))
 						)
 					} else {
@@ -80,7 +83,7 @@ impl View {
 				)
 					.style(style::SpecialMenuButton)
 					.width(Length::Fill)
-					.height(Length::Units(MENU_STATE.button_height))
+					.height(Length::Units(self.menu_state.button_height))
 					.on_press(Message::SwitchToPlanned)
 			)
 		);

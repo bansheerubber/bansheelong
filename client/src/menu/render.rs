@@ -1,9 +1,9 @@
-use bansheelong_shared_ui::constants;
+use bansheelong_shared_ui::{ constants, meals };
 use iced::{ Command, Container, Element, Length, Row };
 
 use crate::calendar;
-use crate::meals;
 use crate::menu::MENU_STATE;
+use crate::state::WINDOW_STATE;
 use crate::todos;
 
 #[derive(Debug)]
@@ -27,7 +27,7 @@ impl View {
 	pub fn new() -> Self {
 		View {
 			calendar: calendar::View::new(),
-			meals: meals::View::new(),
+			meals: meals::View::new(MENU_STATE.clone(), WINDOW_STATE),
 			todos: todos::View::new(),
 			
 			menu: constants::Menu::Todos,

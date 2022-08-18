@@ -34,7 +34,7 @@ pub enum Menu {
 	Todos,
 }
 
-#[derive(Debug)]
+#[derive(Clone, Debug)]
 pub struct MenuState {
 	pub buttons: Vec<(String, Menu)>,
 	pub button_count: u16,

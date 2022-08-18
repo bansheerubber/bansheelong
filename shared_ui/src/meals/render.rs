@@ -1,13 +1,12 @@
 use std::collections::HashMap;
 use std::time::{ Duration, Instant };
 
-use bansheelong_shared_ui::constants;
 use bansheelong_types::Date;
 use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Command, Element, button, image, scrollable };
 
+use crate::constants;
 use crate::meals::{ Message, PlannedInfo, PlannerInfo, PlannerState, View, has_image };
-use crate::menu::MENU_STATE;
 
 static DAY_COUNT: [i8; 12] = [
 	31, // january
@@ -33,8 +32,8 @@ fn get_current_year() -> u8 {
 }
 
 impl View {
-	pub fn new() -> Self {
-		let scroll_position = (MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) as f32;
+	pub fn new(menu_state: constants::MenuState, window_state: constants::WindowState) -> Self {
+		let scroll_position = (menu_state.get_area_size() + menu_state.button_height + menu_state.button_spacing) as f32;
 
 		let mut meals_state = scrollable::State::new();
 		meals_state.snap_to_absolute(scroll_position);
@@ -43,9 +42,10 @@ impl View {
 		recipes_state.snap_to_absolute(scroll_position);
 
 		let mut view = View {
-			button_states: vec![button::State::new(); MENU_STATE.button_count as usize],
+			button_states: vec![button::State::new(); menu_state.button_count as usize],
 			database: None,
 			last_interaction: None,
+			menu_state,
 			planned: PlannedInfo {
 				image: image::Handle::from_path(format!(
 					"{}/data/meals-images/placeholder.png",
@@ -83,6 +83,7 @@ impl View {
 				year_index: 0,
 			},
 			showing_planner: false,
+			window_state,
 		};
 
 		view.transition_planner_state(PlannerState::DaySelect);
@@ -159,7 +160,7 @@ impl View {
 				Command::none()
 			},
 			Message::MenuChange(_) => {
-				let size = (MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) as f32;
+				let size = (self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) as f32;
 				
 				self.planned.meals_state.snap_to_absolute(size);
 				self.planned.meals_position = size;
@@ -239,7 +240,7 @@ impl View {
 				Command::none()
 			},
 			Message::SwitchToPlanned => {
-				let size = (MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) as f32;
+				let size = (self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) as f32;
 				
 				self.planned.meals_state.snap_to_absolute(size);
 				self.planned.meals_position = size;
@@ -254,7 +255,7 @@ impl View {
 				Command::none()
 			},
 			Message::SwitchToPlanner => {
-				let size = (MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) as f32;
+				let size = (self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) as f32;
 				
 				self.planned.meals_state.snap_to_absolute(size);
 				self.planned.meals_position = size;
@@ -269,7 +270,7 @@ impl View {
 				Command::none()
 			},
 			Message::Tick => {
-				let size = (MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) as f32;
+				let size = (self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) as f32;
 				
 				if self.last_interaction.is_some() {
 					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
