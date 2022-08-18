@@ -89,3 +89,13 @@ pub struct View {
 	showing_planner: bool,
 	window_state: constants::WindowState,
 }
+
+pub fn get_scroll_position(menu_state: &constants::MenuState) -> f32 {
+	let position = menu_state.get_area_size() + menu_state.button_height;
+
+	if menu_state.button_count > 1 {
+		(position + menu_state.button_spacing) as f32
+	} else {
+		position as f32
+	}
+}

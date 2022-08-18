@@ -6,7 +6,7 @@ use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Command, Container, Element, Length, Padding, Space, button, image, scrollable };
 
 use crate::constants;
-use crate::meals::{ Message, PlannedInfo, PlannerInfo, PlannerState, View, has_image };
+use crate::meals::{ Message, PlannedInfo, PlannerInfo, PlannerState, View, get_scroll_position, has_image };
 use crate::style;
 
 static DAY_COUNT: [i8; 12] = [
@@ -38,7 +38,7 @@ impl View {
 		window_state: constants::WindowState,
 		empty_padding: P
 	) -> Self {
-		let scroll_position = (menu_state.get_area_size() + menu_state.button_height + menu_state.button_spacing) as f32;
+		let scroll_position = get_scroll_position(&menu_state);
 
 		let mut meals_state = scrollable::State::new();
 		meals_state.snap_to_absolute(scroll_position);
@@ -166,7 +166,7 @@ impl View {
 				Command::none()
 			},
 			Message::MenuChange(_) => {
-				let size = (self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) as f32;
+				let size = get_scroll_position(&self.menu_state);
 				
 				self.planned.meals_state.snap_to_absolute(size);
 				self.planned.meals_position = size;
@@ -246,7 +246,7 @@ impl View {
 				Command::none()
 			},
 			Message::SwitchToPlanned => {
-				let size = (self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) as f32;
+				let size = get_scroll_position(&self.menu_state);
 				
 				self.planned.meals_state.snap_to_absolute(size);
 				self.planned.meals_position = size;
@@ -261,7 +261,7 @@ impl View {
 				Command::none()
 			},
 			Message::SwitchToPlanner => {
-				let size = (self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) as f32;
+				let size = get_scroll_position(&self.menu_state);
 				
 				self.planned.meals_state.snap_to_absolute(size);
 				self.planned.meals_position = size;
@@ -276,7 +276,7 @@ impl View {
 				Command::none()
 			},
 			Message::Tick => {
-				let size = (self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) as f32;
+				let size = get_scroll_position(&self.menu_state);
 				
 				if self.last_interaction.is_some() {
 					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)

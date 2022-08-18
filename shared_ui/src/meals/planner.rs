@@ -2,7 +2,7 @@ use bansheelong_types::Date;
 use iced::{ Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment };
 
 use crate::constants;
-use crate::meals::{ Message, PlannerState, View, right_panel };
+use crate::meals::{ Message, PlannerState, View, get_scroll_position, right_panel };
 use crate::style;
 
 impl View {
@@ -46,7 +46,7 @@ impl View {
 		.padding([20, 15, 20, 0])
 		.style(style::TodoScrollable)
 		.on_scroll_absolute(move |offset| Message::RecipesScroll(offset))
-		.min_height(((self.menu_state.get_area_size() + self.menu_state.button_height + self.menu_state.button_spacing) + self.window_state.height) as u32)
+		.min_height((get_scroll_position(&self.menu_state) as u16 + self.window_state.height) as u32)
 		.push( // add menu navigation
 			self.button_states
 			.iter_mut()
