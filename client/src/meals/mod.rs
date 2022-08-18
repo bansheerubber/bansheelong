@@ -1,4 +1,5 @@
 pub(crate) mod image_utils;
+pub(crate) mod planned;
 pub(crate) mod planner;
 pub(crate) mod render;
 pub(crate) mod right_panel;
