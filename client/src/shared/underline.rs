@@ -1,8 +1,17 @@
-use iced_native::alignment;
-use iced_native::layout;
-use iced_native::renderer;
-use iced_native::text;
-use iced_native::{ Color, Element, Layout, Length, Point, Rectangle, Size, Widget };
+use iced_native::{
+	Color,
+	Element,
+	Layout,
+	Length,
+	Point,
+	Rectangle,
+	Size,
+	Widget,
+	alignment,
+	layout,
+	renderer,
+	text
+};
 
 #[derive(Debug)]
 pub struct Underline<Renderer: text::Renderer> {

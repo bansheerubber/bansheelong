@@ -1,22 +1,20 @@
 mod calendar;
-mod constants;
 mod flavor;
 mod meals;
 mod menu;
 mod shared;
 mod storage;
-mod style;
 mod todos;
 mod weather;
 
 use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
+use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
+use bansheelong_shared_ui::{ constants, style };
 use iced::alignment;
 use iced::executor;
 use iced::{ Application, Column, Command, Container, Element, Length, Row, Settings, Subscription, Text };
-
-use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
 
 struct Window {
 	flavor: flavor::View,
@@ -363,7 +361,7 @@ impl Application for Window {
 async fn main() -> iced::Result {
 	Window::run(Settings {
 		antialiasing: false,
-		default_font: Some(include_bytes!("../data/fonts/NotoSans-Medium.ttf")),
+		default_font: Some(include_bytes!("../../shared_ui/data/fonts/NotoSans-Medium.ttf")),
 		text_multithreading: true,
 		window: iced::window::Settings {
 			size: (constants::WINDOW_WIDTH as u32, constants::WINDOW_HEIGHT as u32),

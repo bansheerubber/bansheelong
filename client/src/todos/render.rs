@@ -2,20 +2,17 @@ use std::collections::BTreeMap;
 use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
+use bansheelong_shared_ui::{ constants, style };
+use bansheelong_types::{ Date, Day, IO, PlannedMeal };
+use chrono::{ Datelike, Local, TimeZone, Utc, Weekday };
 use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, scrollable };
 
-use chrono::{ Datelike, Local, TimeZone, Utc, Weekday };
-
-use bansheelong_types::{ Date, Day, IO, PlannedMeal };
-
-use crate::constants;
-use crate::menu::{ Menu, BUTTONS, BUTTON_AREA_SIZE, BUTTON_COUNT, BUTTON_HEIGHT, BUTTON_SPACING };
+use crate::menu::{ Menu, BUTTONS, MENU_STATE };
 use crate::shared::Underline;
-use crate::style;
 
 #[derive(Debug)]
 pub struct View {
-	button_states: [button::State; BUTTON_COUNT as usize],
+	button_states: [button::State; MENU_STATE.button_count as usize],
 	database: Option<Arc<IO>>,
 	last_interaction: Option<Instant>,
 	scrollable_state: scrollable::State,
@@ -32,12 +29,12 @@ pub enum Message {
 
 impl View {
 	pub fn new() -> Self {
-		let scroll_position = BUTTON_AREA_SIZE as f32;
+		let scroll_position = MENU_STATE.get_area_size() as f32;
 		
 		let mut scrollable_state = scrollable::State::new();
 		scrollable_state.snap_to_absolute(scroll_position);
 		View {
-			button_states: [button::State::new(); BUTTON_COUNT as usize],
+			button_states: [button::State::new(); MENU_STATE.button_count as usize],
 			database: None,
 			last_interaction: None,
 			scrollable_state,
@@ -48,8 +45,8 @@ impl View {
 	pub fn update(&mut self, message: Message) -> Command<Message> {
 		match message {
 			Message::MenuChange(_) => {
-				self.scrollable_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
-				self.scroll_position = BUTTON_AREA_SIZE as f32;
+				self.scrollable_state.snap_to_absolute(MENU_STATE.get_area_size() as f32);
+				self.scroll_position = MENU_STATE.get_area_size() as f32;
 				Command::none()
 			},
 			Message::Scroll(scroll) => {
@@ -61,10 +58,10 @@ impl View {
 			Message::Tick => {
 				if self.last_interaction.is_some() {
 					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(2)
-						&& self.scroll_position < BUTTON_AREA_SIZE as f32
+						&& self.scroll_position < MENU_STATE.get_area_size() as f32
 					{
-						self.scrollable_state.snap_to_absolute(BUTTON_AREA_SIZE as f32);
-						self.scroll_position = BUTTON_AREA_SIZE as f32;
+						self.scrollable_state.snap_to_absolute(MENU_STATE.get_area_size() as f32);
+						self.scroll_position = MENU_STATE.get_area_size() as f32;
 					}
 
 					if Instant::now() - self.last_interaction.unwrap() > Duration::from_secs(4) {
@@ -121,7 +118,7 @@ impl View {
 			.padding([20, 15, 20, 0])
 			.style(style::TodoScrollable)
 			.on_scroll_absolute(move |offset| Message::Scroll(offset))
-			.min_height((BUTTON_AREA_SIZE + constants::WINDOW_HEIGHT) as u32);
+			.min_height((MENU_STATE.get_area_size() + constants::WINDOW_HEIGHT) as u32);
 
 		// add buttons to top button menu thing
 		scrollable = scrollable.push(
@@ -130,7 +127,7 @@ impl View {
 			.zip(BUTTONS.iter())
 			.fold(
 				Column::new()
-					.spacing(BUTTON_SPACING)
+					.spacing(MENU_STATE.button_spacing)
 					.padding([0, 0, 20, 0]),
 				|button_column, (state, (name, menu_type))| {
 					if menu_type != &Menu::Todos {
@@ -143,7 +140,7 @@ impl View {
 							)
 								.style(style::TodoMenuButton)
 								.width(Length::Fill)
-								.height(Length::Units(BUTTON_HEIGHT))
+								.height(Length::Units(MENU_STATE.button_height))
 								.on_press(Message::MenuChange(menu_type.clone()))
 						)
 					} else {

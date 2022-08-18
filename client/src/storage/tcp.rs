@@ -1,9 +1,7 @@
+use bansheelong_types::{ JobStatusFlags, STORAGE_MESSAGE_COUNT, get_storage_port, get_storage_host };
 use iced_native::subscription::{ self, Subscription };
-
 use tokio::time::{ Duration, sleep };
 use tokio::net::TcpStream;
-
-use bansheelong_types::{ JobStatusFlags, STORAGE_MESSAGE_COUNT, get_storage_port, get_storage_host };
 
 #[derive(Debug)]
 enum State {

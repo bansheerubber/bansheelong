@@ -143,6 +143,7 @@ name = "bansheelong_client"
 version = "0.1.0"
 dependencies = [
  "async-tungstenite",
+ "bansheelong_shared_ui",
  "bansheelong_types",
  "chrono",
  "futures",
@@ -173,6 +174,28 @@ dependencies = [
  "tokio-stream",
  "url",
  "warp",
+]
+
+[[package]]
+name = "bansheelong_shared_ui"
+version = "0.1.0"
+dependencies = [
+ "async-tungstenite",
+ "bansheelong_types",
+ "chrono",
+ "futures",
+ "http",
+ "iced",
+ "iced_futures",
+ "iced_graphics",
+ "iced_native",
+ "iced_style",
+ "lazy_static",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "time 0.3.11",
+ "tokio",
 ]
 
 [[package]]

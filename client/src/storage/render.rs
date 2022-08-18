@@ -1,8 +1,7 @@
+use bansheelong_shared_ui::style;
+use bansheelong_types::JobStatusFlags;
 use iced::{ Column, Command, Container, Element, Length, Row, Space, Text };
 
-use bansheelong_types::JobStatusFlags;
-
-use crate::style;
 use super::Data;
 
 #[derive(Debug)]

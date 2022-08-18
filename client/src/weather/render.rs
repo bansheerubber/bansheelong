@@ -1,14 +1,12 @@
 use std::cmp;
 use std::time::{ Duration, Instant };
 
+use bansheelong_shared_ui::{ constants, style };
 use chrono::{ Local, Timelike };
-
 use iced::alignment;
 use iced::button;
 use iced::{ Alignment, Button, Column, Command, Container, Element, Length, Row, Svg, Text };
 
-use crate::constants::{ ICONS, NOTOSANS_BOLD, WINDOW_HEIGHT, get_directory };
-use crate::style;
 use crate::weather::api;
 use crate::weather::types::{ DailyStatus, OneAPIError, OneAPIResponse, TemperatureDatum };
 
@@ -164,7 +162,7 @@ impl View {
 					.style(style::BlankWeatherContainer)
 			)
 				.width(Length::Units(width))
-				.height(Length::Units(WINDOW_HEIGHT))
+				.height(Length::Units(constants::WINDOW_HEIGHT))
 				.padding([0, 0, 0, 40])
 				.style(style::WeatherContainer)
 				.align_y(alignment::Vertical::Center)
@@ -192,7 +190,7 @@ impl View {
 				.height(Length::Fill)
 				.vertical_alignment(alignment::Vertical::Center)
 				.size(60)
-				.font(ICONS)
+				.font(constants::ICONS)
 		)
 			.on_press(Message::Previous)
 			.width(Length::Units(40))
@@ -207,7 +205,7 @@ impl View {
 				.height(Length::Fill)
 				.vertical_alignment(alignment::Vertical::Center)
 				.size(60)
-				.font(ICONS)
+				.font(constants::ICONS)
 		)
 			.on_press(Message::Next)
 			.width(Length::Units(40))
@@ -227,7 +225,7 @@ impl View {
 							Svg::from_path(
 								format!(
 									"{}/data/uv-index-{}.svg",
-									get_directory(),
+									constants::get_directory(),
 									self.statuses[self.current_status as usize].uv
 								)
 							)
@@ -244,7 +242,7 @@ impl View {
 									Svg::from_path(
 										format!(
 											"{}/data/raindrop.svg",
-											get_directory()
+											constants::get_directory()
 										)
 									)
 										.width(Length::Units(60))
@@ -266,7 +264,7 @@ impl View {
 									Svg::from_path(
 										format!(
 											"{}/data/wind.svg",
-											get_directory()
+											constants::get_directory()
 										)
 									)
 										.width(Length::Units(80))
@@ -318,7 +316,7 @@ impl View {
 									Svg::from_path(
 										format!(
 											"{}/data/{}.svg",
-											get_directory(),
+											constants::get_directory(),
 											self.statuses[self.current_status as usize].icon
 										)
 									)
@@ -331,7 +329,7 @@ impl View {
 										.push(
 											Text::new(self.statuses[self.current_status as usize].current.get_temperature())
 												.size(70)
-												.font(NOTOSANS_BOLD)
+												.font(constants::NOTOSANS_BOLD)
 										)
 										.push(
 											Container::new(
@@ -358,7 +356,7 @@ impl View {
 				)
 		)
 			.width(Length::Units(width))
-			.height(Length::Units(WINDOW_HEIGHT))
+			.height(Length::Units(constants::WINDOW_HEIGHT))
 			.padding([8, 0, 0, 20])
 			.style(style::WeatherContainer)
 			.into()

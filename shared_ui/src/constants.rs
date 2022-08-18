@@ -25,7 +25,30 @@ pub const ICONS: Font = Font::External {
 	bytes: include_bytes!("../data/fonts/MaterialIcons-Regular.ttf"),
 };
 
-pub const MENU_WIDTH: u16 = 740;
+pub struct MenuState {
+	pub button_count: u16,
+	pub button_height: u16,
+	pub button_spacing: u16,
+	pub width: u16,
+}
+
+impl MenuState {
+	pub fn get_area_size(&self) -> u16 {
+		let spacing_amount = if self.button_count >= 2 {
+			self.button_count - 2
+		} else {
+			0
+		};
+
+		let button_count = if self.button_count >= 1 {
+			self.button_count - 1
+		} else {
+			0
+		};
+		
+		self.button_height * button_count + self.button_spacing * spacing_amount + 20
+	}
+}
 
 pub fn get_directory() -> String {
 	match env::var("BANSHEELONG_DIR") {

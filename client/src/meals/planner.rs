@@ -3,7 +3,7 @@ use iced::{ Button, Column, Container, Length, Row, Scrollable, Space, Text, ali
 
 use crate::constants;
 use crate::meals::{ Message, PlannerState, View, right_panel };
-use crate::menu::{ Menu, BUTTONS, BUTTON_AREA_SIZE, BUTTON_HEIGHT, BUTTON_SPACING };
+use crate::menu::{ Menu, BUTTONS, MENU_STATE };
 use crate::style;
 
 impl View {
@@ -43,14 +43,14 @@ impl View {
 		.padding([20, 15, 20, 0])
 		.style(style::TodoScrollable)
 		.on_scroll_absolute(move |offset| Message::RecipesScroll(offset))
-		.min_height(((BUTTON_AREA_SIZE + BUTTON_HEIGHT + BUTTON_SPACING) + constants::WINDOW_HEIGHT) as u32)
+		.min_height(((MENU_STATE.get_area_size() + MENU_STATE.button_height + MENU_STATE.button_spacing) + constants::WINDOW_HEIGHT) as u32)
 		.push( // add menu navigation
 			self.button_states
 			.iter_mut()
 			.zip(BUTTONS.iter())
 			.fold(
 				Column::new()
-					.spacing(BUTTON_SPACING)
+					.spacing(MENU_STATE.button_spacing)
 					.padding([0, 0, 20, 0]),
 				|button_column, (state, (name, menu_type))| {
 					if menu_type != &Menu::Meals {
@@ -63,7 +63,7 @@ impl View {
 							)
 								.style(style::TodoMenuButton)
 								.width(Length::Fill)
-								.height(Length::Units(BUTTON_HEIGHT))
+								.height(Length::Units(MENU_STATE.button_height))
 								.on_press(Message::MenuChange(menu_type.clone()))
 						)
 					} else {
@@ -80,7 +80,7 @@ impl View {
 				)
 					.style(style::SpecialMenuButton)
 					.width(Length::Fill)
-					.height(Length::Units(BUTTON_HEIGHT))
+					.height(Length::Units(MENU_STATE.button_height))
 					.on_press(Message::SwitchToPlanned)
 			)
 		);

@@ -1,14 +1,13 @@
 use std::sync::Arc;
 
 use bansheelong_types::{ Date, IO, PlannedMeal };
+use bansheelong_shared_ui::{ constants, style };
 use chrono::{ Datelike, Local, NaiveDate };
 use iced::{ Alignment, Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
-use crate::constants;
 use crate::meals::{ Message, PlannerState };
-use crate::menu::BUTTON_HEIGHT;
+use crate::menu::MENU_STATE;
 use crate::shared::Underline;
-use crate::style;
 
 const MONTH: [&'static str; 12] = [
 	"January",
@@ -231,7 +230,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(
 				.height(Length::Units(constants::WINDOW_HEIGHT))
 				.padding([20, 20, 20, 5]);
 
-			return (container, constants::MENU_WIDTH - (WEEK_SELECT_WIDTH + 40 + 25));
+			return (container, MENU_STATE.width - (WEEK_SELECT_WIDTH + 40 + 25));
 		},
 		PlannerState::MealSelect => {
 			let mut information_column = Column::new();
@@ -380,7 +379,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(
 						)
 							.style(style::TodoMenuButton)
 							.width(Length::Fill)
-							.height(Length::Units(BUTTON_HEIGHT))
+							.height(Length::Units(MENU_STATE.button_height))
 							.on_press(Message::APIAddPlannedMeal(PlannedMeal::new(selected_date.unwrap(), selected_recipe.clone())))
 					);
 			}
@@ -400,7 +399,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(
 				.padding([20, 15, 20, 5])
 				.style(style::TodoScrollable);
 
-			(Container::new(scrollable), constants::MENU_WIDTH - 435)
+			(Container::new(scrollable), MENU_STATE.width - 435)
 		},
 	}
 }

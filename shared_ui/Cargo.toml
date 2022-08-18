@@ -1,11 +1,10 @@
 [package]
-name = "bansheelong_client"
+name = "bansheelong_shared_ui"
 version = "0.1.0"
 edition = "2021"
 
 [dependencies]
 async-tungstenite = { features = ["tokio-rustls-webpki-roots"], version = "0.16" }
-bansheelong_shared_ui = { path = "../shared_ui" }
 bansheelong_types = { path = "../types" }
 chrono = "0.4.19"
 futures = "0.3.21"

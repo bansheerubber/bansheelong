@@ -11,7 +11,7 @@ use std::time::Instant;
 use bansheelong_types::{ Date, IO, PlannedMeal };
 use iced::{ button, image, scrollable };
 
-use crate::menu::{ Menu, BUTTON_COUNT };
+use crate::menu::{ Menu, MENU_STATE };
 
 pub(crate) use image_utils::download_image;
 pub(crate) use image_utils::has_image;
@@ -79,7 +79,7 @@ pub(crate) enum PlannerState {
 
 #[derive(Debug)]
 pub(crate) struct View {
-	button_states: [button::State; BUTTON_COUNT as usize],
+	button_states: [button::State; MENU_STATE.button_count as usize],
 	database: Option<Arc<IO>>,
 	last_interaction: Option<Instant>,
 	planned: PlannedInfo,

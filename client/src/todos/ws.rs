@@ -1,13 +1,10 @@
-use futures::StreamExt;
-use iced_native::subscription::{ self, Subscription };
-
 use async_tungstenite::tokio::{ ConnectStream, connect_async };
 use async_tungstenite::tungstenite;
-use tungstenite::handshake::client::{ Request };
-
-use tokio::time::{ Duration, sleep };
-
 use bansheelong_types::{ get_todos_port, get_todos_host, get_todos_secret };
+use futures::StreamExt;
+use iced_native::subscription::{ self, Subscription };
+use tokio::time::{ Duration, sleep };
+use tungstenite::handshake::client::Request;
 
 #[derive(Debug)]
 enum State {
