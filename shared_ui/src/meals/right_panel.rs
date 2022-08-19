@@ -241,9 +241,9 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 					.align_y(alignment::Vertical::Center)
 					.style(style::MealsCalendarContainer)
 			)
-				.width(Length::Units(props.get_calendar_width() + 40 + 35))
+				.width(Length::Units(props.get_calendar_width() + 40 + 20))
 				.height(Length::Units(window_state.height))
-				.padding([20, 20, 20, 5]);
+				.padding([20, 15, 20, 5]);
 
 			return container;
 		},
