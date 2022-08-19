@@ -20,7 +20,6 @@ impl View {
 		};
 
 		let args = right_panel::PlannerRightPanelArguments {
-			calendar_state: self.calendar_state,
 			database: self.database.as_ref().unwrap().clone(),
 			day_buttons,
 			image: &self.planner.image,
@@ -31,6 +30,7 @@ impl View {
 			month_index: self.planner.month_index,
 			next_month_state: &mut self.planner.next_month_state,
 			previous_month_state: &mut self.planner.previous_month_state,
+			props: self.props,
 			recipe_index: self.planner.recipe_index,
 			selected_date,
 			state: self.planner.state,
@@ -62,6 +62,7 @@ impl View {
 								Button::new(
 									state,
 									Text::new(name.clone())
+										.size(self.props.text_size)
 										.width(Length::Fill)
 										.horizontal_alignment(alignment::Horizontal::Center)
 								)
@@ -79,6 +80,7 @@ impl View {
 					Button::new(
 						&mut self.planned.switch_planner_state,
 						Text::new("Planned meals")
+							.size(self.props.text_size)
 							.width(Length::Fill)
 							.horizontal_alignment(alignment::Horizontal::Center)
 					)
@@ -102,6 +104,7 @@ impl View {
 								.width(Length::Fill)
 								.push(
 									Text::new(recipe.name.clone())
+										.size(self.props.text_size)
 										.width(Length::Fill)
 								)
 								.push(
@@ -120,6 +123,7 @@ impl View {
 												""
 											}
 										))
+											.size(self.props.text_size)
 									} else {
 										Text::new("")
 									}

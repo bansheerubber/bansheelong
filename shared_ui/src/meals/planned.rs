@@ -8,7 +8,7 @@ impl View {
 	pub(crate) fn get_meal_planned(&mut self) -> Row<Message> {
 		// construct the meal manager container
 		let mut scrollable = Scrollable::new(&mut self.planned.meals_state)
-			.width(Length::Units(300))
+			.width(Length::Units(self.props.ingredient_list_width))
 			.height(Length::Fill)
 			.padding([20, 15, 20, 0])
 			.style(style::TodoScrollable)
@@ -28,6 +28,7 @@ impl View {
 								Button::new(
 									state,
 									Text::new(name.clone())
+										.size(self.props.text_size)
 										.width(Length::Fill)
 										.horizontal_alignment(alignment::Horizontal::Center)
 								)
@@ -45,6 +46,7 @@ impl View {
 					Button::new(
 						&mut self.planned.switch_planner_state,
 						Text::new("Add meal")
+							.size(self.props.text_size)
 							.width(Length::Fill)
 							.horizontal_alignment(alignment::Horizontal::Center)
 					)
@@ -82,10 +84,12 @@ impl View {
 								.width(Length::Fill)
 								.push(
 									Text::new(format!("{}/{}/{}", date.month, date.day, date.year))
+										.size(self.props.text_size)
 										.width(Length::Units(70))
 								)
 								.push(
 									Text::new(selected_meal.recipe.name.clone())
+										.size(self.props.text_size)
 										.width(Length::Fill)
 								)
 								.push(
@@ -98,6 +102,7 @@ impl View {
 											"\u{e836}"
 										}
 									)
+										.size(self.props.text_size)	
 										.width(Length::Shrink)
 										.font(constants::ICONS)
 								)
@@ -155,7 +160,8 @@ impl View {
 							selected_meal.recipe.name.clone()
 						}
 					)
-						.width(Length::Fill)
+						.size(self.props.text_size)	
+						.size(self.props.text_size).width(Length::Fill)
 						.horizontal_alignment(alignment::Horizontal::Center)
 				)
 				.push(
@@ -170,6 +176,7 @@ impl View {
 				)
 				.push(
 					Text::new("Ingredients")
+						.size(self.props.text_size)
 				);
 			
 			// put the ingredients into the information column
@@ -194,6 +201,7 @@ impl View {
 											"\u{e836}"
 										}
 									)
+										.size(self.props.text_size)
 										.font(constants::ICONS)
 								)
 								.push(
@@ -201,6 +209,7 @@ impl View {
 								)
 								.push(
 									Text::new(planned_ingredient.ingredient.name.clone())
+										.size(self.props.text_size)
 								)
 								.padding([10, 0, 0, 0])
 						)
@@ -225,6 +234,7 @@ impl View {
 					)
 					.push(
 						Text::new("Ingredient Prep")
+							.size(self.props.text_size)
 					);
 				
 				// show preparation steps
@@ -235,6 +245,7 @@ impl View {
 							Row::new()
 								.push(
 									Text::new(format!("{}.", index + 1))
+										.size(self.props.text_size)
 										.width(Length::Units(20))
 								)
 								.push(
@@ -242,6 +253,7 @@ impl View {
 								)
 								.push(
 									Text::new(step)
+										.size(self.props.text_size)
 								)
 								.padding([10, 0, 0, 0])
 						)
@@ -263,6 +275,7 @@ impl View {
 					)
 					.push(
 						Text::new("Cooking")
+							.size(self.props.text_size)
 					);
 				
 				// show cooking steps
@@ -273,6 +286,7 @@ impl View {
 							Row::new()
 								.push(
 									Text::new(format!("{}.", index + 1))
+										.size(self.props.text_size)
 										.width(Length::Units(20))
 								)
 								.push(
@@ -280,6 +294,7 @@ impl View {
 								)
 								.push(
 									Text::new(step)
+										.size(self.props.text_size)
 								)
 								.padding([10, 0, 0, 0])
 						)
@@ -295,6 +310,7 @@ impl View {
 					Button::new(
 						&mut self.planned.remove_meal_state,
 						Text::new("Remove meal from schedule")
+							.size(self.props.text_size)
 							.width(Length::Fill)
 							.horizontal_alignment(alignment::Horizontal::Center)
 					)

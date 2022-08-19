@@ -14,7 +14,7 @@ lazy_static! {
 			(String::from("Meal manager"), constants::Menu::Meals),
 		],
 		button_count: 1,
-		button_height: 30,
+		button_height: 36,
 		button_spacing: 15,
 		width: WINDOW_STATE.width - 5 - 20,
 	};

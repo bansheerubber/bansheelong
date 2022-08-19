@@ -7,7 +7,7 @@ use iced::{ Command, Container, Element, Length, Padding, Space, button, image, 
 
 use crate::constants;
 use crate::meals::{
-	CalendarState,
+	Props,
 	Message,
 	PlannedInfo,
 	PlannerInfo,
@@ -37,9 +37,9 @@ static DAY_COUNT: [i8; 12] = [
 
 impl View {
 	pub fn new<P: Into<Padding>>(
+		props: Props,
 		menu_state: constants::MenuState,
 		window_state: constants::WindowState,
-		calendar_state: CalendarState,
 		empty_padding: P
 	) -> Self {
 		let scroll_position = get_scroll_position(&menu_state);
@@ -52,7 +52,6 @@ impl View {
 
 		let mut view = View {
 			button_states: vec![button::State::new(); menu_state.button_count as usize],
-			calendar_state,
 			database: None,
 			empty_padding: empty_padding.into(),
 			last_interaction: None,
@@ -93,6 +92,7 @@ impl View {
 				state: PlannerState::DaySelect,
 				year_index: 0,
 			},
+			props,
 			showing_planner: false,
 			window_state,
 		};

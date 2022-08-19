@@ -81,7 +81,7 @@ pub enum PlannerState {
 #[derive(Debug)]
 pub struct View {
 	button_states: Vec<button::State>,
-	calendar_state: CalendarState,
+	props: Props,
 	database: Option<Arc<IO>>,
 	empty_padding: iced::Padding,
 	last_interaction: Option<Instant>,
@@ -93,14 +93,18 @@ pub struct View {
 }
 
 #[derive(Clone, Copy, Debug)]
-pub struct CalendarState {
-	pub day_size: u16,
-	pub day_spacing: u16,
+pub struct Props {
+	pub calendar_day_size: u16,
+	pub calendar_day_spacing: u16,
+	pub calendar_day_text_size: u16,
+	pub calendar_month_text_size: u16,
+	pub ingredient_list_width: u16,
+	pub text_size: u16,
 }
 
-impl CalendarState {
-	fn get_width(&self) -> u16 {
-		7 * self.day_size + 6 * self.day_spacing
+impl Props {
+	fn get_calendar_width(&self) -> u16 {
+		7 * self.calendar_day_size + 6 * self.calendar_day_spacing
 	}
 }
 

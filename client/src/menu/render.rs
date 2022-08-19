@@ -28,12 +28,16 @@ impl View {
 		View {
 			calendar: calendar::View::new(),
 			meals: meals::View::new(
+				meals::Props {
+					calendar_day_size: 35,
+					calendar_day_spacing: 4,
+					calendar_day_text_size: 18,
+					calendar_month_text_size: 25,
+					ingredient_list_width: 300,
+					text_size: 20,
+				},
 				MENU_STATE.clone(),
 				WINDOW_STATE,
-				meals::CalendarState {
-					day_size: 35,
-					day_spacing: 4,
-				},
 				[20, 15, 20, 0]
 			),
 			todos: todos::View::new(),

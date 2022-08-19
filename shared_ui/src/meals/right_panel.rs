@@ -5,7 +5,7 @@ use chrono::{ Datelike, NaiveDate };
 use iced::{ Alignment, Button, Column, Container, Length, Row, Scrollable, Space, Text, alignment, button, image, scrollable };
 
 use crate::constants;
-use crate::meals::{ CalendarState, Message, PlannerState, get_current_month, get_current_year };
+use crate::meals::{ Props, Message, PlannerState, get_current_month, get_current_year };
 use crate::Underline;
 use crate::style;
 
@@ -43,7 +43,6 @@ pub struct PlannerRightPanelArguments<'a, I>
 	where
 		I: Iterator<Item = &'a mut button::State>
 {
-	pub calendar_state: CalendarState,
 	pub database: Arc<IO>,
 	pub day_buttons: I,
 	pub image: &'a image::Handle,
@@ -54,6 +53,7 @@ pub struct PlannerRightPanelArguments<'a, I>
 	pub month_index: u32,
 	pub next_month_state: &'a mut button::State,
 	pub previous_month_state: &'a mut button::State,
+	pub props: Props,
 	pub recipe_index: Option<usize>,
 	pub state: PlannerState,
 	pub selected_date: Option<Date>,
@@ -67,7 +67,6 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 		I: Iterator<Item = &'a mut button::State>
 {
 	let PlannerRightPanelArguments {
-		calendar_state,
 		database,
 		day_buttons,
 		image,
@@ -78,6 +77,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 		month_index,
 		next_month_state,
 		previous_month_state,
+		props,
 		recipe_index,
 		state,
 		selected_date,
@@ -144,7 +144,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 										.width(Length::Units(20))
 										.horizontal_alignment(alignment::Horizontal::Center)
 										.vertical_alignment(alignment::Vertical::Center)
-										.size(25)
+										.size(props.calendar_month_text_size)
 										.font(constants::ICONS)
 								)
 									.padding([0, 10])
@@ -153,7 +153,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 							)
 							.push(
 								Underline::new(format!("{}", MONTH[month_index as usize]))
-									.size(25)
+									.size(props.calendar_month_text_size)
 									.font(constants::NOTOSANS_BOLD)
 							)
 							.push(
@@ -163,7 +163,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 										.width(Length::Units(20))
 										.horizontal_alignment(alignment::Horizontal::Center)
 										.vertical_alignment(alignment::Vertical::Center)
-										.size(25)
+										.size(props.calendar_month_text_size)
 										.font(constants::ICONS)
 								)
 									.padding([0, 10])
@@ -175,7 +175,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 						.align_x(alignment::Horizontal::Center)
 				)
 				.push(Space::new(Length::Units(0), Length::Units(if weeks < 6 { 10 } else { 5 })))
-				.width(Length::Units(calendar_state.get_width()));
+				.width(Length::Units(props.get_calendar_width()));
 
 			let mut day: i8 = match NaiveDate::from_ymd(2000 + year_index as i32, month_index + 1, 1).weekday() {
 				chrono::Weekday::Sun => 1,
@@ -193,7 +193,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 			for state in day_buttons {
 				if day_in_week == 7 {
 					month = month.push(week)
-						.push(Space::new(Length::Units(0), Length::Units(calendar_state.day_spacing)));
+						.push(Space::new(Length::Units(0), Length::Units(props.calendar_day_spacing)));
 
 					week = Row::new();
 					day_in_week = 0;
@@ -204,14 +204,14 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 					Container::new(
 						if day >= 1 && day <= DAY_COUNT[month_index as usize] {
 							Text::new(day.to_string())
-								.size(18)
+								.size(props.calendar_day_text_size)
 						} else {
 							Text::new("")
 						}
 					)
 						.padding([0, 0, 0, 3])
-						.width(Length::Units(calendar_state.day_size))
-						.height(Length::Units(calendar_state.day_size))
+						.width(Length::Units(props.calendar_day_size))
+						.height(Length::Units(props.calendar_day_size))
 						.style(style::MealsDayContainer)
 				)
 					.style(style::DarkButton)
@@ -223,25 +223,25 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 
 				week = week
 					.push(button)
-					.push(Space::new(Length::Units(calendar_state.day_spacing), Length::Units(0)));
+					.push(Space::new(Length::Units(props.calendar_day_spacing), Length::Units(0)));
 
 				day += 1;
 				day_in_week += 1;
 			}
 
 			month = month.push(week)
-				.push(Space::new(Length::Units(0), Length::Units(calendar_state.day_spacing)))
+				.push(Space::new(Length::Units(0), Length::Units(props.calendar_day_spacing)))
 				.push(Space::new(Length::Units(0), Length::Units(10)));
 
 			let container = Container::new(
 				Container::new(month)
 					.height(Length::Units(window_state.height - 40))
-					.width(Length::Units(calendar_state.get_width() + 40))
+					.width(Length::Units(props.get_calendar_width() + 40))
 					.padding([0, 20])
 					.align_y(alignment::Vertical::Center)
 					.style(style::MealsCalendarContainer)
 			)
-				.width(Length::Units(calendar_state.get_width() + 40 + 35))
+				.width(Length::Units(props.get_calendar_width() + 40 + 35))
 				.height(Length::Units(window_state.height))
 				.padding([20, 20, 20, 5]);
 
@@ -271,6 +271,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 					)
 					.push(
 						Text::new(selected_recipe.name.clone())
+							.size(props.text_size)
 							.width(Length::Fill)
 							.horizontal_alignment(alignment::Horizontal::Center)
 					)
@@ -286,6 +287,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 					)
 					.push(
 						Text::new("Ingredients")
+							.size(props.text_size)
 					)
 					.push(
 						Space::new(Length::Units(0), Length::Units(0))
@@ -298,12 +300,14 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 							Row::new()
 								.push(
 									Text::new("-")
+										.size(props.text_size)
 								)
 								.push(
 									Space::new(Length::Units(6), Length::Units(0))
 								)
 								.push(
 									Text::new(ingredient.name.clone())
+										.size(props.text_size)
 								)
 								.padding([10, 0, 0, 0])
 						)
@@ -324,6 +328,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 						)
 						.push(
 							Text::new("Ingredient Prep")
+								.size(props.text_size)
 						);
 					
 					// show preparation steps
@@ -334,6 +339,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 								Row::new()
 									.push(
 										Text::new(format!("{}.", index + 1))
+											.size(props.text_size)	
 											.width(Length::Units(20))
 									)
 									.push(
@@ -341,6 +347,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 									)
 									.push(
 										Text::new(step)
+											.size(props.text_size)
 									)
 									.padding([10, 0, 0, 0])
 							)
@@ -362,6 +369,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 						)
 						.push(
 							Text::new("Cooking")
+								.size(props.text_size)
 						);
 					
 					// show cooking steps
@@ -372,6 +380,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 								Row::new()
 									.push(
 										Text::new(format!("{}.", index + 1))
+											.size(props.text_size)
 											.width(Length::Units(20))
 									)
 									.push(
@@ -379,6 +388,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 									)
 									.push(
 										Text::new(step)
+											.size(props.text_size)
 									)
 									.padding([10, 0, 0, 0])
 							)
@@ -393,6 +403,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 						Button::new(
 							meal_add_state,
 							Text::new("Add meal to schedule")
+								.size(props.text_size)
 								.width(Length::Fill)
 								.horizontal_alignment(alignment::Horizontal::Center)
 						)
@@ -413,7 +424,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 						.style(style::TodoItem)
 				)
 				.on_scroll_absolute(move |_| Message::PlannerRecipeScroll)
-				.width(Length::Units(menu_state.width - 300))
+				.width(Length::Units(menu_state.width - props.ingredient_list_width))
 				.height(Length::Fill)
 				.padding([20, 15, 20, 5])
 				.style(style::TodoScrollable);

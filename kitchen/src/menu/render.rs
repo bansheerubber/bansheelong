@@ -20,12 +20,16 @@ impl View {
 	pub fn new() -> Self {
 		View {
 			meals: meals::View::new(
+				meals::Props {
+					calendar_day_size: 65,
+					calendar_day_spacing: 6,
+					calendar_day_text_size: 25,
+					calendar_month_text_size: 35,
+					ingredient_list_width: 400,
+					text_size: 25,
+				},
 				MENU_STATE.clone(),
 				WINDOW_STATE,
-				meals::CalendarState {
-					day_size: 65,
-					day_spacing: 6,
-				},
 				20
 			),
 			menu: constants::Menu::Meals,
