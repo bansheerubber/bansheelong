@@ -43,6 +43,25 @@ async fn main() {
 		..IO::default()
 	}));
 
+	let mut locked = io.lock().await;
+	if let Err(error)
+		= locked.parse_from_human_readable(String::from(todo_list), String::from(recipe_list))
+	{
+		eprintln!("{:?}", error);
+	}
+
+	draw_todo_list(&locked, String::from("/home/me/Projects/bansheelong/todo-list.png"));
+	draw_time_sheet(&locked, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
+	combine(
+		String::from("/home/me/.config/background2.png"),
+		String::from("/home/me/Projects/bansheelong/todo-list.png"),
+		String::from("/home/me/Projects/bansheelong/time-sheet.png"),
+		String::from("/home/me/.config/real-background.png"),
+	);
+	reload_feh();
+
+	drop(locked);
+
 	future::join(
 		async {
 			let io = io.clone();

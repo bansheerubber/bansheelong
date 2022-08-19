@@ -11,6 +11,10 @@ use crate::constants::{
 	TIMESHEET_WIDTH_PADDING,
 };
 
+pub(crate) fn row_to_y(row: f32) -> i32 {
+	(row * FONT_HEIGHT as f32) as i32
+}
+
 pub(crate) fn draw_todo_line(image: &mut RgbaImage, text: String, mut row: f32) -> f32 {
 	// we need to split it up, pad it with space at the front and back
 	let split = text.split(" ");
@@ -20,7 +24,7 @@ pub(crate) fn draw_todo_line(image: &mut RgbaImage, text: String, mut row: f32) 
 	for word in split {
 		if buffer_character_count + word.trim().len() + buffer.len() >= (CHARACTERS_PER_ROW - 2) as usize {
 			let joined = format!(" {} ", buffer.join(" "));
-			draw_text_mut(image, TODO_LIST_TEXT_COLOR, 0, (row * FONT_HEIGHT as f32) as i32, FONT_SCALE, &FONT, joined.as_str());
+			draw_text_mut(image, TODO_LIST_TEXT_COLOR, 0, row_to_y(row), FONT_SCALE, &FONT, joined.as_str());
 			row += 1.0;
 
 			buffer.clear();
@@ -33,7 +37,7 @@ pub(crate) fn draw_todo_line(image: &mut RgbaImage, text: String, mut row: f32) 
 
 	if buffer.len() > 0 {
 		let joined = format!(" {} ", buffer.join(" "));
-		draw_text_mut(image, TODO_LIST_TEXT_COLOR, 0, (row * FONT_HEIGHT as f32) as i32, FONT_SCALE, &FONT, joined.as_str());
+		draw_text_mut(image, TODO_LIST_TEXT_COLOR, 0, row_to_y(row), FONT_SCALE, &FONT, joined.as_str());
 		row += 1.0;
 	}
 
