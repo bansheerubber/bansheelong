@@ -1,0 +1,26 @@
+{
+	"compilerOptions": {
+		"allowJs": true,
+		"alwaysStrict": true,
+		"allowSyntheticDefaultImports": true,
+		"esModuleInterop": true,
+		"jsx": "react",
+		"outDir": "./dist/",
+		"module": "CommonJS",
+		"moduleResolution": "node",
+		// explicitly defining some things that strict already defines, makes the config a little more legible
+		"noImplicitAny": true,
+		"noImplicitOverride": true,
+		"noImplicitReturns": true,
+		"noPropertyAccessFromIndexSignature": true,
+		"noUncheckedIndexedAccess": true,
+		"noUnusedLocals": true,
+		"sourceMap": true,
+		"strictBindCallApply": true,
+		"strictFunctionTypes": true,
+		"strictNullChecks": true,
+		"strictPropertyInitialization": true,
+		"useUnknownInCatchVariables": true,
+		"target": "es2021"
+	}
+}

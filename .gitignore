@@ -1,7 +1,8 @@
 send.sh
 data
-index.html
+/index.html
 target
 /todos
 todo_renderer/fonts
 *.png
+node_modules
