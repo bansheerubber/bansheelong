@@ -5,7 +5,7 @@ use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
 use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
-use bansheelong_shared_ui::{ meals, style };
+use bansheelong_shared_ui::{ meals, style, ws };
 use iced::executor;
 use iced::{ Application, Command, Container, Element, Length, Row, Settings, Subscription };
 
@@ -62,6 +62,17 @@ impl Application for Window {
 			iced::time::every(std::time::Duration::from_secs(300)).map(|_| Self::Message::Refresh), // refresh weather/todos
 			iced::time::every(std::time::Duration::from_secs(1)).map(|_| { // tick weather widget so it can detect absense of user interaction, etc
 				Self::Message::Tick
+			}),
+			ws::connect().map(|event| {
+				match event {
+					ws::Event::Error(_) => Self::Message::MenuMessage(menu::Message::MealsMessage(
+						meals::Message::Update(None)
+					)),
+					ws::Event::InvalidateState => Self::Message::MenuMessage(menu::Message::MealsMessage(
+						meals::Message::Update(None)
+					)),
+					ws::Event::Refresh => Self::Message::Refresh,
+				}
 			}),
 		])
 	}

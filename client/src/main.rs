@@ -10,7 +10,7 @@ use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
 use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
-use bansheelong_shared_ui::{ meals, style };
+use bansheelong_shared_ui::{ meals, style, ws };
 use iced::alignment;
 use iced::executor;
 use iced::{ Application, Column, Command, Container, Element, Length, Row, Settings, Subscription, Text };
@@ -85,15 +85,15 @@ impl Application for Window {
 			iced::time::every(std::time::Duration::from_secs(1)).map(|_| { // tick weather widget so it can detect absense of user interaction, etc
 				Self::Message::Tick
 			}),
-			todos::connect().map(|event| {
+			ws::connect().map(|event| {
 				match event {
-					todos::Event::Error(_) => Self::Message::MenuMessage(menu::Message::TodosMessage(
+					ws::Event::Error(_) => Self::Message::MenuMessage(menu::Message::TodosMessage(
 						todos::Message::Update(None)
 					)),
-					todos::Event::InvalidateState => Self::Message::MenuMessage(menu::Message::TodosMessage(
+					ws::Event::InvalidateState => Self::Message::MenuMessage(menu::Message::TodosMessage(
 						todos::Message::Update(None)
 					)),
-					todos::Event::Refresh => Self::Message::RefreshTodos,
+					ws::Event::Refresh => Self::Message::RefreshTodos,
 				}
 			}),
 			storage::connect().map(|event| {
