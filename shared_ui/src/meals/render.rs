@@ -312,17 +312,19 @@ impl View {
 			Message::Update(io) => {
 				self.database = io;
 
-				self.planner.recipe_button_states.clear();
-				for _ in 0..self.database.as_ref().unwrap().meals_database.recipes.len() {
-					self.planner.recipe_button_states.push(button::State::new());
-				}
+				if self.database.is_some() {
+					self.planner.recipe_button_states.clear();
+					for _ in 0..self.database.as_ref().unwrap().meals_database.recipes.len() {
+						self.planner.recipe_button_states.push(button::State::new());
+					}
 
-				self.planned.meal_button_states.clear();
-				for _ in 0..self.database.as_ref().unwrap().meals_database.planned_meal_mapping.len() {
-					self.planned.meal_button_states.push(button::State::new());
-				}
+					self.planned.meal_button_states.clear();
+					for _ in 0..self.database.as_ref().unwrap().meals_database.planned_meal_mapping.len() {
+						self.planned.meal_button_states.push(button::State::new());
+					}
 
-				self.planned.mapping.clear();
+					self.planned.mapping.clear();
+				}
 
 				Command::none()
 			},
