@@ -30,7 +30,7 @@ impl View {
 				},
 				MENU_STATE.clone(),
 				WINDOW_STATE,
-				20
+				[20, 15, 20, 0]
 			),
 			menu: constants::Menu::Meals,
 		}
