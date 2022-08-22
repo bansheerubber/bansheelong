@@ -9,6 +9,8 @@ use iced_native::renderer;
 use iced_native::text;
 use iced_native::{ Background, Color, Element, Layout, Length, Point, Rectangle, Size, Vector, Widget };
 
+use crate::state::VALID_STARTING_CHARACTERS;
+
 type HourMinute = i32;
 
 pub static START_TIME: HourMinute = 1; // time range: 1-24 hours
@@ -216,7 +218,13 @@ where
 
 				// figure out string truncation
 				let size = self.item_size.unwrap_or(renderer.default_size());
-				let mut string = item.description.clone().replace("- ", "");
+				let mut string = if VALID_STARTING_CHARACTERS.contains(&item.description.chars().nth(0).unwrap())
+					&& item.description.chars().nth(1).unwrap() == ' '
+				{
+					String::from(&item.description[2..])
+				} else {
+					item.description
+				};
 				let mut string_width = 0.0;
 				let mut string_height = 0.0;
 

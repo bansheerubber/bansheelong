@@ -34,6 +34,8 @@ pub(crate) static TIMESHEET_COLORS: [Rgba<u8>; 4] = [
 
 pub(crate) const TODO_LIST_TEXT_COLOR: Rgba<u8> = Rgba([183, 172, 183, 255]);
 
+pub(crate) static VALID_STARTING_CHARACTERS: [char; 4] = ['-', '!', '%', 'z'];
+
 lazy_static! {
 	pub(crate) static ref FONT: Font<'static> = Font::try_from_vec(Vec::from(include_bytes!("../fonts/Greybeard-16px.ttf") as &[u8])).unwrap();
 }

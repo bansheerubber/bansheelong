@@ -9,6 +9,7 @@ use crate::constants::{
 	TODO_LIST_TEXT_COLOR,
 	TIMESHEET_TEXT_COLOR,
 	TIMESHEET_WIDTH_PADDING,
+	VALID_STARTING_CHARACTERS,
 };
 
 pub(crate) fn row_to_y(row: f32) -> i32 {
@@ -45,7 +46,9 @@ pub(crate) fn draw_todo_line(image: &mut RgbaImage, text: String, mut row: f32) 
 }
 
 pub(crate) fn draw_timesheet_line(image: &mut RgbaImage, text: String, mut y_offset: i32) {
-	let text = if &text[0..2]  == "- " {
+	let text = if VALID_STARTING_CHARACTERS.contains(&text.chars().nth(0).unwrap())
+		&& text.chars().nth(1).unwrap() == ' '
+	{
 		String::from(&text[2..])
 	} else {
 		text

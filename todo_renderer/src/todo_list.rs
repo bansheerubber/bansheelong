@@ -5,7 +5,14 @@ use image::imageops::crop;
 use imageproc::drawing::{ draw_filled_circle_mut, draw_filled_rect_mut };
 use imageproc::rect::Rect;
 
-use crate::constants:: { BACKGROUND_COLOR, CHARACTERS_PER_ROW, FONT_HEIGHT, FONT_WIDTH, TIMESHEET_COLORS, TODO_LIST_TEXT_COLOR, };
+use crate::constants:: {
+	BACKGROUND_COLOR,
+	CHARACTERS_PER_ROW,
+	FONT_HEIGHT,
+	FONT_WIDTH,
+	TIMESHEET_COLORS,
+	TODO_LIST_TEXT_COLOR,
+};
 use crate::util::{ draw_todo_line, row_to_y };
 
 pub fn draw_todo_list(database: &IO, file_name: String) {
@@ -58,7 +65,11 @@ pub fn draw_todo_list(database: &IO, file_name: String) {
 				row += 0.6
 			} else {
 				let description = if date == &current_date && item.time.is_some() { // get item description
-					format!(" {}", item.description.split("-").skip(1).map(|x| x.to_string()).collect::<Vec<String>>().join("-"))
+					if item.description.chars().nth(0).unwrap() == '-' {
+						format!("  {}", item.description.split('-').skip(1).map(|x| x.to_string()).collect::<Vec<String>>().join("-").trim())
+					} else {
+						format!("  {}", item.description)
+					}
 				} else {
 					item.description.clone()
 				};

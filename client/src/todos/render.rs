@@ -8,7 +8,7 @@ use chrono::{ Datelike, Local, TimeZone, Utc, Weekday };
 use iced::{ Button, Column, Command, Container, Element, Length, Row, Scrollable, Space, Text, alignment, button, scrollable };
 
 use crate::menu::MENU_STATE;
-use crate::state::WINDOW_STATE;
+use crate::state::{ VALID_STARTING_CHARACTERS, WINDOW_STATE };
 
 #[derive(Debug)]
 pub struct View {
@@ -231,12 +231,18 @@ impl View {
 										.width(Length::Units(7))
 										.height(Length::Units(7))
 								)
-									.width(Length::Units(10))
+									.width(Length::Units(18))
 									.align_x(alignment::Horizontal::Center)
 									.padding([7, 4, 0, 0])
 							} else if item.description != "" {
-								Container::new(Text::new("-"))
-									.width(Length::Units(10))
+								let start_character = if VALID_STARTING_CHARACTERS.contains(&item.description.chars().nth(0).unwrap()) {
+									String::from(item.description.chars().nth(0).unwrap())
+								} else {
+									String::from("-")
+								};
+								
+								Container::new(Text::new(start_character))
+									.width(Length::Units(18))
 									.align_x(alignment::Horizontal::Center)
 									.padding([0, 4, 0, 0])
 							} else {
@@ -249,7 +255,16 @@ impl View {
 										circle_or_dash
 									)
 									.push(
-										Text::new(format!("{} ", item.description.clone().replace("- ", "")))
+										Text::new(format!(
+											"{} ",
+											if VALID_STARTING_CHARACTERS.contains(&item.description.chars().nth(0).unwrap())
+												&& item.description.chars().nth(1).unwrap() == ' '
+											{
+												String::from(&item.description[2..])
+											} else {
+												item.description.clone()
+											}
+										))
 											.font(constants::NOTOSANS_THIN)
 											.width(Length::Fill)
 									)
@@ -280,7 +295,7 @@ impl View {
 					Row::new()
 						.push(
 							Container::new(Text::new(character))
-								.width(Length::Units(14))
+								.width(Length::Units(18))
 								.align_x(alignment::Horizontal::Center)
 								.padding([0, 4, 0, 0])
 						)
