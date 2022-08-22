@@ -75,5 +75,7 @@ bitflags! {
 		const CREATING_WEEKLY   = 0b00000100;
 		const CREATING_MONTHLY  = 0b00001000;
 		const SYNCING_GITHUB    = 0b00010000;
+		const REMOVING_DAILY    = 0b00100000;
+		const REMOVING_WEEKLY   = 0b01000000;
 	}
 }

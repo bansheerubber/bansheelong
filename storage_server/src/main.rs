@@ -158,6 +158,16 @@ fn get_job_flags() -> Result<JobStatusFlags, Error> {
 		result |= JobStatusFlags::SYNCING_GITHUB;
 	}
 
+	// check removing daily backup
+	if Path::new("/home/me/bansheestorage/removing-daily-backup").exists() {
+		result |= JobStatusFlags::REMOVING_DAILY;
+	}
+
+	// check removing weekly backup
+	if Path::new("/home/me/bansheestorage/removing-weekly-backup").exists() {
+		result |= JobStatusFlags::REMOVING_WEEKLY;
+	}
+
 	Ok(result)
 }
 

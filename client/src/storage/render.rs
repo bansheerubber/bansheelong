@@ -105,6 +105,10 @@ impl View {
 									String::from("Downloading daily backup") + &ellipses
 								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::SYNCING_GITHUB) {
 									String::from("Syncing GitHub to backup") + &ellipses
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::REMOVING_DAILY) {
+									String::from("Removing stale daily") + &ellipses
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::REMOVING_WEEKLY) {
+									String::from("Removing stale weekly") + &ellipses
 								} else {
 									String::from("Idle")
 								}
