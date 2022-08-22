@@ -323,6 +323,14 @@ impl View {
 						self.planned.meal_button_states.push(button::State::new());
 					}
 
+					if self.planned.meal_index.is_some()
+						&& !self.database.as_ref().unwrap().meals_database.planned_meal_mapping.contains_key(
+							&self.planned.meal_index.unwrap()
+						)
+					{
+						self.planned.meal_index = None;
+					}
+
 					self.planned.mapping.clear();
 				}
 

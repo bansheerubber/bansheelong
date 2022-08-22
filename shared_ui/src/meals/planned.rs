@@ -118,7 +118,11 @@ impl View {
 			});
 
 		let mut information_column = Column::new();
-		if self.planned.meal_index.is_none() {
+		if self.planned.meal_index.is_none()
+			|| !self.database.as_ref().unwrap().meals_database.planned_meal_mapping.contains_key(
+				&self.planned.meal_index.unwrap()
+			)
+		{
 			information_column = information_column.push(
 				Space::new(Length::Units(0), Length::Units(self.window_state.height - 40 - 20))
 			);
