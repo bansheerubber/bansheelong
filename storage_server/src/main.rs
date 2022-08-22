@@ -273,7 +273,7 @@ async fn main() {
 			let mut sleep_time = 0;
 			loop {
 				sleep(Duration::from_secs(sleep_time)).await;
-				sleep_time = 30;
+				sleep_time = 5;
 
 				// get server job status
 				let job_status = match get_job_flags() {
