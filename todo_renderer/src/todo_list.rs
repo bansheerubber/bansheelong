@@ -57,13 +57,13 @@ pub fn draw_todo_list(database: &IO, file_name: String) {
 			if item.description.len() == 0 { // for separations, add half a row instead of a full one
 				row += 0.6
 			} else {
-				let description = if date == &current_date { // get item description
+				let description = if date == &current_date && item.time.is_some() { // get item description
 					format!(" {}", item.description.split("-").skip(1).map(|x| x.to_string()).collect::<Vec<String>>().join("-"))
 				} else {
 					item.description.clone()
 				};
 
-				if date == &current_date { // draw circle in place of hyphen
+				if date == &current_date && item.time.is_some() { // draw circle in place of hyphen
 					draw_filled_circle_mut(
 						&mut image,
 						(FONT_WIDTH as i32 + FONT_WIDTH as i32 / 2, row_to_y(row) + FONT_HEIGHT as i32 / 2),
