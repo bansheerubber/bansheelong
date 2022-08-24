@@ -12,7 +12,7 @@ use crate::{
 	Resource,
 	TodosDatabase,
 	WriteDatabase,
-	get_todos_secret
+	get_todos_secret,
 };
 
 pub async fn read_database(resource: Resource) -> Result<(TodosDatabase, MealsDatabase), Error> {

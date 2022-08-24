@@ -20,7 +20,7 @@ use crate::{
 	Weekday,
 	WriteDatabase,
 	read_database,
-	write_database
+	write_database,
 };
 
 impl IO {

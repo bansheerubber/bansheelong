@@ -46,7 +46,7 @@ class HTMLLoader {
 
 const targets: { [key: string]: webpack.Configuration } = {
 	"release": {
-		entry: "./src/index.ts",
+		entry: "./src/index.tsx",
 		mode: "production",
 		module: {
 			rules: [{
@@ -75,7 +75,7 @@ const targets: { [key: string]: webpack.Configuration } = {
 	},
 	"debug": {
 		devtool: "inline-source-map",
-		entry: "./src/index.ts",
+		entry: "./src/index.tsx",
 		mode: "development",
 		module: {
 			rules: [{
