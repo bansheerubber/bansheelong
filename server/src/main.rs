@@ -1,15 +1,10 @@
+use futures::future;
 use std::sync::Arc;
 use tokio::sync::{ Mutex, mpsc };
-use std::pin::Pin;
-use std::future::Future;
-
-use futures::future;
 
 mod http;
 mod types;
 mod ws;
-
-use bansheelong_types::IO;
 
 #[tokio::main]
 async fn main() {
@@ -17,16 +12,7 @@ async fn main() {
 
 	let tx = Arc::new(Mutex::new(tx));
 
-	let http_host: Pin<Box<dyn Future<Output = ()>>> = Box::pin(async {
-		let io = Arc::new(Mutex::new(IO::default()));
-		println!("Running HTTP server");
-		http::host(tx.clone(), io.clone()).await;
-	});
-
-	let ws_host = Box::pin(async {
-		println!("Running WS server");
-		ws::host(rx).await;
-	});
+	let http_ws_host = http::host(rx, tx.clone());
 
 	let ws_ping = Box::pin(async {
 		loop {
@@ -37,7 +23,7 @@ async fn main() {
 		}
 	});
 
-	future::join_all([http_host, ws_host, ws_ping]).await;
+	future::join_all([http_ws_host.0, http_ws_host.1, ws_ping]).await;
 
 	println!("Did we reach here");
 }

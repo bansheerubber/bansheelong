@@ -51,7 +51,7 @@ pub fn connect() -> Subscription<Event> {
 				State::Disconnected => { // try connecting if we're disconnected
 					match connect_async(
 						Request::builder()
-							.uri(format!("ws://{}:{}/websocket", get_todos_host(), get_todos_port() + 1))
+							.uri(format!("ws://{}:{}/websocket", get_todos_host(), get_todos_port()))
 							.header("Secret", get_todos_secret())
 							.body(())
 							.unwrap()
