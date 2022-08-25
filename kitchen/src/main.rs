@@ -4,7 +4,7 @@ mod state;
 use std::sync::Arc;
 use std::time::{ Duration, Instant };
 
-use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_port, read_database, write_database };
+use bansheelong_types::{ Date, Error, IO, MealsDatabase, PlannedMeal, PlannedMealsWriteLog, Resource, TodosDatabase, WriteDatabase, get_todos_host, get_todos_path, get_todos_port, read_database, write_database };
 use bansheelong_shared_ui::{ meals, style, ws };
 use iced::executor;
 use iced::{ Application, Command, Container, Element, Length, Row, Settings, Subscription };
@@ -35,7 +35,7 @@ impl Application for Window {
 
 	fn new(_flags: ()) -> (Self, Command<Self::Message>) {
 		let resource = Resource {
-			reference: format!("http://{}:{}", get_todos_host(), get_todos_port()),
+			reference: format!("https://{}{}{}", get_todos_host(), get_todos_port(), get_todos_path()),
 		};
 
 		(

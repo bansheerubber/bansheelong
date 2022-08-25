@@ -1,6 +1,6 @@
 use async_tungstenite::tokio::{ ConnectStream, connect_async };
 use async_tungstenite::tungstenite;
-use bansheelong_types::{ get_todos_port, get_todos_host, get_todos_secret };
+use bansheelong_types::{ get_todos_host, get_todos_secret, get_todos_server_port };
 use futures::StreamExt;
 use iced_native::subscription::{ self, Subscription };
 use tokio::time::{ Duration, sleep };
@@ -51,7 +51,7 @@ pub fn connect() -> Subscription<Event> {
 				State::Disconnected => { // try connecting if we're disconnected
 					match connect_async(
 						Request::builder()
-							.uri(format!("ws://{}:{}/websocket", get_todos_host(), get_todos_port()))
+							.uri(format!("wss://{}:{}/websocket", get_todos_host(), get_todos_server_port()))
 							.header("Secret", get_todos_secret())
 							.body(())
 							.unwrap()

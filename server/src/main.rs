@@ -2,7 +2,13 @@ mod http;
 mod types;
 mod ws;
 
-use bansheelong_types::{ IO, get_todos_port, get_todos_secret };
+use bansheelong_types::{
+	IO,
+	get_todos_https_cert,
+	get_todos_https_key,
+	get_todos_secret,
+	get_todos_server_port,
+};
 use futures::StreamExt;
 use std::future::Future;
 use std::pin::Pin;
@@ -59,7 +65,11 @@ async fn main() {
 	// http server async block
 	let http_server: Pin<Box<dyn Future<Output = ()>>> = Box::pin(async move {
 		println!("Running HTTP server");
-		warp::serve(routes).run(([0, 0, 0 ,0], get_todos_port())).await;
+		warp::serve(routes)
+			.tls()
+			.cert_path(get_todos_https_cert())
+			.key_path(get_todos_https_key())
+			.run(([0, 0, 0, 0], get_todos_server_port())).await;
 	});
 
 	// ws message handler async block

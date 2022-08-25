@@ -6,7 +6,7 @@ use notify::{ Op, RawEvent, RecursiveMode, Watcher, raw_watcher };
 use tokio::sync::Mutex;
 
 use bansheelong_todo_renderer::{ combine, draw_time_sheet, draw_todo_list };
-use bansheelong_types::{ IO, Resource, WriteDatabase, get_todos_host, get_todos_port, write_database };
+use bansheelong_types::{ IO, Resource, WriteDatabase, get_todos_host, get_todos_path, get_todos_port, write_database };
 
 fn reload_feh() {
 	let child = Command::new("feh")
@@ -38,7 +38,7 @@ async fn main() {
 
 	let io = Arc::new(Mutex::new(IO {
 		resource: Resource {
-			reference: format!("http://{}:{}", get_todos_host(), get_todos_port()),
+			reference: format!("https://{}{}{}", get_todos_host(), get_todos_port(), get_todos_path()),
 		},
 		..IO::default()
 	}));

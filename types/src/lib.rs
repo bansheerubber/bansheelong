@@ -29,10 +29,23 @@ pub use types::WriteDatabase;
 pub use read_write::read_database;
 pub use read_write::write_database;
 
-pub fn get_todos_port() -> u16 {
-	match env::var("BANSHEELONG_TODOS_PORT") {
+pub fn get_todos_server_port() -> u16 {
+	match env::var("BANSHEELONG_TODOS_SERVER_PORT") {
 		Ok(port) => port.parse().unwrap(),
 		Err(_) => 0,
+	}
+}
+
+pub fn get_todos_port() -> String {
+	match env::var("BANSHEELONG_TODOS_PORT") {
+		Ok(port) => {
+			if let Ok(_) = port.parse::<u16>() {
+				format!(":{}", port)
+			} else {
+				String::from("")
+			}
+		},
+		Err(_) => String::from(""),
 	}
 }
 
@@ -43,9 +56,30 @@ pub fn get_todos_host() -> String {
 	}
 }
 
+pub fn get_todos_path() -> String {
+	match env::var("BANSHEELONG_TODOS_PATH") {
+		Ok(path) => path,
+		Err(_) => String::from(""),
+	}
+}
+
 pub fn get_todos_secret() -> String {
 	match env::var("BANSHEELONG_TODOS_SECRET") {
 		Ok(secret) => secret,
+		Err(_) => String::from(""),
+	}
+}
+
+pub fn get_todos_https_cert() -> String {
+	match env::var("BANSHEELONG_TODOS_HTTPS_CERT") {
+		Ok(cert) => cert,
+		Err(_) => String::from(""),
+	}
+}
+
+pub fn get_todos_https_key() -> String {
+	match env::var("BANSHEELONG_TODOS_HTTPS_KEY") {
+		Ok(key) => key,
 		Err(_) => String::from(""),
 	}
 }
