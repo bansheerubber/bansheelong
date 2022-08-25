@@ -185,6 +185,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "bansheelong_printer"
+version = "0.1.0"
+dependencies = [
+ "bansheelong_types",
+ "tokio",
+]
+
+[[package]]
 name = "bansheelong_server"
 version = "0.1.0"
 dependencies = [

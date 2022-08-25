@@ -3,6 +3,7 @@ resolver = "2"
 members = [
 	"client",
 	"kitchen",
+	"printer",
 	"server",
 	"shared_ui",
 	"storage_server",
