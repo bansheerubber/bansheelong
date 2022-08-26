@@ -6,6 +6,8 @@ import Todos from "./todos/todos";
 
 interface Props {};
 
+type MenuOption = "Todo manager" | "Grocery Manager";
+
 enum IOState {
 	Invalid,
 	Unauthorized,
@@ -15,6 +17,7 @@ enum IOState {
 interface State {
 	ioState: IOState;
 	password: string;
+	selectedMenu: MenuOption;
 };
 
 class Application extends React.Component<Props, State> {
@@ -28,6 +31,7 @@ class Application extends React.Component<Props, State> {
 		this.state = {
 			ioState: IOState.Invalid,
 			password: "",
+			selectedMenu: "Todo manager",
 		};
 
 		this.refresh();
@@ -82,9 +86,44 @@ class Application extends React.Component<Props, State> {
 				</div>
 			</div>);
 		}
-		
+
+		const menuItems: [MenuOption, JSX.Element][] = [
+			["Todo manager", <Todos database={this.state.ioState === IOState.Valid ? this.io : null} />],
+			["Grocery Manager", <div></div>],
+		];
+
+		const element = menuItems.find(([menuName, _]) => {
+			if (this.state.selectedMenu === menuName) {
+				return true;
+			} else {
+				return false;
+			}
+		})![1];
+
+		const buttons = menuItems.map(([menuName, _]) => {
+			if (this.state.selectedMenu === menuName) {
+				return null;
+			} else {
+				return (
+					<button
+						className="menu-button"
+						onClick={() => {
+							this.setState({
+								selectedMenu: menuName,
+							});
+						}}
+					>
+						{menuName}
+					</button>
+				);
+			}
+		});
+
 		return (<div className="application">
-			<Todos database={this.state.ioState === IOState.Valid ? this.io : null} />
+			<div className="menu">
+				{buttons}
+			</div>
+			{element}
 		</div>);
 	}
 };
