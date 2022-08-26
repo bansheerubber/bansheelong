@@ -1,4 +1,4 @@
-use crate::http::{ Response };
+use crate::http::Response;
 
 pub(crate) fn failed_secret() -> warp::reply::WithStatus<warp::reply::Json> {
 	warp::reply::with_status(
@@ -6,6 +6,6 @@ pub(crate) fn failed_secret() -> warp::reply::WithStatus<warp::reply::Json> {
 			error: None,
 			success: false,
 		}),
-		warp::http::StatusCode::NOT_FOUND
+		warp::http::StatusCode::FORBIDDEN
 	)
 }
