@@ -1,0 +1,28 @@
+.groceries {
+	display: flex;
+	flex-direction: column;
+	font-family: 'Noto Sans';
+	padding: 1em;
+
+	.inner {
+		background-color: #322238;
+		margin-bottom: 0.7em;
+		padding: 0.7em;
+		display: flex;
+		flex-direction: column;
+
+		.ingredient {
+			display: flex;
+			align-items: center;
+			margin-bottom: 0.6em;
+
+			.MuiSvgIcon-root {
+				margin-right: 0.3em;
+			}
+		}
+
+		.ingredient:last-of-type {
+			margin-bottom: 0;
+		}
+	}
+}

@@ -1,6 +1,7 @@
 import Cookies from "js-cookie";
 import * as React from "react";
 
+import Groceries from "./grocery-list/groceries";
 import IO from "../api/io";
 import Todos from "./todos/todos";
 
@@ -89,7 +90,7 @@ class Application extends React.Component<Props, State> {
 
 		const menuItems: [MenuOption, JSX.Element][] = [
 			["Todo manager", <Todos database={this.state.ioState === IOState.Valid ? this.io : null} />],
-			["Grocery Manager", <div></div>],
+			["Grocery Manager", <Groceries database={this.state.ioState === IOState.Valid ? this.io : null} />],
 		];
 
 		const element = menuItems.find(([menuName, _]) => {
