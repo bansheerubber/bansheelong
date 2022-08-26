@@ -256,7 +256,7 @@ impl View {
 									Space::new(Length::Units(6), Length::Units(0))
 								)
 								.push(
-									Text::new(step)
+									Text::new(step.name.clone())
 										.size(self.props.text_size)
 								)
 								.padding([10, 0, 0, 0])
@@ -297,7 +297,7 @@ impl View {
 									Space::new(Length::Units(6), Length::Units(0))
 								)
 								.push(
-									Text::new(step)
+									Text::new(step.name.clone())
 										.size(self.props.text_size)
 								)
 								.padding([10, 0, 0, 0])

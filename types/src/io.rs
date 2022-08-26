@@ -15,6 +15,7 @@ use crate::{
 	PlannedMealsRemoveLog,
 	PlannedMealsWriteLog,
 	Recipe,
+	RecipeStep,
 	Time,
 	TodosDatabase,
 	Weekday,
@@ -200,7 +201,9 @@ impl IO {
 
 				// group 1: markup character delineating ingredient/steps/etc
 				// group 2: text description of ingredient/step/etc
-				static ref INFO_REGEX: Regex = Regex::new(r"([$#-]) (.+)").unwrap();
+				static ref INFO_REGEX: Regex = Regex::new(
+					r"([$#-]) ([a-zA-Z\s\-0-9]+)(?:\s+?\(([a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=\s]+)\))?$"
+				).unwrap();
 			}
 
 			let lines: Vec<String> = string.split("\n").map(str::to_string).collect();
@@ -250,18 +253,29 @@ impl IO {
 				} else if let Some(captures) = INFO_REGEX.captures(&line) {
 					let first_character = captures.get(1).unwrap().as_str();
 					let rest = String::from(captures.get(2).unwrap().as_str());
+					let extra = match captures.get(3) {
+						Some(m) => Some(String::from(m.as_str())),
+						None => None,
+					};
 
 					match first_character {
 						"-" => { // ingredient markup
 							ingredients.push(Ingredient {
 								name: rest,
+								quantity: extra,
 							});
 						},
 						"#" => { // preparation markup
-							preparation_steps.push(rest);
+							preparation_steps.push(RecipeStep {
+								extra_information: extra,
+								name: rest,
+							});
 						},
 						"$" => { // cooking markup
-							cooking_steps.push(rest);
+							cooking_steps.push(RecipeStep {
+								extra_information: extra,
+								name: rest,
+							});
 						},
 						_ => {},
 					}

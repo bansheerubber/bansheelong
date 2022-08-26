@@ -20,6 +20,7 @@ pub use types::PlannedMeal;
 pub use types::PlannedMealsRemoveLog;
 pub use types::PlannedMealsWriteLog;
 pub use types::Recipe;
+pub use types::RecipeStep;
 pub use types::Resource;
 pub use types::Time;
 pub use types::TodosDatabase;

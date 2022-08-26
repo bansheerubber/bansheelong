@@ -255,24 +255,32 @@ pub struct MealsDatabase {
 #[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
 pub struct Ingredient {
 	pub name: String,
+	pub quantity: Option<String>,
 }
 
 impl Ingredient {
-	pub fn new(name: String) -> Self {
+	pub fn new(name: String, quantity: Option<String>) -> Self {
 		Ingredient {
 			name,
+			quantity,
 		}
 	}
 }
 
+#[derive(Clone, Debug, Deserialize, Eq, PartialEq, Serialize)]
+pub struct RecipeStep {
+	pub extra_information: Option<String>,
+	pub name: String,
+}
+
 #[derive(Clone, Debug, Deserialize, Eq, Serialize)]
 pub struct Recipe {
-	pub cooking_steps: Vec<String>,
+	pub cooking_steps: Vec<RecipeStep>,
 	pub ingredients: Vec<Ingredient>,
 	pub image_url: Option<String>,
 	pub minutes: Option<u32>,
 	pub name: String,
-	pub preparation_steps: Vec<String>,
+	pub preparation_steps: Vec<RecipeStep>,
 }
 
 impl PartialEq for Recipe {

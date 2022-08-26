@@ -346,7 +346,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 										Space::new(Length::Units(6), Length::Units(0))
 									)
 									.push(
-										Text::new(step)
+										Text::new(step.name.clone())
 											.size(props.text_size)
 									)
 									.padding([10, 0, 0, 0])
@@ -387,7 +387,7 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 										Space::new(Length::Units(6), Length::Units(0))
 									)
 									.push(
-										Text::new(step)
+										Text::new(step.name.clone())
 											.size(props.text_size)
 									)
 									.padding([10, 0, 0, 0])
