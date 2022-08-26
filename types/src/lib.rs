@@ -98,6 +98,13 @@ pub fn get_storage_host() -> String {
 	}
 }
 
+pub fn get_static_path() -> Option<String> {
+	match env::var("BANSHEELONG_TODOS_HTTP_ROOT") {
+		Ok(root) => Some(root),
+		Err(_) => None,
+	}
+}
+
 // how many words we send to clients using the storage server
 pub const STORAGE_MESSAGE_COUNT: u8 = 5;
 

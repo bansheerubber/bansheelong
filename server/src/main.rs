@@ -4,6 +4,7 @@ mod ws;
 
 use bansheelong_types::{
 	IO,
+	get_static_path,
 	get_todos_https_cert,
 	get_todos_https_key,
 	get_todos_secret,
@@ -32,6 +33,11 @@ use crate::ws::Users;
 
 #[tokio::main]
 async fn main() {
+	if let None = get_static_path() {
+		eprintln!("No static path");
+		return;
+	}
+	
 	let users = Users::default();
 	let borrowed = users.clone();
 	let users_filter = warp::any().map(move || borrowed.clone());
@@ -60,6 +66,14 @@ async fn main() {
 				.and(warp::ws())
 				.and(users_filter)
 				.and_then(ws::handler)
+		)
+		.or(
+			warp::path("bundle.min.js")
+				.and(warp::fs::file(format!("{}/bundle.min.js", get_static_path().unwrap())))
+		)
+		.or(
+			warp::path::end()
+				.and(warp::fs::file(format!("{}/index.html", get_static_path().unwrap())))
 		);
 	
 	// http server async block
