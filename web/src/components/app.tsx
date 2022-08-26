@@ -1,3 +1,4 @@
+import Cookies from "js-cookie";
 import * as React from "react";
 
 import IO from "../api/io";
@@ -7,16 +8,18 @@ interface Props {};
 
 enum IOState {
 	Invalid,
+	Unauthorized,
 	Valid,
 };
 
 interface State {
 	ioState: IOState;
+	password: string;
 };
 
 class Application extends React.Component<Props, State> {
 	io: IO = new IO({
-		resource: "http://bansheerubber.com:3000"
+		resource: "https://bansheerubber.com/manager"
 	});
 
 	constructor(props: Props) {
@@ -24,6 +27,7 @@ class Application extends React.Component<Props, State> {
 
 		this.state = {
 			ioState: IOState.Invalid,
+			password: "",
 		};
 
 		this.refresh();
@@ -35,14 +39,50 @@ class Application extends React.Component<Props, State> {
 			this.setState({
 				ioState: IOState.Valid,
 			});
-		}).catch(() => {
-			this.setState({
-				ioState: IOState.Invalid,
-			});
+		}).catch((code: number | null) => {
+			if (code === 403) {
+				this.setState({
+					ioState: IOState.Unauthorized,
+				});
+			} else {
+				this.setState({
+					ioState: IOState.Invalid,
+				});
+			}
 		});
 	}
 	
 	override render(): JSX.Element {
+		const secret = Cookies.get("secret");
+
+		if (!secret || this.state.ioState === IOState.Unauthorized) {
+			return (<div className="application">
+				<div className="password">
+					<input
+						onChange={(event) => {
+							this.setState({
+								password: event.target.value,
+							});
+						}}
+						type="text"
+						value={this.state.password}
+					/>
+					<button
+						onClick={() => {
+							Cookies.set("secret", this.state.password, {
+								expires: 365,
+								path: '',
+								secure: true,
+							});
+							location.reload();
+						}}
+					>
+						Enter
+					</button>
+				</div>
+			</div>);
+		}
+		
 		return (<div className="application">
 			<Todos database={this.state.ioState === IOState.Valid ? this.io : null} />
 		</div>);

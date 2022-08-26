@@ -104,7 +104,7 @@ class IO {
 	readDatabase(): Promise<void> {
 		return new Promise((resolve, reject) => {
 			if (this.resource === null) {
-				reject();
+				reject(null);
 				return;
 			}
 
@@ -149,7 +149,7 @@ class IO {
 
 						resolve();
 					} else {
-						reject();
+						reject(request.status);
 					}
 				}
 			};
