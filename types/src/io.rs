@@ -196,13 +196,13 @@ impl IO {
 				// group 2: url of picture
 				// group 3: minutes it takes to complete meal
 				static ref NAME_REGEX: Regex = Regex::new(
-					r"^([a-zA-Z\s\-0-9]+)(?:\s+?\(([a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=]+),\s*?([0-9]+)\))?:$"
+					r"^([a-zA-Z\s\-0-9,.()]+)(?:\s+?\[([a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=]+),\s*?([0-9]+)\])?:$"
 				).unwrap();
 
 				// group 1: markup character delineating ingredient/steps/etc
 				// group 2: text description of ingredient/step/etc
 				static ref INFO_REGEX: Regex = Regex::new(
-					r"([$#-]) ([a-zA-Z\s\-0-9]+)(?:\s+?\(([a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=\s]+)\))?$"
+					r"([$#-]) ([a-zA-Z\s\-0-9,.()]+)(?:\s+?\[([a-zA-Z0-9\-._~:/?#\[\]@!$&'()*+,;=\s]+)\])?$"
 				).unwrap();
 			}
 
