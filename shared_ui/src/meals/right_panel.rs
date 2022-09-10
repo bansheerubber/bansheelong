@@ -306,7 +306,20 @@ pub(crate) fn get_planner_right_panel<'a, I>(args: PlannerRightPanelArguments<'a
 									Space::new(Length::Units(6), Length::Units(0))
 								)
 								.push(
-									Text::new(ingredient.name.clone())
+									Text::new(
+										ingredient.name.clone()
+									)
+										.size(props.text_size)
+										.width(Length::Fill)
+								)
+								.push(
+									Text::new(
+										if let Some(quantity) = ingredient.quantity.as_ref() {
+											quantity.clone()
+										} else {
+											String::new()
+										}
+									)
 										.size(props.text_size)
 								)
 								.padding([10, 0, 0, 0])

@@ -212,7 +212,20 @@ impl View {
 									Space::new(Length::Units(6), Length::Units(0))
 								)
 								.push(
-									Text::new(planned_ingredient.ingredient.name.clone())
+									Text::new(
+										planned_ingredient.ingredient.name.clone()
+									)
+										.size(self.props.text_size)
+										.width(Length::Fill)
+								)
+								.push(
+									Text::new(
+										if let Some(quantity) = planned_ingredient.ingredient.quantity.as_ref() {
+											quantity.clone()
+										} else {
+											String::new()
+										}
+									)
 										.size(self.props.text_size)
 								)
 								.padding([10, 0, 0, 0])
