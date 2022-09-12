@@ -111,13 +111,18 @@ pub const STORAGE_MESSAGE_COUNT: u8 = 5;
 
 bitflags! {
 	pub struct JobStatusFlags: u64 {
-		const IDLE              = 0b00000000;
-		const ERROR             = 0b00000001;
-		const DOWNLOADING_DAILY = 0b00000010;
-		const CREATING_WEEKLY   = 0b00000100;
-		const CREATING_MONTHLY  = 0b00001000;
-		const SYNCING_GITHUB    = 0b00010000;
-		const REMOVING_DAILY    = 0b00100000;
-		const REMOVING_WEEKLY   = 0b01000000;
+		const IDLE                           = 0;
+		const GENERAL_ERROR	                 = 1 << 0;
+		const DOWNLOADING_DAILY              = 1 << 1;
+		const CREATING_WEEKLY                = 1 << 2;
+		const CREATING_MONTHLY               = 1 << 3;
+		const SYNCING_GITHUB                 = 1 << 4;
+		const REMOVING_DAILY                 = 1 << 5;
+		const REMOVING_WEEKLY                = 1 << 6;
+		const ZPOOL_ERROR                    = 1 << 7;
+		const ZPOOL_HARD_DRIVE_PARSE_ERROR   = 1 << 8;
+		const ZPOOL_HARD_DRIVE_RW_ERROR      = 1 << 9;
+		const ZPOOL_HARD_DRIVE_STATE_ERROR   = 1 << 10;
+		const ZPOOL_SCRUBBING                = 1 << 11;
 	}
 }

@@ -95,7 +95,7 @@ impl View {
 							if self.data.is_none() {
 								String::from("Not connected")
 							} else {
-								if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::ERROR) {
+								if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::GENERAL_ERROR) {
 									String::from("Error")
 								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::CREATING_MONTHLY) {
 									String::from("Creating monthly backup") + &ellipses
@@ -109,6 +109,16 @@ impl View {
 									String::from("Removing stale daily") + &ellipses
 								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::REMOVING_WEEKLY) {
 									String::from("Removing stale weekly") + &ellipses
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::ZPOOL_ERROR) { // start here
+									String::from("ZPool error")
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::ZPOOL_HARD_DRIVE_PARSE_ERROR) {
+									String::from("Hard drive parse error")
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::ZPOOL_HARD_DRIVE_RW_ERROR) {
+									String::from("Hard drive r/w/c error")
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::ZPOOL_HARD_DRIVE_STATE_ERROR) {
+									String::from("Hard drive error")
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::ZPOOL_SCRUBBING) {
+									String::from("Scrubbing") + &ellipses
 								} else {
 									String::from("Idle")
 								}

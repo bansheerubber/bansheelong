@@ -78,7 +78,7 @@ pub fn connect() -> Subscription<Event> {
 							(
 								Some(Event::Message(Data {
 									job_flags: if JobStatusFlags::from_bits(parts[0] as u64).is_none() {
-										JobStatusFlags::ERROR
+										JobStatusFlags::GENERAL_ERROR
 									} else {
 										JobStatusFlags::from_bits(parts[0] as u64).unwrap()
 									},

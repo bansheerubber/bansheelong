@@ -1,0 +1,23 @@
+  pool: bansheerubber
+ state: ONLINE
+status: One or more devices has experienced an unrecoverable error.  An
+        attempt was made to correct the error.  Applications are unaffected.
+action: Determine if the device needs to be replaced, and clear the errors
+        using 'zpool clear' or replace the device with 'zpool replace'.
+   see: https://openzfs.github.io/openzfs-docs/msg/ZFS-8000-9P
+  scan: scrub repaired 5.39M in 07:42:46 with 0 errors on Wed Jul 13 02:08:51 2022
+config:
+
+        NAME                                 STATE     READ WRITE CKSUM
+        bansheerubber                        ONLINE       0     0     0
+          raidz2-0                           ONLINE       0     0     0
+            ata-ST2000DM008-2FR102_ZFL36PYH  ONLINE       0     0     4
+            ata-ST2000DM008-2FR102_ZFL36QCV  ONLINE       0     0     0
+            ata-ST2000DM008-2FR102_ZFL36YRL  ONLINE       0     0     0
+            ata-ST2000DM008-2FR102_ZFL370C6  ONLINE       0     0     0
+            ata-ST2000DM008-2FR102_ZFL370EW  ONLINE      16   103     0
+            ata-ST2000DM008-2FR102_ZK203LK8  ONLINE       0     0     0
+            ata-ST2000DM008-2FR102_ZK203MKK  ONLINE       0     0     0
+            ata-ST2000DM008-2FR102_ZK203SFZ  ONLINE      42   202     0
+
+errors: No known data errors

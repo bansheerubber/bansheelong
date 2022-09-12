@@ -52,21 +52,101 @@ fn run_command(command: &mut Command) -> Result<String, Error> {
 	}
 }
 
-fn get_zpool_error() -> Result<bool, Error> {
+#[derive(Debug)]
+enum ZPoolStatus {
+	Error,
+	HardDriveReadWriteChecksumError,
+	HardDriveParseError,
+	HardDriveStateError,
+	Scrubbing,
+	Safe,
+}
+
+#[derive(Debug)]
+enum HardDriveStatus {
+	Degraded(i64, i64, i64),
+	Faulted(i64, i64, i64),
+	Offline(i64, i64, i64),
+	Online(i64, i64, i64),
+	Unavailable(i64, i64, i64),
+}
+
+fn get_hard_drive_status(line: &str) -> Option<HardDriveStatus> {
+	let is_hard_drive_line = ["ONLINE", "FAULTED", "DEGRADED", "UNAVAIL", "OFFLINE"].iter()
+		.fold(None, |is_hard_drive_line, item| {
+			if line.to_string().contains(item)
+				&& is_hard_drive_line == None
+				&& !line.to_string().contains("state:")
+			{
+				Some(item)
+			} else {
+				is_hard_drive_line
+			}
+		});
+	
+	if is_hard_drive_line != None {
+		let split_line = line.split(" ")
+			.fold(Vec::new(), |mut accum, item| {
+				if item.len() == 0 {
+					accum
+				} else {
+					accum.push(item);
+					accum
+				}
+			});
+		
+		let read_errors: i64 = split_line[2].parse().unwrap_or(-1);
+		let write_errors: i64 = split_line[3].parse().unwrap_or(-1);
+		let checksum_errors: i64 = split_line[4].parse().unwrap_or(-1);
+
+		match is_hard_drive_line {
+			Some(&"ONLINE") => Some(HardDriveStatus::Online(read_errors, write_errors, checksum_errors)),
+			Some(&"FAULTED") => Some(HardDriveStatus::Faulted(read_errors, write_errors, checksum_errors)),
+			Some(&"DEGRADED") => Some(HardDriveStatus::Degraded(read_errors, write_errors, checksum_errors)),
+			Some(&"UNAVAIL") => Some(HardDriveStatus::Unavailable(read_errors, write_errors, checksum_errors)),
+			Some(&"OFFLINE") => Some(HardDriveStatus::Offline(read_errors, write_errors, checksum_errors)),
+			_ => None,
+		}
+	} else {
+		return None;
+	}
+}
+
+fn get_zpool_error() -> Result<ZPoolStatus, Error> {
 	let stdout = run_command(
 		Command::new("zpool")
 			.arg("status")
 	)?;
-	
+
 	// analyze the output
-	let mut has_zpool_error = true;
 	for line in stdout.split('\n') {
-		if line == "errors: No known data errors" {
-			has_zpool_error = false;
+		// parse scrubbing information
+		if line.contains("scan:") && line.contains("scrub in progress") {
+			return Ok(ZPoolStatus::Scrubbing);
+		}
+		
+		// parse hard drive information
+		match get_hard_drive_status(line) {
+			Some(HardDriveStatus::Online(read_errors, write_errors, checksum_errors)) => {
+				// return error if we have error counts set
+				if read_errors == -1 || write_errors == -1 || checksum_errors == -1 {
+					return Ok(ZPoolStatus::HardDriveParseError);
+				} else if read_errors != 0 || write_errors != 0 || checksum_errors != 0 {
+					return Ok(ZPoolStatus::HardDriveReadWriteChecksumError);
+				}
+			},
+			None => {},
+			_ => {
+				return Ok(ZPoolStatus::HardDriveStateError);
+			},
+		}
+
+		if line.contains("errors:") && line != "errors: No known data errors" {
+			return Ok(ZPoolStatus::Error)
 		}
 	}
 
-	Ok(has_zpool_error)
+	Ok(ZPoolStatus::Safe)
 }
 
 fn get_disk_usage() -> Result<(u64, u64), Error> {
@@ -129,13 +209,24 @@ fn get_job_flags() -> Result<JobStatusFlags, Error> {
 
 	match get_zpool_error() { // handle zpool error by indicating it on the bansheelong
 		Err(_) => {
-			result |= JobStatusFlags::ERROR;
+			result |= JobStatusFlags::ZPOOL_ERROR;
 		},
-		Ok(status) => {
-			if status {
-				result |= JobStatusFlags::ERROR;
-			}
+		Ok(ZPoolStatus::Error) => {
+			result |= JobStatusFlags::ZPOOL_ERROR;
 		},
+		Ok(ZPoolStatus::HardDriveParseError) => {
+			result |= JobStatusFlags::ZPOOL_HARD_DRIVE_PARSE_ERROR;
+		},
+		Ok(ZPoolStatus::HardDriveReadWriteChecksumError) => {
+			result |= JobStatusFlags::ZPOOL_HARD_DRIVE_RW_ERROR;
+		},
+		Ok(ZPoolStatus::HardDriveStateError) => {
+			result |= JobStatusFlags::ZPOOL_HARD_DRIVE_STATE_ERROR;
+		},
+		Ok(ZPoolStatus::Scrubbing) => {
+			result |= JobStatusFlags::ZPOOL_SCRUBBING;
+		},
+		Ok(ZPoolStatus::Safe) => {},
 	};
 
 	// check daily backup
@@ -325,7 +416,7 @@ async fn main() {
 					if let Err(error) = write_socket(writable.clone(), locked_message.clone()).await {
 						eprintln!("socket write error {:?}", error);
 					}
-				} 
+				}
 			}
 		}
 	).await;
