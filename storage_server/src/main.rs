@@ -87,10 +87,12 @@ fn get_hard_drive_status(line: &str) -> Option<HardDriveStatus> {
 	if is_hard_drive_line != None {
 		let split_line = line.split(" ")
 			.fold(Vec::new(), |mut accum, item| {
-				if item.len() == 0 {
+				let mut trimmed = item.replace("\t", "");
+				trimmed = trimmed.trim().to_string();
+				if trimmed.len() == 0 {
 					accum
 				} else {
-					accum.push(item);
+					accum.push(trimmed);
 					accum
 				}
 			});
