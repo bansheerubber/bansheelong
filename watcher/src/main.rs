@@ -69,6 +69,7 @@ async fn main() {
 				tokio::time::sleep(tokio::time::Duration::from_secs(300)).await;
 
 				let locked = io.lock().await;
+				draw_todo_list(&locked, String::from("/home/me/Projects/bansheelong/todo-list.png"));
 				draw_time_sheet(&locked, String::from("/home/me/Projects/bansheelong/time-sheet.png"));
 				combine(
 					String::from("/home/me/.config/background2.png"),
