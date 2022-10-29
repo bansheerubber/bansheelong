@@ -22,7 +22,7 @@ enum Error {
 fn run_command(command: &mut Command) -> Result<String, Error> {
 	let child = command.stdout(Stdio::piped())
 		.spawn();
-	
+
 	// make sure the command spawned
 	let child = match child {
 		Err(error) => {
@@ -83,7 +83,7 @@ fn get_hard_drive_status(line: &str) -> Option<HardDriveStatus> {
 				is_hard_drive_line
 			}
 		});
-	
+
 	if is_hard_drive_line != None {
 		let split_line = line.split(" ")
 			.fold(Vec::new(), |mut accum, item| {
@@ -96,7 +96,7 @@ fn get_hard_drive_status(line: &str) -> Option<HardDriveStatus> {
 					accum
 				}
 			});
-		
+
 		let read_errors: i64 = split_line[2].parse().unwrap_or(-1);
 		let write_errors: i64 = split_line[3].parse().unwrap_or(-1);
 		let checksum_errors: i64 = split_line[4].parse().unwrap_or(-1);
@@ -126,7 +126,7 @@ fn get_zpool_error() -> Result<ZPoolStatus, Error> {
 		if line.contains("scan:") && line.contains("scrub in progress") {
 			return Ok(ZPoolStatus::Scrubbing);
 		}
-		
+
 		// parse hard drive information
 		match get_hard_drive_status(line) {
 			Some(HardDriveStatus::Online(read_errors, write_errors, checksum_errors)) => {
@@ -166,7 +166,7 @@ fn get_disk_usage() -> Result<(u64, u64), Error> {
 				.filter(|i| i.len() > 0)
 				.map(|i| i.to_string())
 				.collect();
-			
+
 			used_size = match items[2].parse() {
 				Err(error) => {
 					return Err(Error::DiskUsage(format!("used size parse error: {:?}", error)));
@@ -261,6 +261,11 @@ fn get_job_flags() -> Result<JobStatusFlags, Error> {
 		result |= JobStatusFlags::REMOVING_WEEKLY;
 	}
 
+	// check btrbk status
+	if Path::new("/home/me/bansheestorage/writing-btrbk").exists() {
+		result |= JobStatusFlags::WRITING_BTRBK;
+	}
+
 	Ok(result)
 }
 
@@ -284,7 +289,7 @@ async fn read_socket(
 			},
 		}
 	}
-	
+
 	Ok(())
 }
 
@@ -319,7 +324,7 @@ async fn main() {
 	future::join(
 		async { // server listener
 			let sockets_reference = sockets.clone();
-			
+
 			let listener = TcpListener::bind("0.0.0.0:3002").await;
 			if let Err(error) = listener.as_ref() {
 				eprintln!("could not open socket {:?}", error);
@@ -362,7 +367,7 @@ async fn main() {
 		},
 		async { // status getter
 			let sockets_reference = sockets.clone();
-			
+
 			let mut sleep_time = 0;
 			loop {
 				sleep(Duration::from_secs(sleep_time)).await;
@@ -394,7 +399,7 @@ async fn main() {
 					},
 					Ok(value) => value
 				};
-		
+
 				// update message
 				let mut locked_message = message.lock().await;
 				*locked_message = format!("{} {} {} {} {}\n", job_status, used_size, total_size, dailies, weeklies);
