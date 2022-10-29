@@ -124,5 +124,6 @@ bitflags! {
 		const ZPOOL_HARD_DRIVE_RW_ERROR      = 1 << 9;
 		const ZPOOL_HARD_DRIVE_STATE_ERROR   = 1 << 10;
 		const ZPOOL_SCRUBBING                = 1 << 11;
+		const WRITING_BTRBK                  = 1 << 12;
 	}
 }
