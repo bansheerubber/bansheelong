@@ -39,7 +39,7 @@ impl View {
 
 	pub fn view(&mut self) -> Element<Message> {
 		let ellipses: String = std::iter::repeat(".").take(std::cmp::min((self.ellipses + 1) as usize, 4)).collect();
-		
+
 		Container::new(
 			Container::new(
 				Column::new()
@@ -119,6 +119,8 @@ impl View {
 									String::from("Hard drive error")
 								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::ZPOOL_SCRUBBING) {
 									String::from("Scrubbing") + &ellipses
+								} else if self.data.as_ref().unwrap().job_flags.contains(JobStatusFlags::WRITING_BTRBK) {
+									String::from("Writing btrfs backup") + &ellipses
 								} else {
 									String::from("Idle")
 								}
