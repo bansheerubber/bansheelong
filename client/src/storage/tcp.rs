@@ -5,7 +5,7 @@ use tokio::net::TcpStream;
 
 #[derive(Debug)]
 enum State {
-	Connected(TcpStream),
+	Connected(TcpStream, String),
 	Disconnected,
 	WaitToConnect,
 }
@@ -16,6 +16,10 @@ pub struct Data {
 
 	pub used_size: u64,
 	pub total_size: u64,
+
+	pub btrfs_used_size: u64,
+	pub btrfs_total_size: u64,
+	pub btrfs_backup_count: u64,
 
 	pub dailies: u8,
 	pub weeklies: u8,
@@ -37,19 +41,28 @@ pub fn connect() -> Subscription<Event> {
 		State::Disconnected,
 		|state| async move {
 			match state {
-				State::Connected(socket) => { // receive messages in a way that is friendly to iced subscriptions
+				State::Connected(socket, mut buffer) => { // receive messages in a way that is friendly to iced subscriptions
 					if let Err(error) = socket.readable().await {
 						eprintln!("TCP error {:?}", error);
 						return (Some(Event::Error(String::from("Lost connection"))), State::WaitToConnect);
 					}
 
-					let mut buffer = Vec::new();
-					match socket.try_read_buf(&mut buffer) {
+					let mut packet = Vec::new();
+					match socket.try_read_buf(&mut packet) {
 						Ok(0) => {
-							(Some(Event::Error(String::from("Lost connection"))), State::WaitToConnect)
+							eprintln!("TCP error lost connection");
+							return (Some(Event::Error(String::from("Lost connection"))), State::WaitToConnect);
+						},
+						Err(ref error) if error.kind() == tokio::io::ErrorKind::WouldBlock => {
+							sleep(Duration::from_secs(1)).await;
+							return (Some(Event::Ignore), State::Connected(socket, buffer));
+						},
+						Err(error) => {
+							eprintln!("TCP error {:?}", error);
+							return (Some(Event::Error(String::from("Lost connection"))), State::WaitToConnect);
 						},
 						Ok(_) => {
-							let message = match String::from_utf8(buffer) {
+							let message = match String::from_utf8(packet) {
 								Ok(string) => string,
 								Err(error) => {
 									eprintln!("TCP error {:?}", error);
@@ -57,56 +70,63 @@ pub fn connect() -> Subscription<Event> {
 								},
 							};
 
-							let message = match message.split("\n").nth(0) {
-								None => return (Some(Event::Error(String::from("Malformed message"))), State::WaitToConnect),
-								Some(message) => message,
-							};
+							buffer.push_str(&message);
+						},
+					}
 
-							let parts: Vec<u64> = message.split(" ").map(|x| {
-								match x.parse::<u64>() {
-									Err(_) => 0,
-									Ok(value) => value
-								}
-							}).collect();
+					if buffer.contains("\n") {
+						let split = buffer.split("\n").filter(|s| s.len() > 0).collect::<Vec<&str>>();
 
-							if parts.len() != STORAGE_MESSAGE_COUNT as usize {
-								return (Some(Event::Error(String::from("Malformed message"))), State::WaitToConnect);
+						let last_valid_message = if buffer.ends_with("\n") {
+							split.len() - 1
+						} else {
+							split.len() - 2
+						};
+
+						// parse the last message only
+						let parts: Vec<u64> = split[last_valid_message].split(" ").map(|x| {
+							match x.parse::<u64>() {
+								Err(_) => 0,
+								Ok(value) => value
 							}
+						}).collect();
 
-							sleep(Duration::from_secs(1)).await;
+						if parts.len() != STORAGE_MESSAGE_COUNT as usize {
+							eprintln!("TCP error message not right length");
+							return (Some(Event::Error(String::from("Malformed message"))), State::WaitToConnect);
+						}
 
-							(
-								Some(Event::Message(Data {
-									job_flags: if JobStatusFlags::from_bits(parts[0] as u64).is_none() {
-										JobStatusFlags::GENERAL_ERROR
-									} else {
-										JobStatusFlags::from_bits(parts[0] as u64).unwrap()
-									},
+						sleep(Duration::from_secs(1)).await;
 
-									used_size: parts[1],
-									total_size: parts[2],
+						return (
+							Some(Event::Message(Data {
+								job_flags: if JobStatusFlags::from_bits(parts[0] as u64).is_none() {
+									JobStatusFlags::GENERAL_ERROR
+								} else {
+									JobStatusFlags::from_bits(parts[0] as u64).unwrap()
+								},
 
-									dailies: parts[3] as u8,
-									weeklies: parts[4] as u8,
-								})),
-								State::Connected(socket)
-							)
-						},
-						Err(ref error) if error.kind() == tokio::io::ErrorKind::WouldBlock => {
-							sleep(Duration::from_secs(1)).await;
-							(Some(Event::Ignore), State::Connected(socket))
-						},
-						Err(error) => {
-							eprintln!("TCP error {:?}", error);
-							(Some(Event::Error(String::from("Lost connection"))), State::WaitToConnect)
-						},
+								used_size: parts[1],
+								total_size: parts[2],
+
+								btrfs_used_size: parts[3],
+								btrfs_total_size: parts[4],
+								btrfs_backup_count: parts[5],
+
+								dailies: parts[6] as u8,
+								weeklies: parts[7] as u8,
+							})),
+							State::Connected(socket, String::new())
+						);
+					} else {
+						return (Some(Event::Ignore), State::Connected(socket, buffer));
 					}
 				},
 				State::Disconnected => { // try connecting if we're disconnected
 					match TcpStream::connect(
 						format!("{}:{}", get_storage_host(), get_storage_port())
 					).await {
-						Ok(socket) => (Some(Event::InvalidateState), State::Connected(socket)),
+						Ok(socket) => (Some(Event::InvalidateState), State::Connected(socket, String::new())),
 						Err(error) => {
 							eprintln!("TCP error {:?}", error);
 							(Some(Event::Error(String::from("Could not connect"))), State::WaitToConnect)

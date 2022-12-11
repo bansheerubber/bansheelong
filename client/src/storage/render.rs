@@ -40,6 +40,15 @@ impl View {
 	pub fn view(&mut self) -> Element<Message> {
 		let ellipses: String = std::iter::repeat(".").take(std::cmp::min((self.ellipses + 1) as usize, 4)).collect();
 
+		let format_size = |size: u64| {
+			let gigabytes = size / 1_000_000_000;
+			if gigabytes < 1_500 {
+				format!("{:.1}T", gigabytes as f64 / 1_000.0)
+			} else {
+				format!("{}T", gigabytes / 1_000)
+			}
+		};
+
 		Container::new(
 			Container::new(
 				Column::new()
@@ -48,42 +57,47 @@ impl View {
 							.push(
 								Text::new(
 									format!(
-										"{} dailies",
+										"{} backups",
 										if let None = self.data {
 											0
 										} else {
-											self.data.as_ref().unwrap().dailies
+											self.data.as_ref().unwrap().btrfs_backup_count
 										}
 									)
 								)
 							)
-							.push(Space::new(Length::Units(20), Length::Units(0)))
+							.push(Space::new(Length::Units(18), Length::Units(0)))
 							.push(
 								Text::new(
 									format!(
-										"{} weeklies",
-										if let None = self.data {
-											0
-										} else {
-											self.data.as_ref().unwrap().weeklies
-										}
-									)
-								)
-							)
-							.push(Space::new(Length::Units(20), Length::Units(0)))
-							.push(
-								Text::new(
-									format!(
-										"{}T/{}T",
+										"{}/{}",
 										if let None = self.data { // used size
-											0
+											"0T".to_string()
 										} else {
-											self.data.as_ref().unwrap().used_size / 1000000000000
+											format_size(self.data.as_ref().unwrap().btrfs_used_size)
 										},
 										if let None = self.data { // total size
-											0
+											"0T".to_string()
 										} else {
-											self.data.as_ref().unwrap().total_size / 1000000000000
+											format_size(self.data.as_ref().unwrap().btrfs_total_size)
+										}
+									)
+								)
+							)
+							.push(Space::new(Length::Units(18), Length::Units(0)))
+							.push(
+								Text::new(
+									format!(
+										"{}/{}",
+										if let None = self.data { // used size
+											"0T".to_string()
+										} else {
+											format_size(self.data.as_ref().unwrap().used_size)
+										},
+										if let None = self.data { // total size
+											"0T".to_string()
+										} else {
+											format_size(self.data.as_ref().unwrap().total_size)
 										}
 									)
 								)
