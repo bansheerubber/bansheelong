@@ -107,7 +107,7 @@ pub fn get_static_path() -> Option<String> {
 }
 
 // how many words we send to clients using the storage server
-pub const STORAGE_MESSAGE_COUNT: u8 = 5;
+pub const STORAGE_MESSAGE_COUNT: u8 = 8;
 
 bitflags! {
 	pub struct JobStatusFlags: u64 {

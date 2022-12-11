@@ -186,6 +186,50 @@ fn get_disk_usage() -> Result<(u64, u64), Error> {
 	Ok((used_size, total_size))
 }
 
+fn get_btrfs_disk_usage() -> Result<(u64, u64), Error> {
+	let stdout = run_command(
+		Command::new("btrfs")
+			.arg("fi")
+			.arg("usage")
+			.arg("-b")
+			.arg("/bansheebtrfs/")
+	)?;
+
+	let get_number = |line: &str| {
+		let mut number = String::new();
+		for character in line.chars() {
+			if character.is_ascii_digit() {
+				number.push(character);
+			}
+		}
+		return number;
+	};
+
+	let mut used_size = 0;
+	let mut total_size = 0;
+	for line in stdout.split('\n') {
+		if line.contains("Device size:") {
+			total_size = get_number(line).parse::<u64>().unwrap();
+		} else if line.contains("Used:\t") {
+			used_size = get_number(line).parse::<u64>().unwrap();
+		}
+	}
+
+	Ok((used_size, total_size))
+}
+
+fn get_btrfs_backup_count() -> Result<u64, Error> {
+	let mut total = 0;
+
+	for path in std::fs::read_dir("/bansheebtrfs/").unwrap() {
+		if path.unwrap().path().to_str().unwrap().contains("home_backup") {
+			total += 1;
+		}
+	}
+
+	Ok(total)
+}
+
 fn get_backups_count() -> Result<(u8, u8), Error> {
 	let read_count = |file_name: &str| {
 		let value = match std::fs::read_to_string(format!("/home/me/bansheestorage/{}-count", file_name)) {
@@ -391,6 +435,24 @@ async fn main() {
 					Ok(value) => value
 				};
 
+				// get btrfs disk usage
+				let (btrfs_used_size, btrfs_total_size) = match get_btrfs_disk_usage() {
+					Err(error) => {
+						eprintln!("btrfs usage error: {:?}", error);
+						(0, 0)
+					},
+					Ok(value) => value
+				};
+
+				// get btrfs backup count
+				let btrfs_backup_count = match get_btrfs_backup_count() {
+					Err(error) => {
+						eprintln!("btrfs backup count error: {:?}", error);
+						return 0;
+					},
+					Ok(value) => value,
+				};
+
 				// get dailies/weeklies count
 				let (dailies, weeklies) = match get_backups_count() {
 					Err(error) => {
@@ -402,7 +464,17 @@ async fn main() {
 
 				// update message
 				let mut locked_message = message.lock().await;
-				*locked_message = format!("{} {} {} {} {}\n", job_status, used_size, total_size, dailies, weeklies);
+				*locked_message = format!(
+					"{} {} {} {} {} {} {} {}\n",
+					job_status,
+					used_size,
+					total_size,
+					btrfs_used_size,
+					btrfs_total_size,
+					btrfs_backup_count,
+					dailies,
+					weeklies
+				);
 
 				let whitespace_count = locked_message.chars()
 					.fold(0, |prev, c| {
